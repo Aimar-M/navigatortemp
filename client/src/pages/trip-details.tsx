@@ -26,9 +26,16 @@ export default function TripDetails() {
   const { data: trip, isLoading: isTripLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}`],
     queryFn: async () => {
-      const response = await fetch(`/api/trips/${tripId}`, {
-        credentials: "include",
-      });
+      // Get auth token for our token-based authentication
+      const token = localStorage.getItem('auth_token');
+      
+      // Add token to authorization header
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`/api/trips/${tripId}`, { headers });
       if (!response.ok) throw new Error("Failed to fetch trip");
       return response.json();
     },
@@ -39,9 +46,16 @@ export default function TripDetails() {
   const { data: members, isLoading: isMembersLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}/members`],
     queryFn: async () => {
-      const response = await fetch(`/api/trips/${tripId}/members`, {
-        credentials: "include",
-      });
+      // Get auth token for our token-based authentication
+      const token = localStorage.getItem('auth_token');
+      
+      // Add token to authorization header
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`/api/trips/${tripId}/members`, { headers });
       if (!response.ok) throw new Error("Failed to fetch members");
       return response.json();
     },
@@ -52,9 +66,16 @@ export default function TripDetails() {
   const { data: activities, isLoading: isActivitiesLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}/activities`],
     queryFn: async () => {
-      const response = await fetch(`/api/trips/${tripId}/activities`, {
-        credentials: "include",
-      });
+      // Get auth token for our token-based authentication
+      const token = localStorage.getItem('auth_token');
+      
+      // Add token to authorization header
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`/api/trips/${tripId}/activities`, { headers });
       if (!response.ok) throw new Error("Failed to fetch activities");
       return response.json();
     },
