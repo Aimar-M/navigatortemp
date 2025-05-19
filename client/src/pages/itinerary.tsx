@@ -1,0 +1,374 @@
+import { useState } from "react";
+import { useParams, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, CalendarPlus } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { formatDate } from "@/lib/utils";
+import Header from "@/components/header";
+import MobileNavigation from "@/components/mobile-navigation";
+import TripTabs from "@/components/trip-tabs";
+import ActivityCard from "@/components/activity-card";
+import { Button } from "@/components/ui/button";
+import { 
+  Dialog, 
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+
+export default function Itinerary() {
+  const { id } = useParams<{ id: string }>();
+  const tripId = parseInt(id);
+  const [, navigate] = useLocation();
+  const { user } = useAuth();
+  const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    date: "",
+    location: "",
+    duration: "",
+    cost: "",
+  });
+
+  // Fetch trip details
+  const { data: trip, isLoading: isTripLoading } = useQuery({
+    queryKey: [`/api/trips/${tripId}`],
+    queryFn: async () => {
+      const response = await fetch(`/api/trips/${tripId}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch trip");
+      return response.json();
+    },
+    enabled: !!tripId && !!user,
+  });
+
+  // Fetch trip activities
+  const { data: activities, isLoading: isActivitiesLoading } = useQuery({
+    queryKey: [`/api/trips/${tripId}/activities`],
+    queryFn: async () => {
+      const response = await fetch(`/api/trips/${tripId}/activities`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch activities");
+      return response.json();
+    },
+    enabled: !!tripId && !!user,
+  });
+
+  // Check if user is organizer
+  const isOrganizer = trip && user && trip.organizer === user.id;
+
+  // Group activities by date
+  const groupedActivities = activities
+    ? activities.reduce((grouped: Record<string, any[]>, activity: any) => {
+        const date = formatDate(new Date(activity.date));
+        if (!grouped[date]) {
+          grouped[date] = [];
+        }
+        grouped[date].push(activity);
+        return grouped;
+      }, {})
+    : {};
+
+  // Sort dates
+  const sortedDates = Object.keys(groupedActivities).sort(
+    (a, b) => new Date(a).getTime() - new Date(b).getTime()
+  );
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      description: "",
+      date: "",
+      location: "",
+      duration: "",
+      cost: "",
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const activityData = {
+        ...formData,
+        tripId,
+        duration: formData.duration ? parseInt(formData.duration) : undefined,
+      };
+
+      await apiRequest("POST", `/api/trips/${tripId}/activities`, activityData);
+      
+      // Invalidate activities query to refresh list
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/activities`] });
+      
+      // Close modal and reset form
+      setIsAddActivityModalOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error("Error creating activity:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!user) {
+    navigate("/login");
+    return null;
+  }
+
+  if (isTripLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <Header />
+        <div className="flex-1 flex justify-center items-center">
+          <Skeleton className="h-12 w-12 rounded-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!trip) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <Header />
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Trip not found</h1>
+          <p className="text-gray-600 mb-4">The trip you're looking for doesn't exist or you don't have access to it.</p>
+          <Button onClick={() => navigate("/")}>Return Home</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Header />
+      
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Trip Header */}
+        <div className="bg-white border-b border-gray-200 p-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center">
+                <h2 className="text-xl font-bold text-gray-900">{trip.name}</h2>
+              </div>
+              <p className="text-sm text-gray-600">Itinerary</p>
+            </div>
+            {isOrganizer && (
+              <Button onClick={() => setIsAddActivityModalOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Activity
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <TripTabs tripId={tripId} />
+
+        {/* Itinerary Content */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {isActivitiesLoading ? (
+            <div className="space-y-6">
+              {[1, 2].map((dayIndex) => (
+                <div key={dayIndex} className="mb-6">
+                  <Skeleton className="h-6 w-40 mb-3" />
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Card key={i}>
+                        <CardContent className="p-3">
+                          <div className="flex justify-between">
+                            <div>
+                              <Skeleton className="h-3 w-20 mb-1" />
+                              <Skeleton className="h-5 w-40 mb-1" />
+                              <Skeleton className="h-4 w-60" />
+                            </div>
+                            <Skeleton className="h-6 w-16 rounded-full" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : sortedDates.length > 0 ? (
+            <div className="space-y-6">
+              {sortedDates.map((date) => (
+                <div key={date} className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">{date}</h3>
+                  <div className="space-y-3">
+                    {groupedActivities[date]
+                      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                      .map((activity: any) => (
+                        <ActivityCard
+                          key={activity.id}
+                          id={activity.id}
+                          name={activity.name}
+                          description={activity.description}
+                          date={activity.date}
+                          location={activity.location}
+                          confirmedCount={activity.rsvps?.filter((r: any) => r.status === 'going').length || 0}
+                          totalCount={activity.rsvps?.length || 0}
+                        />
+                      ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <CalendarPlus className="h-16 w-16 text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium text-gray-700">No activities planned yet</h3>
+              <p className="text-gray-500 mt-1 mb-4 max-w-md">
+                Plan your trip by adding activities to your itinerary.
+              </p>
+              {isOrganizer && (
+                <Button onClick={() => setIsAddActivityModalOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Activity
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+      
+      <MobileNavigation />
+
+      {/* Add Activity Modal */}
+      <Dialog open={isAddActivityModalOpen} onOpenChange={setIsAddActivityModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Activity</DialogTitle>
+            <DialogDescription>
+              Create a new activity for your trip itinerary.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4 py-2">
+              <div className="grid gap-3">
+                <div>
+                  <label htmlFor="name" className="text-sm font-medium text-gray-700 mb-1 block">
+                    Activity Name
+                  </label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="e.g., Sagrada Familia Tour"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="date" className="text-sm font-medium text-gray-700 mb-1 block">
+                    Date & Time
+                  </label>
+                  <Input
+                    type="datetime-local"
+                    id="date"
+                    name="date"
+                    value={formData.date}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="location" className="text-sm font-medium text-gray-700 mb-1 block">
+                    Location
+                  </label>
+                  <Input
+                    id="location"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    placeholder="Activity location"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="duration" className="text-sm font-medium text-gray-700 mb-1 block">
+                      Duration (minutes)
+                    </label>
+                    <Input
+                      type="number"
+                      id="duration"
+                      name="duration"
+                      value={formData.duration}
+                      onChange={handleChange}
+                      placeholder="e.g., 120"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="cost" className="text-sm font-medium text-gray-700 mb-1 block">
+                      Cost
+                    </label>
+                    <Input
+                      id="cost"
+                      name="cost"
+                      value={formData.cost}
+                      onChange={handleChange}
+                      placeholder="e.g., $25 per person"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="description" className="text-sm font-medium text-gray-700 mb-1 block">
+                    Description
+                  </label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder="Provide details about this activity"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="mt-4 sm:justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsAddActivityModalOpen(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting || !formData.name || !formData.date}>
+                {isSubmitting ? "Adding..." : "Add Activity"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
