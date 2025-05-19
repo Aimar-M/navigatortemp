@@ -95,12 +95,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Don't send password in the response
       const { password, ...userWithoutPassword } = user;
       
-      // Set user in session
-      if (req.session) {
-        req.session.userId = user.id;
-      }
+      // Generate token (in this simple implementation, just use the user ID)
+      const token = user.id.toString();
       
-      res.status(201).json(userWithoutPassword);
+      // Return user data with token
+      res.status(201).json({
+        ...userWithoutPassword,
+        token
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Invalid data', errors: error.errors });
@@ -125,12 +127,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Don't send password in the response
       const { password: _, ...userWithoutPassword } = user;
       
-      // Set user in session
-      if (req.session) {
-        req.session.userId = user.id;
-      }
+      // Generate token (in this simple implementation, just use the user ID)
+      const token = user.id.toString();
       
-      res.json(userWithoutPassword);
+      // Return user data with token
+      res.json({
+        ...userWithoutPassword,
+        token
+      });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
     }
@@ -171,17 +175,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Middleware to check if user is authenticated
   const isAuthenticated = async (req: Request, res: Response, next: Function) => {
-    if (!req.session?.userId) {
+    // Get auth token from header
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
       return res.status(401).json({ message: 'Authentication required' });
     }
     
-    const user = await storage.getUser(req.session.userId);
-    if (!user) {
-      return res.status(401).json({ message: 'User not found' });
+    try {
+      // In this simple implementation, token is the user ID
+      const userId = parseInt(token, 10);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(401).json({ message: 'User not found' });
+      }
+      
+      // Set user on request
+      req.user = user;
+      next();
+    } catch (err) {
+      return res.status(401).json({ message: 'Invalid authentication token' });
     }
-    
-    req.user = user;
-    next();
   };
   
   // Trip Routes
