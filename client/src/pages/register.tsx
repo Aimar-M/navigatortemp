@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import navigatorLogo from "@/assets/navigator-logo.svg";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -74,20 +75,12 @@ export default function Register() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-8 w-8 text-primary-600 mr-2"
-            >
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
-            <h1 className="text-2xl font-bold text-gray-900">TripTogether</h1>
+            <img 
+              src={navigatorLogo} 
+              alt="Navigator Logo" 
+              className="h-10 w-10 mr-2"
+            />
+            <h1 className="text-2xl font-bold text-gray-900">Navigator</h1>
           </div>
           <p className="text-gray-600">Plan amazing trips with friends</p>
         </div>
