@@ -101,13 +101,22 @@ export default function Chat() {
 
     setIsSubmitting(true);
     try {
+      // Get auth token for our token-based authentication
+      const token = localStorage.getItem('auth_token');
+      
+      // Add token to authorization header
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json"
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(`/api/trips/${tripId}/messages`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({ content: message }),
-        credentials: "include",
       });
 
       if (!response.ok) {
