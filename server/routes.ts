@@ -24,6 +24,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const router = express.Router();
   const httpServer = createServer(app);
   
+  // We'll use a simple token system for authentication
+  // No middleware needed
+  
   // Setup WebSocket server for real-time chat
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
