@@ -26,9 +26,17 @@ export default function Home() {
     queryKey: ["/api/trips"],
     queryFn: async () => {
       if (!user) return null;
-      const response = await fetch("/api/trips", {
-        credentials: "include",
-      });
+      
+      // Get auth token for our new token-based authentication system
+      const token = localStorage.getItem('auth_token');
+      
+      // Add token to authorization header
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch("/api/trips", { headers });
       if (!response.ok) throw new Error("Failed to fetch trips");
       return response.json();
     },
