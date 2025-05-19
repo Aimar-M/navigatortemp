@@ -57,13 +57,17 @@ export default function TripForm({ onComplete }: TripFormProps) {
     setIsSubmitting(true);
     
     try {
+      // Convert string dates to Date objects for the server
+      const startDate = new Date(formData.startDate);
+      const endDate = new Date(formData.endDate);
+      
       const tripData = {
         ...formData,
         organizer: user.id,
         cover: getRandomDestinationImage(),
         status: "planning",
-        startDate: new Date(formData.startDate).toISOString(),
-        endDate: new Date(formData.endDate).toISOString(),
+        startDate,
+        endDate,
       };
       
       const response = await apiRequest("POST", "/api/trips", tripData);
