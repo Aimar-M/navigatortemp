@@ -39,22 +39,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check if the user is logged in when the app loads
     const checkAuthStatus = async () => {
       try {
-        const response = await fetch("/api/auth/me", {
-          credentials: "include",
-        });
+        // Check if we have a token
+        const token = localStorage.getItem('auth_token');
         
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
+        if (token) {
+          // Add token to authorization header
+          const headers = {
+            'Authorization': `Bearer ${token}`
+          };
           
-          // Connect WebSocket if user is logged in
-          if (userData) {
-            // TODO: Fetch user's trips first
-            wsClient.connect(userData.id, []);
+          const response = await fetch("/api/auth/me", { headers });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            setUser(userData);
+            
+            // Connect WebSocket if user is logged in
+            if (userData) {
+              // TODO: Fetch user's trips first
+              wsClient.connect(userData.id, []);
+            }
+          } else {
+            // If token is invalid, remove it
+            localStorage.removeItem('auth_token');
           }
         }
       } catch (error) {
         console.error("Auth check failed:", error);
+        localStorage.removeItem('auth_token');
       } finally {
         setIsLoading(false);
       }
@@ -76,6 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       const userData = await response.json();
+      
+      // Store the token in localStorage
+      if (userData.token) {
+        localStorage.setItem('auth_token', userData.token);
+      }
+      
       setUser(userData);
       
       // Connect WebSocket after login
@@ -88,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: error instanceof Error ? error.message : "Invalid username or password",
         variant: "destructive",
       });
+      console.error("Login error:", error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -100,6 +119,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await apiRequest("POST", "/api/auth/register", userData);
       
       const newUser = await response.json();
+      
+      // Store the token in localStorage
+      if (newUser.token) {
+        localStorage.setItem('auth_token', newUser.token);
+      }
+      
       setUser(newUser);
       
       // Connect WebSocket after registration
@@ -121,6 +146,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await apiRequest("POST", "/api/auth/logout");
+      // Remove the token from localStorage
+      localStorage.removeItem('auth_token');
       setUser(null);
       wsClient.disconnect();
       navigate("/login");
