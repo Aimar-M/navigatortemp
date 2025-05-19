@@ -83,10 +83,17 @@ export class MemStorage implements IStorage {
     this.surveyResponseCurrentId = 1;
     
     // Add sample data for testing
-    this.createInitialData();
+    this.initializeData();
   }
   
-  private createInitialData() {
+  private initializeData() {
+    // Call the async function and handle any errors
+    this.createInitialData().catch(err => {
+      console.error("Error creating initial data:", err);
+    });
+  }
+  
+  private async createInitialData() {
     // Create sample user
     const sampleUser: InsertUser = {
       username: "demo",
@@ -95,7 +102,52 @@ export class MemStorage implements IStorage {
       name: "Demo User",
       avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150"
     };
-    this.createUser(sampleUser);
+    const createdUser = await this.createUser(sampleUser);
+    
+    // Create a sample trip
+    const sampleTrip: InsertTrip = {
+      name: "Summer Beach Vacation",
+      description: "Relaxing week at the beach with friends. We'll enjoy swimming, sunbathing, and exploring local cuisine.",
+      destination: "Miami Beach",
+      startDate: new Date("2025-07-15"),
+      endDate: new Date("2025-07-22"),
+      status: "planning",
+      cover: "https://images.unsplash.com/photo-1583422409516-2895a77efded?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&h=600",
+      organizer: 1 // The demo user's ID
+    };
+    const trip = await this.createTrip(sampleTrip);
+    
+    // Create a sample activity
+    const sampleActivity: InsertActivity = {
+      tripId: trip.id,
+      name: "Beach Day at South Beach",
+      description: "Spend the day relaxing at South Beach. Don't forget to bring sunscreen!",
+      date: new Date("2025-07-16T10:00:00"),
+      location: "South Beach, Miami",
+      duration: 240,
+      cost: "$0"
+    };
+    await this.createActivity(sampleActivity);
+    
+    // Create another sample activity
+    const sampleActivity2: InsertActivity = {
+      tripId: trip.id,
+      name: "Dinner at Ocean Drive",
+      description: "Group dinner at a restaurant on Ocean Drive",
+      date: new Date("2025-07-16T19:00:00"),
+      location: "Ocean Drive, Miami Beach",
+      duration: 120,
+      cost: "$40 per person"
+    };
+    await this.createActivity(sampleActivity2);
+    
+    // Create a sample chat message
+    const sampleMessage: InsertMessage = {
+      tripId: trip.id,
+      userId: 1,
+      content: "Hi everyone! I'm excited about our trip to Miami Beach! Don't forget to pack sunscreen and beach towels."
+    };
+    await this.createMessage(sampleMessage);
   }
   
   // User methods
