@@ -26,9 +26,16 @@ export default function Chat() {
   const { data: trip, isLoading: isTripLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}`],
     queryFn: async () => {
-      const response = await fetch(`/api/trips/${tripId}`, {
-        credentials: "include",
-      });
+      // Get auth token for our token-based authentication
+      const token = localStorage.getItem('auth_token');
+      
+      // Add token to authorization header
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`/api/trips/${tripId}`, { headers });
       if (!response.ok) throw new Error("Failed to fetch trip");
       return response.json();
     },
@@ -39,9 +46,16 @@ export default function Chat() {
   const { data: chatMessages, isLoading: isMessagesLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}/messages`],
     queryFn: async () => {
-      const response = await fetch(`/api/trips/${tripId}/messages`, {
-        credentials: "include",
-      });
+      // Get auth token for our token-based authentication
+      const token = localStorage.getItem('auth_token');
+      
+      // Add token to authorization header
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`/api/trips/${tripId}/messages`, { headers });
       if (!response.ok) throw new Error("Failed to fetch messages");
       return response.json();
     },
