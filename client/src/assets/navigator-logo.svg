@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
   <!-- Compass circle -->
-  <circle cx="60" cy="60" r="50" stroke="#3B82F6" stroke-width="4" fill="white" />
-  
+  <circle cx="12" cy="12" r="10" stroke="#0284c7" stroke-width="2" fill="none"/>
+  <!-- North direction -->
+  <path d="M12 2L12 6" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+  <!-- South direction -->
+  <path d="M12 18L12 22" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+  <!-- East direction -->
+  <path d="M18 12L22 12" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+  <!-- West direction -->
+  <path d="M2 12L6 12" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
   <!-- Compass needle -->
-  <path d="M60 25 L70 60 L60 95 L50 60 Z" fill="#3B82F6" />
-  
-  <!-- Cardinal directions marks -->
-  <line x1="60" y1="15" x2="60" y2="25" stroke="#3B82F6" stroke-width="3" />
-  <line x1="60" y1="95" x2="60" y2="105" stroke="#3B82F6" stroke-width="3" />
-  <line x1="15" y1="60" x2="25" y2="60" stroke="#3B82F6" stroke-width="3" />
-  <line x1="95" y1="60" x2="105" y2="60" stroke="#3B82F6" stroke-width="3" />
-  
-  <!-- Inner circle -->
-  <circle cx="60" cy="60" r="10" fill="#3B82F6" />
+  <path d="M12 12L16 8" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+  <path d="M12 12L8 16" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+  <!-- Center dot -->
+  <circle cx="12" cy="12" r="1.5" fill="#0284c7"/>
 </svg>
