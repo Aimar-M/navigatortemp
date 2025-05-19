@@ -203,7 +203,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Trip Routes
   router.post('/trips', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const tripData = insertTripSchema.parse(req.body);
+      // Convert string dates to Date objects before validation
+      const data = {
+        ...req.body,
+        startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : undefined
+      };
+      
+      const tripData = insertTripSchema.parse(data);
       
       // Ensure the authenticated user is the organizer
       if (tripData.organizer !== req.user.id) {
