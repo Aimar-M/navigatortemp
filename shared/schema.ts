@@ -192,10 +192,21 @@ export const insertSurveyQuestionSchema = createInsertSchema(surveyQuestions).pi
 // Survey responses schema
 export const surveyResponses = pgTable("survey_responses", {
   id: serial("id").primaryKey(),
-  questionId: integer("question_id").notNull(),
-  userId: integer("user_id").notNull(),
+  questionId: integer("question_id").notNull().references(() => surveyQuestions.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   response: text("response").notNull(),
 });
+
+export const surveyResponsesRelations = relations(surveyResponses, ({ one }) => ({
+  question: one(surveyQuestions, {
+    fields: [surveyResponses.questionId],
+    references: [surveyQuestions.id]
+  }),
+  user: one(users, {
+    fields: [surveyResponses.userId],
+    references: [users.id]
+  })
+}));
 
 export const insertSurveyResponseSchema = createInsertSchema(surveyResponses).pick({
   questionId: true,
