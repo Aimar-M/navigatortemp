@@ -310,7 +310,7 @@ export class MemStorage implements IStorage {
     const message: Message = { 
       ...insertMessage, 
       id, 
-      timestamp: insertMessage.timestamp || new Date() 
+      timestamp: new Date() 
     };
     this.messages.set(id, message);
     return message;
