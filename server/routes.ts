@@ -583,7 +583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Auto-RSVP the creator as "going"
       await storage.createActivityRSVP({
         activityId: activity.id,
-        userId: req.user.id,
+        userId: user.id,
         status: 'going'
       });
       
@@ -598,6 +598,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.get('/trips/:id/activities', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       const tripId = parseInt(req.params.id);
       if (isNaN(tripId)) {
         return res.status(400).json({ message: 'Invalid trip ID' });
@@ -605,7 +608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user is a member of the trip
       const members = await storage.getTripMembers(tripId);
-      const isMember = members.some(member => member.userId === req.user.id);
+      const isMember = members.some(member => member.userId === user.id);
       
       if (!isMember) {
         return res.status(403).json({ message: 'Not a member of this trip' });
@@ -632,6 +635,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.put('/activities/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       const activityId = parseInt(req.params.id);
       if (isNaN(activityId)) {
         return res.status(400).json({ message: 'Invalid activity ID' });
@@ -648,7 +654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Trip not found' });
       }
       
-      if (trip.organizer !== req.user.id) {
+      if (trip.organizer !== user.id) {
         return res.status(403).json({ message: 'Only the trip organizer can update activities' });
       }
       
@@ -666,6 +672,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.delete('/activities/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       const activityId = parseInt(req.params.id);
       if (isNaN(activityId)) {
         return res.status(400).json({ message: 'Invalid activity ID' });
@@ -682,7 +691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Trip not found' });
       }
       
-      if (trip.organizer !== req.user.id) {
+      if (trip.organizer !== user.id) {
         return res.status(403).json({ message: 'Only the trip organizer can delete activities' });
       }
       
@@ -700,6 +709,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Activity RSVP Routes
   router.post('/activities/:id/rsvp', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       const activityId = parseInt(req.params.id);
       if (isNaN(activityId)) {
         return res.status(400).json({ message: 'Invalid activity ID' });
@@ -713,7 +725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user is a confirmed member of the trip
       const members = await storage.getTripMembers(activity.tripId);
       const isMember = members.some(member => 
-        member.userId === req.user.id && member.status === 'confirmed'
+        member.userId === user.id && member.status === 'confirmed'
       );
       
       if (!isMember) {
@@ -727,17 +739,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if RSVP already exists
       const rsvps = await storage.getActivityRSVPs(activityId);
-      const existingRsvp = rsvps.find(rsvp => rsvp.userId === req.user.id);
+      const existingRsvp = rsvps.find(rsvp => rsvp.userId === user.id);
       
       let rsvp;
       if (existingRsvp) {
         // Update existing RSVP
-        rsvp = await storage.updateActivityRSVP(activityId, req.user.id, status);
+        rsvp = await storage.updateActivityRSVP(activityId, user.id, status);
       } else {
         // Create new RSVP
         rsvp = await storage.createActivityRSVP({
           activityId,
-          userId: req.user.id,
+          userId: user.id,
           status
         });
       }
@@ -751,6 +763,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Message Routes
   router.get('/trips/:id/messages', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       const tripId = parseInt(req.params.id);
       if (isNaN(tripId)) {
         return res.status(400).json({ message: 'Invalid trip ID' });
@@ -758,7 +773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user is a member of the trip
       const members = await storage.getTripMembers(tripId);
-      const isMember = members.some(member => member.userId === req.user.id);
+      const isMember = members.some(member => member.userId === user.id);
       
       if (!isMember) {
         return res.status(403).json({ message: 'Not a member of this trip' });
