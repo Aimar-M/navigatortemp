@@ -88,7 +88,7 @@ export default function Chats() {
   const { data: lastMessages, isLoading: messagesLoading } = useQuery({
     queryKey: ["/api/messages"],
     queryFn: async () => {
-      if (!user || !trips) return [];
+      if (!user) return [];
       
       const token = localStorage.getItem('auth_token');
       const headers: Record<string, string> = {};
@@ -96,32 +96,16 @@ export default function Chats() {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      // In a full implementation, this would be a dedicated endpoint
-      // Here we'll fetch the most recent message from each trip
-      const messagesPromises = trips.map(async (trip: any) => {
-        try {
-          const response = await fetch(`/api/trips/${trip.id}/messages`, { headers });
-          if (!response.ok) return [];
-          const messages = await response.json();
-          return messages.map((msg: any) => ({
-            ...msg,
-            tripId: trip.id
-          }));
-        } catch (error) {
-          console.error(`Error fetching messages for trip ${trip.id}:`, error);
-          return [];
-        }
-      });
+      // Use our new endpoint that gets all messages across trips
+      const response = await fetch('/api/messages', { headers });
+      if (!response.ok) {
+        throw new Error("Failed to fetch messages");
+      }
       
-      const allMessages = await Promise.all(messagesPromises);
-      const flattenedMessages = allMessages.flat();
-      
-      // Sort messages by timestamp in descending order (newest first)
-      return flattenedMessages.sort((a: any, b: any) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
+      const messages = await response.json();
+      return messages;
     },
-    enabled: !!user && !!trips,
+    enabled: !!user,
   });
 
   // Filter trips based on search
