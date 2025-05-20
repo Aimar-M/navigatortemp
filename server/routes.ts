@@ -873,6 +873,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get all messages for the current user across all trips
+  router.get('/messages', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Get all trips the user is a member of
+      const memberships = await storage.getTripMembershipsByUser(req.user.id);
+      const tripIds = memberships.map(membership => membership.tripId);
+      
+      // Get messages from all these trips
+      const allMessagesWithDetails = [];
+      
+      for (const tripId of tripIds) {
+        const tripMessages = await storage.getMessagesByTrip(tripId);
+        
+        // Get trip details
+        const trip = await storage.getTrip(tripId);
+        
+        // Get user details for each message
+        const messagesWithDetails = await Promise.all(tripMessages.map(async (message) => {
+          const user = await storage.getUser(message.userId);
+          return {
+            ...message,
+            tripId,
+            tripName: trip?.name || 'Unknown Trip',
+            user: user ? {
+              id: user.id,
+              name: user.name,
+              avatar: user.avatar
+            } : null
+          };
+        }));
+        
+        allMessagesWithDetails.push(...messagesWithDetails);
+      }
+      
+      // Sort by timestamp (newest first)
+      allMessagesWithDetails.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+      
+      res.json(allMessagesWithDetails);
+    } catch (error) {
+      console.error('Error getting all messages:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
   app.use('/api', router);
   
   return httpServer;
