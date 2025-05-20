@@ -110,40 +110,71 @@ export default function Itinerary() {
 
     setIsSubmitting(true);
     try {
-      // Make sure date is in ISO format
-      let dateValue = formData.date;
-      if (dateValue && !dateValue.includes('Z')) {
-        // Add timezone info if missing
-        dateValue = new Date(dateValue).toISOString();
+      // Validate required fields
+      if (!formData.name || !formData.date) {
+        toast({
+          title: "Missing information",
+          description: "Please provide a name and date for the activity",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
       }
       
+      // Format date properly
+      let dateValue = formData.date;
+      
+      // Create a proper date object
+      const dateObj = new Date(dateValue);
+      if (isNaN(dateObj.getTime())) {
+        toast({
+          title: "Invalid date",
+          description: "Please enter a valid date and time",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Always use ISO format for consistency
+      dateValue = dateObj.toISOString();
+      
+      // Prepare data for submission
       const activityData = {
-        ...formData,
+        name: formData.name,
+        description: formData.description,
         date: dateValue,
+        location: formData.location,
         tripId,
         duration: formData.duration ? parseInt(formData.duration) : undefined,
+        cost: formData.cost,
       };
 
       console.log("Submitting activity data:", activityData);
-      const response = await apiRequest("POST", `/api/trips/${tripId}/activities`, activityData);
+      await apiRequest("POST", `/api/trips/${tripId}/activities`, activityData);
       
-      // Invalidate activities query to refresh list
+      // Refresh data
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/activities`] });
       
-      // Close modal and reset form
+      // UI updates
       setIsAddActivityModalOpen(false);
       resetForm();
       
-      // Show success message
       toast({
         title: "Activity created",
         description: "Your activity has been added to the itinerary",
       });
     } catch (error) {
       console.error("Error creating activity:", error);
+      
+      // Show more specific error message if possible
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      
       toast({
         title: "Error creating activity",
-        description: "There was a problem creating your activity. Please try again.",
+        description: errorMessage.includes(":") ? 
+          errorMessage.split(":")[1].trim() : 
+          "There was a problem creating your activity. Please try again.",
         variant: "destructive",
       });
     } finally {
