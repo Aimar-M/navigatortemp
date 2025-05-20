@@ -8,50 +8,7 @@ import {
   messages, surveyQuestions, surveyResponses 
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-
-export interface IStorage {
-  // User methods
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  
-  // Trip methods
-  createTrip(trip: InsertTrip): Promise<Trip>;
-  getTrip(id: number): Promise<Trip | undefined>;
-  getTripsByUser(userId: number): Promise<Trip[]>;
-  updateTrip(id: number, trip: Partial<InsertTrip>): Promise<Trip | undefined>;
-  deleteTrip(id: number): Promise<boolean>;
-  
-  // Trip member methods
-  addTripMember(member: InsertTripMember): Promise<TripMember>;
-  getTripMembers(tripId: number): Promise<TripMember[]>;
-  getTripMembershipsByUser(userId: number): Promise<TripMember[]>;
-  updateTripMemberStatus(tripId: number, userId: number, status: string): Promise<TripMember | undefined>;
-  removeTripMember(tripId: number, userId: number): Promise<boolean>;
-  
-  // Activity methods
-  createActivity(activity: InsertActivity): Promise<Activity>;
-  getActivitiesByTrip(tripId: number): Promise<Activity[]>;
-  getActivity(id: number): Promise<Activity | undefined>;
-  updateActivity(id: number, activity: Partial<InsertActivity>): Promise<Activity | undefined>;
-  deleteActivity(id: number): Promise<boolean>;
-  
-  // Activity RSVP methods
-  createActivityRSVP(rsvp: InsertActivityRSVP): Promise<ActivityRSVP>;
-  getActivityRSVPs(activityId: number): Promise<ActivityRSVP[]>;
-  updateActivityRSVP(activityId: number, userId: number, status: string): Promise<ActivityRSVP | undefined>;
-  
-  // Message methods
-  createMessage(message: InsertMessage): Promise<Message>;
-  getMessagesByTrip(tripId: number): Promise<Message[]>;
-  
-  // Survey methods
-  createSurveyQuestion(question: InsertSurveyQuestion): Promise<SurveyQuestion>;
-  getSurveyQuestionsByTrip(tripId: number): Promise<SurveyQuestion[]>;
-  createSurveyResponse(response: InsertSurveyResponse): Promise<SurveyResponse>;
-  getSurveyResponses(questionId: number): Promise<SurveyResponse[]>;
-}
+import { IStorage } from "./storage";
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
@@ -343,5 +300,3 @@ export class DatabaseStorage implements IStorage {
       .where(eq(surveyResponses.questionId, questionId));
   }
 }
-
-export const storage = new DatabaseStorage();
