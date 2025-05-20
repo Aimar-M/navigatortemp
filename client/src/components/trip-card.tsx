@@ -27,7 +27,7 @@ export default function TripCard({
 }: TripCardProps) {
   return (
     <Link href={`/trips/${id}`}>
-      <a className="block">
+      <div className="block">
         <Card
           className={cn(
             "cursor-pointer hover:bg-gray-50 transition-colors",
@@ -58,7 +58,7 @@ export default function TripCard({
             </div>
           </CardContent>
         </Card>
-      </a>
+      </div>
     </Link>
   );
 }
