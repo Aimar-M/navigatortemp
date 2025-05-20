@@ -851,8 +851,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password, ...userWithoutPassword } = userData!;
       
       const messageWithUser = {
-        ...message,
-        user: userWithoutPassword
+        id: message.id,
+        content: message.content,
+        timestamp: message.timestamp.toISOString(),
+        tripId: message.tripId,
+        userId: message.userId,
+        user: {
+          id: userWithoutPassword.id,
+          name: userWithoutPassword.name,
+          avatar: userWithoutPassword.avatar
+        }
       };
       
       // Broadcast via WebSocket

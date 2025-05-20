@@ -168,8 +168,32 @@ export default function Itinerary() {
         cost: formData.cost,
       };
 
+      // Get auth token for our token-based authentication
+      const token = localStorage.getItem('auth_token');
+      
       console.log("Submitting activity data:", activityData);
-      await apiRequest("POST", `/api/trips/${tripId}/activities`, activityData);
+      
+      // Use direct fetch with authentication headers instead of apiRequest
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`/api/trips/${tripId}/activities`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(activityData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to create activity: ${errorData.message || response.status}`);
+      }
+      
+      const createdActivity = await response.json();
       
       // Refresh data
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/activities`] });
