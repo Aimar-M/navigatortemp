@@ -226,11 +226,11 @@ export default function TripsCalendar() {
     enabled: !!user,
   });
 
-  // Fetch all activities across trips (this would typically be a single API endpoint)
+  // Fetch all activities across trips
   const { data: activities, isLoading: activitiesLoading } = useQuery({
     queryKey: ["/api/activities"],
     queryFn: async () => {
-      if (!user || !trips) return [];
+      if (!user) return [];
       
       const token = localStorage.getItem('auth_token');
       const headers: Record<string, string> = {};
@@ -238,25 +238,20 @@ export default function TripsCalendar() {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      // In a real application, you might have a dedicated endpoint for this
-      // Here we're aggregating activities from each trip
-      const activitiesPromises = trips.map(async (trip: any) => {
-        const response = await fetch(`/api/trips/${trip.id}/activities`, { headers });
-        if (!response.ok) return [];
-        const tripActivities = await response.json();
-        // Add trip information to each activity
-        return tripActivities.map((activity: any) => ({
-          ...activity,
-          type: 'activity',
-          date: activity.date
-        }));
-      });
+      // Use our new dedicated endpoint to get all activities
+      const response = await fetch('/api/activities', { headers });
+      if (!response.ok) {
+        throw new Error('Failed to fetch activities');
+      }
       
-      const activitiesArrays = await Promise.all(activitiesPromises);
-      // Flatten the array of arrays
-      return activitiesArrays.flat();
+      const allActivities = await response.json();
+      return allActivities.map((activity: any) => ({
+        ...activity,
+        type: 'activity',
+        date: activity.date
+      }));
     },
-    enabled: !!user && !!trips,
+    enabled: !!user,
   });
 
   // Prepare calendar events by combining trips and activities

@@ -919,6 +919,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get all activities for the current user across all trips
+  router.get('/activities', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Get all trips the user is a member of
+      const memberships = await storage.getTripMembershipsByUser(req.user!.id);
+      const tripIds = memberships.map(membership => membership.tripId);
+      
+      // Get activities from all these trips
+      const allActivitiesWithDetails = [];
+      
+      for (const tripId of tripIds) {
+        const tripActivities = await storage.getActivitiesByTrip(tripId);
+        
+        // Get trip details
+        const trip = await storage.getTrip(tripId);
+        
+        // Add trip details to each activity
+        const activitiesWithTripDetails = tripActivities.map(activity => ({
+          ...activity,
+          tripName: trip?.name || 'Unknown Trip'
+        }));
+        
+        allActivitiesWithDetails.push(...activitiesWithTripDetails);
+      }
+      
+      // Sort by date
+      allActivitiesWithDetails.sort((a, b) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+      
+      res.json(allActivitiesWithDetails);
+    } catch (error) {
+      console.error('Error getting all activities:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
   app.use('/api', router);
   
   return httpServer;
