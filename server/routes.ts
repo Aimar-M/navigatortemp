@@ -791,11 +791,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const user = await storage.getUser(message.userId);
           if (!user) return message;
           
-          // Remove sensitive user information
+          // Remove sensitive user information and format for chat component
           const { password, ...userWithoutPassword } = user;
           
           return {
-            ...message,
+            id: message.id,
+            content: message.content,
+            timestamp: message.timestamp.toISOString(),
+            tripId: message.tripId,
+            userId: message.userId,
             user: {
               id: userWithoutPassword.id,
               name: userWithoutPassword.name,
@@ -854,9 +858,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Broadcast via WebSocket
       wss.clients.forEach((client: WebSocketClient) => {
         if (client.readyState === WebSocket.OPEN && client.tripIds?.includes(tripId)) {
+          // Format message for WebSocket broadcast
+          const formattedMessage = {
+            id: message.id,
+            content: message.content,
+            timestamp: message.timestamp.toISOString(),
+            tripId: message.tripId,
+            userId: message.userId,
+            user: userWithoutPassword
+          };
+          
           client.send(JSON.stringify({
             type: 'new_message',
-            data: messageWithUser
+            data: formattedMessage
           }));
         }
       });

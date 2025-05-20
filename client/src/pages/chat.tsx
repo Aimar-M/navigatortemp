@@ -65,6 +65,7 @@ export default function Chat() {
   // Update local messages when fetched from API
   useEffect(() => {
     if (chatMessages) {
+      console.log("Received chat messages:", chatMessages);
       setMessages(chatMessages);
     }
   }, [chatMessages]);
