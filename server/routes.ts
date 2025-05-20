@@ -423,6 +423,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.get('/trips/:id/members', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       const tripId = parseInt(req.params.id);
       if (isNaN(tripId)) {
         return res.status(400).json({ message: 'Invalid trip ID' });
@@ -430,7 +433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user is a member of the trip
       const members = await storage.getTripMembers(tripId);
-      const isMember = members.some(member => member.userId === req.user.id);
+      const isMember = members.some(member => member.userId === user.id);
       
       if (!isMember) {
         return res.status(403).json({ message: 'Not a member of this trip' });
@@ -458,6 +461,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.put('/trips/:tripId/members/:userId', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       const tripId = parseInt(req.params.tripId);
       const userId = parseInt(req.params.userId);
       
@@ -472,8 +478,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Trip not found' });
       }
       
-      const isOrganizer = trip.organizer === req.user.id;
-      const isUpdatingSelf = userId === req.user.id;
+      const isOrganizer = trip.organizer === user.id;
+      const isUpdatingSelf = userId === user.id;
       
       if (!isOrganizer && !isUpdatingSelf) {
         return res.status(403).json({ message: 'Not authorized to update this member' });
@@ -502,6 +508,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.delete('/trips/:tripId/members/:userId', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       const tripId = parseInt(req.params.tripId);
       const userId = parseInt(req.params.userId);
       
@@ -515,8 +524,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Trip not found' });
       }
       
-      const isOrganizer = trip.organizer === req.user.id;
-      const isRemovingSelf = userId === req.user.id;
+      const isOrganizer = trip.organizer === user.id;
+      const isRemovingSelf = userId === user.id;
       
       if (!isOrganizer && !isRemovingSelf) {
         return res.status(403).json({ message: 'Not authorized to remove this member' });
@@ -541,6 +550,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Activity Routes
   router.post('/trips/:id/activities', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       const tripId = parseInt(req.params.id);
       if (isNaN(tripId)) {
         return res.status(400).json({ message: 'Invalid trip ID' });
@@ -554,7 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user is a confirmed member of the trip
       const members = await storage.getTripMembers(tripId);
       const isMember = members.some(member => 
-        member.userId === req.user.id && member.status === 'confirmed'
+        member.userId === user.id && member.status === 'confirmed'
       );
       
       if (!isMember) {
