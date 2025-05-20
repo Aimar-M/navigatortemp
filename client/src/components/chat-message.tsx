@@ -17,7 +17,8 @@ interface MessageProps {
 
 export default function ChatMessage({ id, content, timestamp, user }: MessageProps) {
   const { user: currentUser } = useAuth();
-  const isCurrentUser = currentUser?.id === user.id;
+  // Ensure we're properly comparing user IDs
+  const isCurrentUser = currentUser?.id === user?.id;
 
   return (
     <div
