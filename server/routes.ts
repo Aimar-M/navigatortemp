@@ -155,6 +155,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.get('/auth/me', async (req: Request, res: Response) => {
     try {
+      // Check for token-based authentication first
+      const authHeader = req.headers.authorization;
+      
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        
+        // In this simple implementation, token is the user ID + '_token'
+        const userId = parseInt(token.split('_')[0]);
+        
+        if (!isNaN(userId)) {
+          const user = await storage.getUser(userId);
+          if (user) {
+            // Don't send password in the response
+            const { password, ...userWithoutPassword } = user;
+            return res.json(userWithoutPassword);
+          }
+        }
+      }
+      
+      // Fallback to session-based auth if token auth fails
       if (!req.session?.userId) {
         return res.status(401).json({ message: 'Not authenticated' });
       }
