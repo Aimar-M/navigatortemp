@@ -171,12 +171,11 @@ export default function Register() {
               </Button>
               <p className="text-center text-sm text-gray-600">
                 Already have an account?{" "}
-                <span 
-                  onClick={() => window.location.href = '/login'} 
-                  className="text-primary-600 hover:text-primary-700 font-medium cursor-pointer"
-                >
-                  Log in
-                </span>
+                <Link href="/login">
+                  <span className="text-primary-600 hover:text-primary-700 font-medium cursor-pointer">
+                    Log in
+                  </span>
+                </Link>
               </p>
             </CardFooter>
           </form>

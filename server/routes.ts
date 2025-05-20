@@ -973,8 +973,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all messages for the current user across all trips
   router.get('/messages', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const authUser = ensureUser(req, res);
+      if (!authUser) return; // Response already sent by ensureUser
+      
       // Get all trips the user is a member of
-      const memberships = await storage.getTripMembershipsByUser(req.user.id);
+      const memberships = await storage.getTripMembershipsByUser(authUser.id);
       const tripIds = memberships.map(membership => membership.tripId);
       
       // Get messages from all these trips
