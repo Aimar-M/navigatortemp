@@ -284,6 +284,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.get('/trips/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       const tripId = parseInt(req.params.id);
       if (isNaN(tripId)) {
         return res.status(400).json({ message: 'Invalid trip ID' });
@@ -296,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user is a member of the trip
       const members = await storage.getTripMembers(tripId);
-      const isMember = members.some(member => member.userId === req.user.id);
+      const isMember = members.some(member => member.userId === user.id);
       
       if (!isMember) {
         return res.status(403).json({ message: 'Not a member of this trip' });
@@ -310,6 +313,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.put('/trips/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       const tripId = parseInt(req.params.id);
       if (isNaN(tripId)) {
         return res.status(400).json({ message: 'Invalid trip ID' });
@@ -321,7 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Only organizer can update trip
-      if (trip.organizer !== req.user.id) {
+      if (trip.organizer !== user.id) {
         return res.status(403).json({ message: 'Only the trip organizer can update trip details' });
       }
       
@@ -339,6 +345,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.delete('/trips/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       const tripId = parseInt(req.params.id);
       if (isNaN(tripId)) {
         return res.status(400).json({ message: 'Invalid trip ID' });
@@ -350,7 +359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Only organizer can delete trip
-      if (trip.organizer !== req.user.id) {
+      if (trip.organizer !== user.id) {
         return res.status(403).json({ message: 'Only the trip organizer can delete the trip' });
       }
       
@@ -364,6 +373,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Trip Members Routes
   router.post('/trips/:id/members', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       const tripId = parseInt(req.params.id);
       if (isNaN(tripId)) {
         return res.status(400).json({ message: 'Invalid trip ID' });
@@ -375,7 +387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Only organizer can add members
-      if (trip.organizer !== req.user.id) {
+      if (trip.organizer !== user.id) {
         return res.status(403).json({ message: 'Only the trip organizer can add members' });
       }
       
