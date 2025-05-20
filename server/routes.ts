@@ -803,6 +803,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.post('/trips/:id/messages', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const authUser = ensureUser(req, res);
+      if (!authUser) return; // Response already sent by ensureUser
+      
       const tripId = parseInt(req.params.id);
       if (isNaN(tripId)) {
         return res.status(400).json({ message: 'Invalid trip ID' });
@@ -811,7 +814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user is a confirmed member of the trip
       const members = await storage.getTripMembers(tripId);
       const isMember = members.some(member => 
-        member.userId === req.user.id && member.status === 'confirmed'
+        member.userId === user.id && member.status === 'confirmed'
       );
       
       if (!isMember) {
@@ -825,13 +828,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const message = await storage.createMessage({
         tripId,
-        userId: req.user.id,
+        userId: authUser.id,
         content
       });
       
       // Get user details for the response
-      const user = await storage.getUser(message.userId);
-      const { password, ...userWithoutPassword } = user!;
+      const userData = await storage.getUser(message.userId);
+      const { password, ...userWithoutPassword } = userData!;
       
       const messageWithUser = {
         ...message,
