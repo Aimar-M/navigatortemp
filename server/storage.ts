@@ -22,6 +22,7 @@ export interface IStorage {
   // Trip member methods
   addTripMember(member: InsertTripMember): Promise<TripMember>;
   getTripMembers(tripId: number): Promise<TripMember[]>;
+  getTripMembershipsByUser(userId: number): Promise<TripMember[]>;
   updateTripMemberStatus(tripId: number, userId: number, status: string): Promise<TripMember | undefined>;
   removeTripMember(tripId: number, userId: number): Promise<boolean>;
   
@@ -228,6 +229,11 @@ export class MemStorage implements IStorage {
   async getTripMembers(tripId: number): Promise<TripMember[]> {
     return Array.from(this.tripMembers.values())
       .filter(member => member.tripId === tripId);
+  }
+  
+  async getTripMembershipsByUser(userId: number): Promise<TripMember[]> {
+    return Array.from(this.tripMembers.values())
+      .filter(member => member.userId === userId);
   }
   
   async updateTripMemberStatus(tripId: number, userId: number, status: string): Promise<TripMember | undefined> {
