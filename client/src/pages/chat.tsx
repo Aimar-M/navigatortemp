@@ -198,15 +198,23 @@ export default function Chat() {
             </div>
           ) : messages.length > 0 ? (
             <div className="space-y-4 py-2">
-              {messages.map((msg) => (
-                <ChatMessage
-                  key={msg.id}
-                  id={msg.id}
-                  content={msg.content}
-                  timestamp={msg.timestamp}
-                  user={msg.user}
-                />
-              ))}
+              {messages.map((msg) => {
+                // Make sure the message has the required properties for the ChatMessage component
+                if (!msg.user) {
+                  console.error("Message missing user data:", msg);
+                  return null;
+                }
+                
+                return (
+                  <ChatMessage
+                    key={msg.id}
+                    id={msg.id}
+                    content={msg.content}
+                    timestamp={msg.timestamp}
+                    user={msg.user}
+                  />
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
           ) : (

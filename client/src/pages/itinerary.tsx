@@ -46,8 +46,17 @@ export default function Itinerary() {
   const { data: trip, isLoading: isTripLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}`],
     queryFn: async () => {
+      // Get auth token for token-based authentication
+      const token = localStorage.getItem('auth_token');
+      
+      // Add token to authorization header
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(`/api/trips/${tripId}`, {
-        credentials: "include",
+        headers,
       });
       if (!response.ok) throw new Error("Failed to fetch trip");
       return response.json();
@@ -59,8 +68,17 @@ export default function Itinerary() {
   const { data: activities, isLoading: isActivitiesLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}/activities`],
     queryFn: async () => {
+      // Get auth token for token-based authentication
+      const token = localStorage.getItem('auth_token');
+      
+      // Add token to authorization header
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(`/api/trips/${tripId}/activities`, {
-        credentials: "include",
+        headers,
       });
       if (!response.ok) throw new Error("Failed to fetch activities");
       return response.json();
