@@ -22,10 +22,11 @@ export default function Home() {
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Use React Query with proper dependencies to avoid setState during render
   const { data: trips, isLoading } = useQuery({
-    queryKey: ["/api/trips"],
+    queryKey: ["/api/trips", !!user],
     queryFn: async () => {
-      if (!user) return null;
+      if (!user) return [];
       
       // Get auth token for our new token-based authentication system
       const token = localStorage.getItem('auth_token');

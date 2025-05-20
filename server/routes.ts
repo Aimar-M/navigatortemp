@@ -24,6 +24,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const router = express.Router();
   const httpServer = createServer(app);
   
+  // Helper function to check for authenticated user
+  const ensureUser = (req: Request, res: Response): User | null => {
+    if (!req.user) {
+      res.status(401).json({ message: 'Authentication required' });
+      return null;
+    }
+    return req.user;
+  };
+  
   // We'll use a simple token system for authentication
   // No middleware needed
   
@@ -234,6 +243,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Trip Routes
   router.post('/trips', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
       // Convert string dates to Date objects before validation
       const data = {
         ...req.body,
@@ -244,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tripData = insertTripSchema.parse(data);
       
       // Ensure the authenticated user is the organizer
-      if (tripData.organizer !== req.user.id) {
+      if (tripData.organizer !== user.id) {
         return res.status(403).json({ message: 'You can only create trips as yourself' });
       }
       
@@ -260,7 +272,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.get('/trips', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const trips = await storage.getTripsByUser(req.user.id);
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const trips = await storage.getTripsByUser(user.id);
       res.json(trips);
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
