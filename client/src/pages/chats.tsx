@@ -9,14 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDateTime, getInitials } from "@/lib/utils";
+import { formatDateTime, formatDate, getInitials } from "@/lib/utils";
 import UserAvatar from "@/components/user-avatar";
 
 // Chat list item component
-const ChatItem = ({ trip }: { trip: any }) => {
-  const lastMessage = trip.lastMessage || { 
+const ChatItem = ({ trip, lastMessages }: { trip: any, lastMessages: any[] }) => {
+  // Find the last message for this trip, if any
+  const tripMessages = lastMessages?.filter(msg => msg.tripId === trip.id) || [];
+  const lastMessage = tripMessages.length > 0 ? tripMessages[0] : { 
     content: "No messages yet", 
-    timestamp: new Date().toISOString(),
+    timestamp: trip.startDate,
     user: { name: "" } 
   };
 
@@ -44,6 +46,11 @@ const ChatItem = ({ trip }: { trip: any }) => {
                     {lastMessage.content}
                   </p>
                 </div>
+                <div className="mt-1">
+                  <span className="text-xs text-gray-500">
+                    {trip.destination} • {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
+                  </span>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -59,7 +66,7 @@ export default function Chats() {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch all trips the user is a member of
-  const { data: trips, isLoading } = useQuery({
+  const { data: trips, isLoading: tripsLoading } = useQuery({
     queryKey: ["/api/trips"],
     queryFn: async () => {
       if (!user) return null;
@@ -77,21 +84,55 @@ export default function Chats() {
     enabled: !!user,
   });
 
-  // Enhance trips with last message information (in a real implementation this would come from the API)
-  const tripsWithLastMessages = trips?.map((trip: any) => {
-    return {
-      ...trip,
-      lastMessage: trip.lastMessage || null
-    };
+  // Fetch last messages for all trips
+  const { data: lastMessages, isLoading: messagesLoading } = useQuery({
+    queryKey: ["/api/messages"],
+    queryFn: async () => {
+      if (!user || !trips) return [];
+      
+      const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      // In a full implementation, this would be a dedicated endpoint
+      // Here we'll fetch the most recent message from each trip
+      const messagesPromises = trips.map(async (trip: any) => {
+        try {
+          const response = await fetch(`/api/trips/${trip.id}/messages`, { headers });
+          if (!response.ok) return [];
+          const messages = await response.json();
+          return messages.map((msg: any) => ({
+            ...msg,
+            tripId: trip.id
+          }));
+        } catch (error) {
+          console.error(`Error fetching messages for trip ${trip.id}:`, error);
+          return [];
+        }
+      });
+      
+      const allMessages = await Promise.all(messagesPromises);
+      const flattenedMessages = allMessages.flat();
+      
+      // Sort messages by timestamp in descending order (newest first)
+      return flattenedMessages.sort((a: any, b: any) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+    },
+    enabled: !!user && !!trips,
   });
 
   // Filter trips based on search
-  const filteredTrips = tripsWithLastMessages?.filter((trip: any) => 
+  const filteredTrips = trips?.filter((trip: any) => 
     searchTerm === "" || 
     trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     trip.destination.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  const isLoading = authLoading || tripsLoading || messagesLoading;
+  
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -150,7 +191,11 @@ export default function Chats() {
           ) : filteredTrips.length > 0 ? (
             <div className="space-y-2 p-4">
               {filteredTrips.map((trip: any) => (
-                <ChatItem key={trip.id} trip={trip} />
+                <ChatItem 
+                  key={trip.id} 
+                  trip={trip} 
+                  lastMessages={lastMessages || []} 
+                />
               ))}
             </div>
           ) : (
