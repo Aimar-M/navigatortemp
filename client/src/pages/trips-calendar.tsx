@@ -374,23 +374,23 @@ export default function TripsCalendar() {
                       {hasEvents ? (
                         <div className="space-y-2">
                           {monthEvents.slice(0, 3).map((event, idx) => (
-                            <Link
+                            <div
                               key={`${event.id}-${idx}`}
-                              href={event.type === 'trip' 
+                              onClick={() => window.location.href = event.type === 'trip' 
                                 ? `/trips/${event.id}` 
-                                : `/trips/${event.tripId}/activities`}
-                            >
-                              <a className={`block text-sm p-2 rounded ${
+                                : `/trips/${event.tripId}/activities`
+                              }
+                              className={`block text-sm p-2 rounded cursor-pointer ${
                                 event.type === 'trip' 
                                   ? "bg-blue-100 text-blue-800" 
                                   : "bg-green-100 text-green-800"
-                              }`}>
-                                <div className="font-medium">{event.name}</div>
-                                <div className="text-xs">
-                                  {formatDate(event.date || event.startDate)}
-                                </div>
-                              </a>
-                            </Link>
+                              }`}
+                            >
+                              <div className="font-medium">{event.name}</div>
+                              <div className="text-xs">
+                                {formatDate(event.date || event.startDate)}
+                              </div>
+                            </div>
                           ))}
                           
                           {monthEvents.length > 3 && (
@@ -406,23 +406,23 @@ export default function TripsCalendar() {
                               <PopoverContent className="w-72 p-2">
                                 <div className="space-y-2 max-h-80 overflow-y-auto">
                                   {monthEvents.map((event, idx) => (
-                                    <Link 
-                                      key={`popup-${event.id}-${idx}`} 
-                                      href={event.type === 'trip' 
+                                    <div
+                                      key={`popup-${event.id}-${idx}`}
+                                      onClick={() => window.location.href = event.type === 'trip' 
                                         ? `/trips/${event.id}` 
-                                        : `/trips/${event.tripId}/activities`}
-                                    >
-                                      <a className={`block text-sm p-2 rounded ${
+                                        : `/trips/${event.tripId}/activities`
+                                      }
+                                      className={`block text-sm p-2 rounded cursor-pointer ${
                                         event.type === 'trip' 
                                           ? "bg-blue-100 text-blue-800" 
                                           : "bg-green-100 text-green-800"
-                                      }`}>
-                                        <div className="font-medium">{event.name}</div>
-                                        <div className="text-xs">
-                                          {formatDate(event.date || event.startDate)}
-                                        </div>
-                                      </a>
-                                    </Link>
+                                      }`}
+                                    >
+                                      <div className="font-medium">{event.name}</div>
+                                      <div className="text-xs">
+                                        {formatDate(event.date || event.startDate)}
+                                      </div>
+                                    </div>
                                   ))}
                                 </div>
                               </PopoverContent>
