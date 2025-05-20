@@ -573,10 +573,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Not a confirmed member of this trip' });
       }
       
-      const activityData = insertActivitySchema.parse({
+      // Convert date string to Date object before validation
+      const data = {
         ...req.body,
-        tripId
-      });
+        tripId,
+        date: req.body.date ? new Date(req.body.date) : undefined
+      };
+      
+      const activityData = insertActivitySchema.parse(data);
       
       const activity = await storage.createActivity(activityData);
       
@@ -787,10 +791,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const user = await storage.getUser(message.userId);
           if (!user) return message;
           
+          // Remove sensitive user information
           const { password, ...userWithoutPassword } = user;
+          
           return {
             ...message,
-            user: userWithoutPassword
+            user: {
+              id: userWithoutPassword.id,
+              name: userWithoutPassword.name,
+              avatar: userWithoutPassword.avatar
+            }
           };
         })
       );

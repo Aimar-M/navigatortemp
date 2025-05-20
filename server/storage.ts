@@ -201,9 +201,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createActivity(activity: InsertActivity): Promise<Activity> {
+    // Ensure date is properly handled as a timestamp
+    const activityData = {
+      ...activity,
+      date: activity.date instanceof Date ? activity.date : new Date(activity.date)
+    };
+    
     const [newActivity] = await db
       .insert(activities)
-      .values(activity)
+      .values(activityData)
       .returning();
     
     return newActivity;
@@ -304,11 +310,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMessagesByTrip(tripId: number): Promise<Message[]> {
-    return db
+    const results = await db
       .select()
       .from(messages)
       .where(eq(messages.tripId, tripId))
       .orderBy(messages.timestamp);
+    
+    return results;
   }
 
   async createSurveyQuestion(question: InsertSurveyQuestion): Promise<SurveyQuestion> {
