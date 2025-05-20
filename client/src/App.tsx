@@ -8,6 +8,8 @@ import Register from "@/pages/register";
 import TripDetails from "@/pages/trip-details";
 import CreateTrip from "@/pages/create-trip";
 import Chat from "@/pages/chat";
+import Chats from "@/pages/chats";
+import TripsCalendar from "@/pages/trips-calendar";
 import Itinerary from "@/pages/itinerary";
 
 function Router() {
@@ -20,6 +22,9 @@ function Router() {
       <Route path="/trips/:id" component={TripDetails} />
       <Route path="/trips/:id/chat" component={Chat} />
       <Route path="/trips/:id/itinerary" component={Itinerary} />
+      <Route path="/chats" component={Chats} />
+      <Route path="/trips" component={TripsCalendar} />
+      <Route path="/chat/:id" component={Chat} />
       <Route component={NotFound} />
     </Switch>
   );
