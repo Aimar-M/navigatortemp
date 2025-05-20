@@ -23,40 +23,38 @@ const ChatItem = ({ trip, lastMessages }: { trip: any, lastMessages: any[] }) =>
   };
 
   return (
-    <Link href={`/chat/${trip.id}`}>
-      <a className="block">
-        <Card className="hover:bg-gray-50 transition-colors">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 flex items-center justify-center rounded-full bg-primary-100 text-primary-800 font-semibold">
-                {getInitials(trip.name)}
+    <div onClick={() => window.location.href = `/chat/${trip.id}`} className="cursor-pointer">
+      <Card className="hover:bg-gray-50 transition-colors">
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-primary-100 text-primary-800 font-semibold">
+              {getInitials(trip.name)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-start">
+                <h3 className="text-sm font-semibold text-gray-900 truncate">{trip.name}</h3>
+                <span className="text-xs text-gray-500">{formatDateTime(lastMessage.timestamp)}</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start">
-                  <h3 className="text-sm font-semibold text-gray-900 truncate">{trip.name}</h3>
-                  <span className="text-xs text-gray-500">{formatDateTime(lastMessage.timestamp)}</span>
-                </div>
-                <div className="flex items-center mt-1">
-                  {lastMessage.user && lastMessage.user.name && (
-                    <span className="text-xs font-medium text-gray-600 mr-1 truncate">
-                      {lastMessage.user.name}:
-                    </span>
-                  )}
-                  <p className="text-xs text-gray-600 truncate">
-                    {lastMessage.content}
-                  </p>
-                </div>
-                <div className="mt-1">
-                  <span className="text-xs text-gray-500">
-                    {trip.destination} • {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
+              <div className="flex items-center mt-1">
+                {lastMessage.user && lastMessage.user.name && (
+                  <span className="text-xs font-medium text-gray-600 mr-1 truncate">
+                    {lastMessage.user.name}:
                   </span>
-                </div>
+                )}
+                <p className="text-xs text-gray-600 truncate">
+                  {lastMessage.content}
+                </p>
+              </div>
+              <div className="mt-1">
+                <span className="text-xs text-gray-500">
+                  {trip.destination} • {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
+                </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </a>
-    </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

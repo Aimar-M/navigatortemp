@@ -141,20 +141,20 @@ const Calendar = ({ date, events, onDateChange }: {
                   
                   <div className="space-y-1">
                     {dayEvents.slice(0, 2).map((event, idx) => (
-                      <Link 
-                        key={`${event.id}-${idx}`} 
-                        href={event.type === 'trip' 
+                      <div
+                        key={`${event.id}-${idx}`}
+                        onClick={() => window.location.href = event.type === 'trip' 
                           ? `/trips/${event.id}` 
-                          : `/trips/${event.tripId}/activities`}
-                      >
-                        <a className={`block text-xs p-1 rounded truncate ${
+                          : `/trips/${event.tripId}/activities`
+                        }
+                        className={`block text-xs p-1 rounded truncate cursor-pointer ${
                           event.type === 'trip' 
                             ? "bg-blue-100 text-blue-800" 
                             : "bg-green-100 text-green-800"
-                        }`}>
-                          {event.name}
-                        </a>
-                      </Link>
+                        }`}
+                      >
+                        {event.name}
+                      </div>
                     ))}
                     
                     {dayEvents.length > 2 && (
@@ -170,20 +170,20 @@ const Calendar = ({ date, events, onDateChange }: {
                         <PopoverContent className="w-64 p-2">
                           <div className="space-y-1">
                             {dayEvents.map((event, idx) => (
-                              <Link 
-                                key={`popup-${event.id}-${idx}`} 
-                                href={event.type === 'trip' 
+                              <div 
+                                key={`popup-${event.id}-${idx}`}
+                                onClick={() => window.location.href = event.type === 'trip' 
                                   ? `/trips/${event.id}` 
-                                  : `/trips/${event.tripId}/activities`}
-                              >
-                                <a className={`block text-xs p-2 rounded ${
+                                  : `/trips/${event.tripId}/activities`
+                                }
+                                className={`block text-xs p-2 rounded cursor-pointer ${
                                   event.type === 'trip' 
                                     ? "bg-blue-100 text-blue-800" 
                                     : "bg-green-100 text-green-800"
-                                }`}>
-                                  {event.name}
-                                </a>
-                              </Link>
+                                }`}
+                              >
+                                {event.name}
+                              </div>
                             ))}
                           </div>
                         </PopoverContent>
