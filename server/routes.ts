@@ -195,28 +195,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Middleware to check if user is authenticated
   const isAuthenticated = async (req: Request, res: Response, next: Function) => {
-    // Get auth token from header
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-    
     try {
-      // In this simple implementation, token is the user ID
-      const userId = parseInt(token, 10);
-      const user = await storage.getUser(userId);
+      // Check for token (bearer) authentication
+      const authHeader = req.headers.authorization;
       
-      if (!user) {
-        return res.status(401).json({ message: 'User not found' });
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        
+        if (token) {
+          // In this simple implementation, token is the user ID + '_token' or just the user ID
+          const userId = parseInt(token.split('_')[0]);
+          if (!isNaN(userId)) {
+            const user = await storage.getUser(userId);
+            if (user) {
+              req.user = user;
+              return next();
+            }
+          }
+        }
       }
       
-      // Set user on request
-      req.user = user;
-      next();
-    } catch (err) {
-      return res.status(401).json({ message: 'Invalid authentication token' });
+      // Fall back to checking the session
+      if (req.session && req.session.userId) {
+        const user = await storage.getUser(req.session.userId);
+        if (user) {
+          req.user = user;
+          return next();
+        }
+      }
+      
+      res.status(401).json({ message: 'Authentication required' });
+    } catch (error) {
+      console.error('Auth error:', error);
+      res.status(401).json({ message: 'Authentication error' });
     }
   };
   
