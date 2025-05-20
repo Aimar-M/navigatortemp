@@ -550,8 +550,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Activity Routes
   router.post('/trips/:id/activities', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const user = ensureUser(req, res);
-      if (!user) return; // Response already sent by ensureUser
+      const authUser = ensureUser(req, res);
+      if (!authUser) return; // Response already sent by ensureUser
       
       const tripId = parseInt(req.params.id);
       if (isNaN(tripId)) {
@@ -566,7 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user is a confirmed member of the trip
       const members = await storage.getTripMembers(tripId);
       const isMember = members.some(member => 
-        member.userId === user.id && member.status === 'confirmed'
+        member.userId === authUser.id && member.status === 'confirmed'
       );
       
       if (!isMember) {
@@ -583,7 +583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Auto-RSVP the creator as "going"
       await storage.createActivityRSVP({
         activityId: activity.id,
-        userId: user.id,
+        userId: authUser.id,
         status: 'going'
       });
       
