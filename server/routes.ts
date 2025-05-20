@@ -814,7 +814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user is a confirmed member of the trip
       const members = await storage.getTripMembers(tripId);
       const isMember = members.some(member => 
-        member.userId === user.id && member.status === 'confirmed'
+        member.userId === authUser.id && member.status === 'confirmed'
       );
       
       if (!isMember) {
@@ -860,6 +860,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Survey Routes
   router.post('/trips/:id/survey', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const authUser = ensureUser(req, res);
+      if (!authUser) return; // Response already sent by ensureUser
+      
       const tripId = parseInt(req.params.id);
       if (isNaN(tripId)) {
         return res.status(400).json({ message: 'Invalid trip ID' });
@@ -871,7 +874,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Only organizer can create survey questions
-      if (trip.organizer !== req.user.id) {
+      if (trip.organizer !== authUser.id) {
         return res.status(403).json({ message: 'Only the trip organizer can create surveys' });
       }
       
@@ -901,6 +904,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.get('/trips/:id/survey', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const authUser = ensureUser(req, res);
+      if (!authUser) return; // Response already sent by ensureUser
+      
       const tripId = parseInt(req.params.id);
       if (isNaN(tripId)) {
         return res.status(400).json({ message: 'Invalid trip ID' });
@@ -908,7 +914,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user is a member of the trip
       const members = await storage.getTripMembers(tripId);
-      const isMember = members.some(member => member.userId === req.user.id);
+      const isMember = members.some(member => member.userId === authUser.id);
       
       if (!isMember) {
         return res.status(403).json({ message: 'Not a member of this trip' });
@@ -935,6 +941,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.post('/survey/:id/respond', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const authUser = ensureUser(req, res);
+      if (!authUser) return; // Response already sent by ensureUser
+      
       const questionId = parseInt(req.params.id);
       if (isNaN(questionId)) {
         return res.status(400).json({ message: 'Invalid question ID' });
@@ -947,7 +956,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const responseData = insertSurveyResponseSchema.parse({
         questionId,
-        userId: req.user.id,
+        userId: authUser.id,
         response: String(response)
       });
       
