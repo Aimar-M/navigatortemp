@@ -33,14 +33,14 @@ export default function Header() {
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <Link href="/">
-            <a className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 cursor-pointer">
               <img 
                 src={navigatorLogo} 
                 alt="Navigator Logo" 
                 className="h-8 w-8"
               />
               <h1 className="text-xl font-bold text-gray-800">Navigator</h1>
-            </a>
+            </div>
           </Link>
         </div>
 
@@ -71,12 +71,12 @@ export default function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/profile">
-                    <a className="cursor-pointer w-full flex">Profile</a>
+                    <div className="cursor-pointer w-full flex">Profile</div>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/settings">
-                    <a className="cursor-pointer w-full flex">Settings</a>
+                    <div className="cursor-pointer w-full flex">Settings</div>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
