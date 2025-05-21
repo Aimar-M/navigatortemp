@@ -211,6 +211,11 @@ export default function TripForm({ onComplete }: TripFormProps) {
                 </>
               )}
             </div>
+            <div className="mt-4">
+              <p className="text-sm font-medium text-primary-700">
+                Please review the trip details above before clicking "Create Trip" to confirm.
+              </p>
+            </div>
           </div>
         );
       default:
