@@ -13,8 +13,8 @@ export default function TripDetailsNew() {
       <Header />
       <TripTabs tripId={tripId} />
       
-      <main className="flex-1 p-4 pb-20 md:pb-4">
-        <div className="space-y-4">
+      <main className="flex-1 p-4 pb-24 md:pb-4">
+        <div className="space-y-4 mb-4">
           <Skeleton className="h-8 w-1/3" />
           <Skeleton className="h-32 w-full" />
           <Skeleton className="h-64 w-full" />

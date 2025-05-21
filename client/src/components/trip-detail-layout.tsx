@@ -21,8 +21,8 @@ const TripDetailLayout: React.FC<TripDetailLayoutProps> = ({
       <Header />
       <TripTabs tripId={tripId} />
       
-      {/* Set a fixed height for the main content area with pb-16 to ensure space for the mobile navigation */}
-      <main className="flex-1 p-4 overflow-y-auto pb-16 md:pb-4">
+      {/* Set a fixed height for the main content area with pb-24 to ensure space for the mobile navigation */}
+      <main className="flex-1 p-4 overflow-y-auto pb-24 md:pb-4">
         <div className="max-w-7xl mx-auto">
           {(title || description) && (
             <div className="mb-6">
