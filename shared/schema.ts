@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, foreignKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, foreignKey, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
@@ -238,3 +238,34 @@ export type InsertSurveyQuestion = z.infer<typeof insertSurveyQuestionSchema>;
 
 export type SurveyResponse = typeof surveyResponses.$inferSelect;
 export type InsertSurveyResponse = z.infer<typeof insertSurveyResponseSchema>;
+
+// Invitation links schema
+export const invitationLinks = pgTable("invitation_links", {
+  id: serial("id").primaryKey(),
+  token: uuid("token").notNull().defaultRandom(),
+  tripId: integer("trip_id").notNull().references(() => trips.id),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  isActive: boolean("is_active").notNull().default(true),
+});
+
+export const invitationLinksRelations = relations(invitationLinks, ({ one }) => ({
+  trip: one(trips, {
+    fields: [invitationLinks.tripId],
+    references: [trips.id]
+  }),
+  creator: one(users, {
+    fields: [invitationLinks.createdBy],
+    references: [users.id]
+  }),
+}));
+
+export const insertInvitationLinkSchema = createInsertSchema(invitationLinks).pick({
+  tripId: true,
+  createdBy: true,
+  expiresAt: true,
+});
+
+export type InvitationLink = typeof invitationLinks.$inferSelect;
+export type InsertInvitationLink = z.infer<typeof insertInvitationLinkSchema>;
