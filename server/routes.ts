@@ -1087,6 +1087,194 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Server error' });
     }
   });
+  // Invitation Links
+  router.post('/trips/:id/invite', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: 'Invalid trip ID' });
+      }
+      
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: 'Trip not found' });
+      }
+      
+      // Check if user is a member of the trip
+      const tripMembers = await storage.getTripMembers(tripId);
+      const isMember = tripMembers.some(member => member.userId === user.id);
+      
+      if (!isMember) {
+        return res.status(403).json({ message: 'You must be a member of this trip to create invitation links' });
+      }
+      
+      // Create expiration date (default: 7 days from now)
+      const expiresAt = req.body.expiresAt ? new Date(req.body.expiresAt) : 
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      
+      const invitationData = insertInvitationLinkSchema.parse({
+        tripId,
+        createdBy: user.id,
+        expiresAt
+      });
+      
+      const invitation = await storage.createInvitationLink(invitationData);
+      
+      // Return the invitation with full URL
+      const host = req.get('host');
+      const protocol = req.protocol;
+      const inviteUrl = `${protocol}://${host}/invite/${invitation.token}`;
+      
+      res.status(201).json({
+        ...invitation,
+        inviteUrl
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid invitation data', errors: error.errors });
+      }
+      console.error('Error creating invitation:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  router.get('/trips/:id/invites', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: 'Invalid trip ID' });
+      }
+      
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: 'Trip not found' });
+      }
+      
+      // Check if user is a member of the trip
+      const tripMembers = await storage.getTripMembers(tripId);
+      const isMember = tripMembers.some(member => member.userId === user.id);
+      
+      if (!isMember) {
+        return res.status(403).json({ message: 'You must be a member of this trip to view invitation links' });
+      }
+      
+      const invites = await storage.getInvitationLinksByTrip(tripId);
+      
+      // Add full invite URLs
+      const host = req.get('host');
+      const protocol = req.protocol;
+      const invitesWithUrls = invites.map(invite => ({
+        ...invite,
+        inviteUrl: `${protocol}://${host}/invite/${invite.token}`
+      }));
+      
+      res.json(invitesWithUrls);
+    } catch (error) {
+      console.error('Error retrieving invitations:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Public route to validate an invitation token and get trip details
+  router.get('/invite/:token', async (req: Request, res: Response) => {
+    try {
+      const token = req.params.token;
+      
+      const invitation = await storage.getInvitationLink(token);
+      if (!invitation) {
+        return res.status(404).json({ message: 'Invitation not found or has expired' });
+      }
+      
+      // Check if invitation is still active
+      if (!invitation.isActive) {
+        return res.status(410).json({ message: 'This invitation link has been deactivated' });
+      }
+      
+      // Check if invitation has expired
+      if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) {
+        return res.status(410).json({ message: 'This invitation link has expired' });
+      }
+      
+      // Get trip details to show to the invited user
+      const trip = await storage.getTrip(invitation.tripId);
+      if (!trip) {
+        return res.status(404).json({ message: 'The associated trip was not found' });
+      }
+      
+      // Get trip organizer details
+      const organizer = await storage.getUser(trip.organizer);
+      
+      // Return limited trip details for the invitation page
+      res.json({
+        invitation: {
+          id: invitation.id,
+          token: invitation.token,
+          expiresAt: invitation.expiresAt
+        },
+        trip: {
+          id: trip.id,
+          name: trip.name,
+          destination: trip.destination,
+          startDate: trip.startDate,
+          endDate: trip.endDate,
+          organizer: organizer ? {
+            id: organizer.id,
+            name: organizer.name
+          } : null
+        }
+      });
+    } catch (error) {
+      console.error('Error processing invitation:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Accept an invitation (requires authentication)
+  router.post('/invite/:token/accept', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const token = req.params.token;
+      
+      const invitation = await storage.getInvitationLink(token);
+      if (!invitation) {
+        return res.status(404).json({ message: 'Invitation not found or has expired' });
+      }
+      
+      // Check if invitation is still active
+      if (!invitation.isActive) {
+        return res.status(410).json({ message: 'This invitation link has been deactivated' });
+      }
+      
+      // Check if invitation has expired
+      if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) {
+        return res.status(410).json({ message: 'This invitation link has expired' });
+      }
+      
+      // Add user to trip members with confirmed status
+      const tripMember = await storage.addTripMember({
+        tripId: invitation.tripId,
+        userId: user.id,
+        status: "confirmed" // Auto-confirm since they accepted the invitation
+      });
+      
+      res.status(201).json({ 
+        message: 'Successfully joined the trip',
+        tripId: invitation.tripId,
+        membership: tripMember
+      });
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
   
   app.use('/api', router);
   
