@@ -47,13 +47,43 @@ export default function InvitationPage() {
     if (!user) {
       // Save the invitation token in localStorage to accept it after login
       localStorage.setItem('pendingInvitation', token);
+      
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in or register to join this trip',
+      });
+      
       navigate('/login');
       return;
     }
 
     setAcceptingInvite(true);
     try {
-      const result = await apiRequest<{tripId: number}>('POST', `/api/invite/${token}/accept`, {});
+      // Get the auth token from localStorage
+      const authToken = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {};
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      
+      // Use a direct fetch with headers to ensure authentication works
+      const response = await fetch(`/api/invite/${token}/accept`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers
+        },
+        body: JSON.stringify({})
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Failed to accept invitation');
+      }
+      
+      const result = await response.json();
+      
       toast({
         title: 'Success!',
         description: 'You have joined the trip',
@@ -62,6 +92,7 @@ export default function InvitationPage() {
       // Navigate to the trip page
       navigate(`/trips/${result.tripId}`);
     } catch (error) {
+      console.error('Error accepting invitation:', error);
       toast({
         title: 'Failed to accept invitation',
         description: error instanceof Error ? error.message : 'Something went wrong',
