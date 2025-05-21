@@ -3,7 +3,8 @@ import { cn, getInitials } from "@/lib/utils";
 
 interface User {
   id: number;
-  name: string;
+  name?: string;
+  username?: string;
   avatar?: string | null;
 }
 
@@ -20,12 +21,14 @@ export default function UserAvatar({
   fallback,
   fallbackClassName,
 }: UserAvatarProps) {
-  const initials = user?.name ? getInitials(user.name) : fallback || "?";
+  // Get display name, prioritize name, then username, then use id as fallback
+  const displayName = user?.name || user?.username || `User ${user?.id}`;
+  const initials = displayName ? getInitials(displayName) : fallback || "?";
 
   return (
     <Avatar className={cn("h-10 w-10", className)}>
       {user?.avatar ? (
-        <AvatarImage src={user.avatar} alt={user.name} />
+        <AvatarImage src={user.avatar} alt={displayName} />
       ) : null}
       <AvatarFallback className={cn("text-sm", fallbackClassName)}>
         {initials}
