@@ -46,10 +46,7 @@ export default function ActivityCard({
     try {
       setIsSubmitting(true);
       
-      await apiRequest(`/api/activities/${id}/rsvp`, {
-        method: "POST",
-        data: { status }
-      });
+      await apiRequest("POST", `/api/activities/${id}/rsvp`, { status });
       
       // Invalidate and refetch activities to update the UI
       await queryClient.invalidateQueries({ queryKey: ["/api/trips"] });

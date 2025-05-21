@@ -326,6 +326,7 @@ export default function Itinerary() {
                           location={activity.location}
                           confirmedCount={activity.rsvps?.filter((r: any) => r.status === 'going').length || 0}
                           totalCount={activity.rsvps?.length || 0}
+                          rsvps={activity.rsvps}
                         />
                       ))}
                   </div>
