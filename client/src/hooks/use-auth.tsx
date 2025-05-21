@@ -82,10 +82,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await apiRequest("POST", "/api/auth/login", {
-        username,
-        password,
+      // Make a direct fetch request to the login endpoint to get JSON response
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || "Invalid username or password");
+      }
       
       const userData = await response.json();
       
@@ -99,7 +111,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Connect WebSocket after login
       wsClient.connect(userData.id, []);
       
-      navigate("/");
+      // Check for pending invitation
+      const pendingInvitation = localStorage.getItem('pendingInvitation');
+      if (pendingInvitation) {
+        // Clear the pending invitation
+        localStorage.removeItem('pendingInvitation');
+        // Redirect to the invitation page to complete the acceptance process
+        navigate(`/invite/${pendingInvitation}`);
+      } else {
+        navigate("/");
+      }
     } catch (error) {
       toast({
         title: "Login failed",
@@ -116,7 +137,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (userData: RegisterData) => {
     setIsLoading(true);
     try {
-      const response = await apiRequest("POST", "/api/auth/register", userData);
+      // Make a direct fetch request to the register endpoint to get JSON response
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || "Unable to create account");
+      }
       
       const newUser = await response.json();
       
@@ -130,7 +163,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Connect WebSocket after registration
       wsClient.connect(newUser.id, []);
       
-      navigate("/");
+      // Check for pending invitation
+      const pendingInvitation = localStorage.getItem('pendingInvitation');
+      if (pendingInvitation) {
+        // Clear the pending invitation
+        localStorage.removeItem('pendingInvitation');
+        // Redirect to the invitation page to complete the acceptance process
+        navigate(`/invite/${pendingInvitation}`);
+      } else {
+        navigate("/");
+      }
     } catch (error) {
       toast({
         title: "Registration failed",
