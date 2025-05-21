@@ -18,7 +18,7 @@ export default function TripTabs({ tripId }: TripTabsProps) {
     { name: "Overview", href: `/trips/${tripId}` },
     { name: "Itinerary", href: `/trips/${tripId}/itinerary` },
     { name: "Chat", href: `/trips/${tripId}/chat` },
-    { name: "Expenses", href: `/trips/${tripId}/expenses` },
+    { name: "Budget", href: `/trips/${tripId}/budget` },
     { name: "Polls", href: `/trips/${tripId}/polls` },
   ];
 

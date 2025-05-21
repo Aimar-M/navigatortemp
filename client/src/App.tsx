@@ -11,6 +11,7 @@ import Chat from "@/pages/chat";
 import Chats from "@/pages/chats";
 import TripsCalendar from "@/pages/trips-calendar";
 import Itinerary from "@/pages/itinerary";
+import TripBudget from "@/pages/trip-budget";
 import InvitationPage from "@/pages/invite";
 
 function Router() {
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/trips/:id" component={TripDetails} />
       <Route path="/trips/:id/chat" component={Chat} />
       <Route path="/trips/:id/itinerary" component={Itinerary} />
+      <Route path="/trips/:id/budget" component={TripBudget} />
       <Route path="/chats" component={Chats} />
       <Route path="/trips" component={TripsCalendar} />
       <Route path="/chat/:id" component={Chat} />
