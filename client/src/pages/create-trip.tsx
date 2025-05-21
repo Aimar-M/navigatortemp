@@ -29,7 +29,7 @@ export default function CreateTrip() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       
-      <main className="flex-1 overflow-y-auto p-4 md:p-8">
+      <main className="flex-1 overflow-y-auto p-4 pb-24 md:p-8">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Create a New Trip</h1>
           <TripForm 

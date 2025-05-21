@@ -116,7 +116,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       
-      <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <main className="flex-1 flex flex-col md:flex-row overflow-hidden pb-16 md:pb-0">
         {/* Navigation Panel */}
         <div className="w-full md:w-80 md:min-w-[320px] bg-white border-r border-gray-200 md:h-full overflow-y-auto">
           {/* Tabs for mobile navigation */}
