@@ -260,7 +260,7 @@ export default function Itinerary() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0">
         {/* Trip Header */}
         <div className="bg-white border-b border-gray-200 p-4">
           <div className="flex items-start justify-between">
@@ -283,7 +283,7 @@ export default function Itinerary() {
         <TripTabs tripId={tripId} />
 
         {/* Itinerary Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 pb-8">
           {isActivitiesLoading ? (
             <div className="space-y-6">
               {[1, 2].map((dayIndex) => (
