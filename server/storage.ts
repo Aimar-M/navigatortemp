@@ -102,6 +102,187 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return user;
   }
+  
+  // Expense methods
+  async createExpense(expense: InsertExpense): Promise<Expense> {
+    const [newExpense] = await db
+      .insert(expenses)
+      .values(expense)
+      .returning();
+    return newExpense;
+  }
+
+  async getExpensesByTrip(tripId: number): Promise<Expense[]> {
+    return await db
+      .select()
+      .from(expenses)
+      .where(eq(expenses.tripId, tripId))
+      .orderBy(desc(expenses.date));
+  }
+
+  async getExpensesByUser(userId: number): Promise<Expense[]> {
+    return await db
+      .select()
+      .from(expenses)
+      .where(eq(expenses.userId, userId))
+      .orderBy(desc(expenses.date));
+  }
+
+  async getExpense(id: number): Promise<Expense | undefined> {
+    const [expense] = await db
+      .select()
+      .from(expenses)
+      .where(eq(expenses.id, id));
+    return expense || undefined;
+  }
+
+  async updateExpense(id: number, expenseUpdate: Partial<InsertExpense>): Promise<Expense | undefined> {
+    const [updatedExpense] = await db
+      .update(expenses)
+      .set({ ...expenseUpdate, updatedAt: new Date() })
+      .where(eq(expenses.id, id))
+      .returning();
+    return updatedExpense || undefined;
+  }
+
+  async deleteExpense(id: number): Promise<boolean> {
+    const result = await db
+      .delete(expenses)
+      .where(eq(expenses.id, id));
+    return !!result;
+  }
+
+  async getTripExpenseSummary(tripId: number): Promise<any> {
+    const allExpenses = await this.getExpensesByTrip(tripId);
+    
+    // Calculate summary statistics
+    const total = allExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+    
+    // Group by category
+    const byCategory = allExpenses.reduce((acc, expense) => {
+      const category = expense.category;
+      if (!acc[category]) {
+        acc[category] = 0;
+      }
+      acc[category] += Number(expense.amount);
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Group by payer
+    const byPayer = allExpenses.reduce((acc, expense) => {
+      const paidBy = expense.paidBy;
+      if (!acc[paidBy]) {
+        acc[paidBy] = 0;
+      }
+      acc[paidBy] += Number(expense.amount);
+      return acc;
+    }, {} as Record<number, number>);
+    
+    // Calculate per person cost (equal split)
+    const tripMembers = await this.getTripMembers(tripId);
+    const confirmedMembers = tripMembers.filter(member => member.status === 'confirmed');
+    const perPersonCost = confirmedMembers.length > 0 ? total / confirmedMembers.length : 0;
+    
+    return {
+      total,
+      byCategory,
+      byPayer,
+      perPersonCost,
+      memberCount: confirmedMembers.length
+    };
+  }
+  
+  // Flight info methods
+  async createFlightInfo(flight: InsertFlightInfo): Promise<FlightInfo> {
+    const [newFlight] = await db
+      .insert(flightInfo)
+      .values(flight)
+      .returning();
+    return newFlight;
+  }
+
+  async getFlightInfoByTrip(tripId: number): Promise<FlightInfo[]> {
+    return await db
+      .select()
+      .from(flightInfo)
+      .where(eq(flightInfo.tripId, tripId))
+      .orderBy(desc(flightInfo.departureTime));
+  }
+
+  async getFlightInfoByUser(userId: number): Promise<FlightInfo[]> {
+    return await db
+      .select()
+      .from(flightInfo)
+      .where(eq(flightInfo.userId, userId))
+      .orderBy(desc(flightInfo.departureTime));
+  }
+
+  async getFlightInfo(id: number): Promise<FlightInfo | undefined> {
+    const [flight] = await db
+      .select()
+      .from(flightInfo)
+      .where(eq(flightInfo.id, id));
+    return flight || undefined;
+  }
+
+  async updateFlightInfo(id: number, flightUpdate: Partial<InsertFlightInfo>): Promise<FlightInfo | undefined> {
+    const [updatedFlight] = await db
+      .update(flightInfo)
+      .set({ ...flightUpdate, updatedAt: new Date() })
+      .where(eq(flightInfo.id, id))
+      .returning();
+    return updatedFlight || undefined;
+  }
+
+  async deleteFlightInfo(id: number): Promise<boolean> {
+    const result = await db
+      .delete(flightInfo)
+      .where(eq(flightInfo.id, id));
+    return !!result;
+  }
+  
+  async searchFlights(departureCity: string, arrivalCity: string, date: Date): Promise<any[]> {
+    // This would normally use an external flight search API
+    // For now, returning mock data for demonstration purposes
+    return [
+      {
+        airline: "Sample Airlines",
+        flightNumber: "SA123",
+        departureAirport: `${departureCity} International Airport`,
+        departureCity,
+        departureTime: new Date(date.setHours(8, 30)),
+        arrivalAirport: `${arrivalCity} International Airport`,
+        arrivalCity,
+        arrivalTime: new Date(date.setHours(10, 45)),
+        price: 299.99,
+        currency: "USD"
+      },
+      {
+        airline: "Global Airways",
+        flightNumber: "GA456",
+        departureAirport: `${departureCity} International Airport`,
+        departureCity,
+        departureTime: new Date(date.setHours(12, 15)),
+        arrivalAirport: `${arrivalCity} International Airport`,
+        arrivalCity,
+        arrivalTime: new Date(date.setHours(14, 30)),
+        price: 349.99,
+        currency: "USD"
+      },
+      {
+        airline: "Express Flights",
+        flightNumber: "EF789",
+        departureAirport: `${departureCity} International Airport`,
+        departureCity,
+        departureTime: new Date(date.setHours(17, 45)),
+        arrivalAirport: `${arrivalCity} International Airport`,
+        arrivalCity,
+        arrivalTime: new Date(date.setHours(20, 0)),
+        price: 249.99,
+        currency: "USD"
+      }
+    ];
+  }
 
   async createTrip(insertTrip: InsertTrip): Promise<Trip> {
     const [trip] = await db

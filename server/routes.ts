@@ -6,6 +6,7 @@ import {
   insertUserSchema, insertTripSchema, insertTripMemberSchema, 
   insertActivitySchema, insertActivityRsvpSchema, insertMessageSchema,
   insertSurveyQuestionSchema, insertSurveyResponseSchema, insertInvitationLinkSchema,
+  insertExpenseSchema, insertFlightInfoSchema,
   User
 } from "@shared/schema";
 import { z } from "zod";
@@ -1281,6 +1282,440 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error accepting invitation:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // EXPENSE ROUTES
+  
+  // Create a new expense
+  router.post('/trips/:id/expenses', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: 'Invalid trip ID' });
+      }
+      
+      // Check if user is a member of the trip
+      const members = await storage.getTripMembers(tripId);
+      const isMember = members.some(member => member.userId === user.id);
+      
+      if (!isMember) {
+        return res.status(403).json({ message: 'Not a member of this trip' });
+      }
+      
+      const expenseData = insertExpenseSchema.parse({
+        ...req.body,
+        tripId,
+        userId: user.id
+      });
+      
+      const expense = await storage.createExpense(expenseData);
+      
+      // Notify trip members about the new expense
+      broadcastToTrip(wss, tripId, {
+        type: 'NEW_EXPENSE',
+        data: expense
+      });
+      
+      res.status(201).json(expense);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: 'Invalid expense data', errors: error.errors });
+      } else {
+        console.error('Error creating expense:', error);
+        res.status(500).json({ message: 'Server error' });
+      }
+    }
+  });
+  
+  // Get all expenses for a trip
+  router.get('/trips/:id/expenses', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: 'Invalid trip ID' });
+      }
+      
+      // Check if user is a member of the trip
+      const members = await storage.getTripMembers(tripId);
+      const isMember = members.some(member => member.userId === user.id);
+      
+      if (!isMember) {
+        return res.status(403).json({ message: 'Not a member of this trip' });
+      }
+      
+      const expenses = await storage.getExpensesByTrip(tripId);
+      
+      // Get user details for each expense
+      const expensesWithUserDetails = await Promise.all(
+        expenses.map(async (expense) => {
+          const creator = await storage.getUser(expense.userId);
+          const payer = await storage.getUser(expense.paidBy);
+          
+          return {
+            ...expense,
+            createdBy: creator ? {
+              id: creator.id,
+              name: creator.name,
+              username: creator.username,
+              avatar: creator.avatar
+            } : null,
+            paidBy: payer ? {
+              id: payer.id,
+              name: payer.name,
+              username: payer.username,
+              avatar: payer.avatar
+            } : null
+          };
+        })
+      );
+      
+      res.json(expensesWithUserDetails);
+    } catch (error) {
+      console.error('Error fetching expenses:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // Get expense summary for a trip
+  router.get('/trips/:id/expenses/summary', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: 'Invalid trip ID' });
+      }
+      
+      // Check if user is a member of the trip
+      const members = await storage.getTripMembers(tripId);
+      const isMember = members.some(member => member.userId === user.id);
+      
+      if (!isMember) {
+        return res.status(403).json({ message: 'Not a member of this trip' });
+      }
+      
+      const summary = await storage.getTripExpenseSummary(tripId);
+      
+      // Add user details for each payer in the summary
+      const payerIds = Object.keys(summary.byPayer).map(id => parseInt(id));
+      const payerDetails = await Promise.all(
+        payerIds.map(async (id) => {
+          const user = await storage.getUser(id);
+          return user ? {
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            avatar: user.avatar
+          } : null;
+        })
+      );
+      
+      const payersWithDetails = payerIds.reduce((acc, id, index) => {
+        if (payerDetails[index]) {
+          acc[id] = {
+            amount: summary.byPayer[id],
+            user: payerDetails[index]
+          };
+        }
+        return acc;
+      }, {} as Record<string, any>);
+      
+      const enhancedSummary = {
+        ...summary,
+        byPayer: payersWithDetails
+      };
+      
+      res.json(enhancedSummary);
+    } catch (error) {
+      console.error('Error fetching expense summary:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // Update an expense
+  router.put('/expenses/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const expenseId = parseInt(req.params.id);
+      if (isNaN(expenseId)) {
+        return res.status(400).json({ message: 'Invalid expense ID' });
+      }
+      
+      const expense = await storage.getExpense(expenseId);
+      
+      if (!expense) {
+        return res.status(404).json({ message: 'Expense not found' });
+      }
+      
+      // Only allow the creator or trip organizer to update expenses
+      const trip = await storage.getTrip(expense.tripId);
+      if (expense.userId !== user.id && trip?.organizer !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to update this expense' });
+      }
+      
+      const expenseUpdate = req.body;
+      const updatedExpense = await storage.updateExpense(expenseId, expenseUpdate);
+      
+      // Notify trip members about the updated expense
+      broadcastToTrip(wss, expense.tripId, {
+        type: 'UPDATE_EXPENSE',
+        data: updatedExpense
+      });
+      
+      res.json(updatedExpense);
+    } catch (error) {
+      console.error('Error updating expense:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // Delete an expense
+  router.delete('/expenses/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const expenseId = parseInt(req.params.id);
+      if (isNaN(expenseId)) {
+        return res.status(400).json({ message: 'Invalid expense ID' });
+      }
+      
+      const expense = await storage.getExpense(expenseId);
+      
+      if (!expense) {
+        return res.status(404).json({ message: 'Expense not found' });
+      }
+      
+      // Only allow the creator or trip organizer to delete expenses
+      const trip = await storage.getTrip(expense.tripId);
+      if (expense.userId !== user.id && trip?.organizer !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to delete this expense' });
+      }
+      
+      const success = await storage.deleteExpense(expenseId);
+      
+      if (success) {
+        // Notify trip members about the deleted expense
+        broadcastToTrip(wss, expense.tripId, {
+          type: 'DELETE_EXPENSE',
+          data: { id: expenseId, tripId: expense.tripId }
+        });
+        
+        res.status(200).json({ message: 'Expense deleted successfully' });
+      } else {
+        res.status(500).json({ message: 'Failed to delete expense' });
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // FLIGHT INFO ROUTES
+  
+  // Create new flight information
+  router.post('/trips/:id/flights', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: 'Invalid trip ID' });
+      }
+      
+      // Check if user is a member of the trip
+      const members = await storage.getTripMembers(tripId);
+      const isMember = members.some(member => member.userId === user.id);
+      
+      if (!isMember) {
+        return res.status(403).json({ message: 'Not a member of this trip' });
+      }
+      
+      const flightData = insertFlightInfoSchema.parse({
+        ...req.body,
+        tripId,
+        userId: user.id
+      });
+      
+      const flight = await storage.createFlightInfo(flightData);
+      
+      // Notify trip members about the new flight information
+      broadcastToTrip(wss, tripId, {
+        type: 'NEW_FLIGHT',
+        data: flight
+      });
+      
+      res.status(201).json(flight);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: 'Invalid flight data', errors: error.errors });
+      } else {
+        console.error('Error creating flight info:', error);
+        res.status(500).json({ message: 'Server error' });
+      }
+    }
+  });
+  
+  // Get all flight information for a trip
+  router.get('/trips/:id/flights', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: 'Invalid trip ID' });
+      }
+      
+      // Check if user is a member of the trip
+      const members = await storage.getTripMembers(tripId);
+      const isMember = members.some(member => member.userId === user.id);
+      
+      if (!isMember) {
+        return res.status(403).json({ message: 'Not a member of this trip' });
+      }
+      
+      const flights = await storage.getFlightInfoByTrip(tripId);
+      
+      // Get user details for each flight
+      const flightsWithUserDetails = await Promise.all(
+        flights.map(async (flight) => {
+          const user = await storage.getUser(flight.userId);
+          
+          return {
+            ...flight,
+            user: user ? {
+              id: user.id,
+              name: user.name,
+              username: user.username,
+              avatar: user.avatar
+            } : null
+          };
+        })
+      );
+      
+      res.json(flightsWithUserDetails);
+    } catch (error) {
+      console.error('Error fetching flight info:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // Update flight information
+  router.put('/flights/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const flightId = parseInt(req.params.id);
+      if (isNaN(flightId)) {
+        return res.status(400).json({ message: 'Invalid flight ID' });
+      }
+      
+      const flight = await storage.getFlightInfo(flightId);
+      
+      if (!flight) {
+        return res.status(404).json({ message: 'Flight information not found' });
+      }
+      
+      // Only allow the creator to update flight information
+      if (flight.userId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to update this flight information' });
+      }
+      
+      const flightUpdate = req.body;
+      const updatedFlight = await storage.updateFlightInfo(flightId, flightUpdate);
+      
+      // Notify trip members about the updated flight information
+      broadcastToTrip(wss, flight.tripId, {
+        type: 'UPDATE_FLIGHT',
+        data: updatedFlight
+      });
+      
+      res.json(updatedFlight);
+    } catch (error) {
+      console.error('Error updating flight info:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // Delete flight information
+  router.delete('/flights/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const flightId = parseInt(req.params.id);
+      if (isNaN(flightId)) {
+        return res.status(400).json({ message: 'Invalid flight ID' });
+      }
+      
+      const flight = await storage.getFlightInfo(flightId);
+      
+      if (!flight) {
+        return res.status(404).json({ message: 'Flight information not found' });
+      }
+      
+      // Only allow the creator to delete flight information
+      if (flight.userId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to delete this flight information' });
+      }
+      
+      const success = await storage.deleteFlightInfo(flightId);
+      
+      if (success) {
+        // Notify trip members about the deleted flight information
+        broadcastToTrip(wss, flight.tripId, {
+          type: 'DELETE_FLIGHT',
+          data: { id: flightId, tripId: flight.tripId }
+        });
+        
+        res.status(200).json({ message: 'Flight information deleted successfully' });
+      } else {
+        res.status(500).json({ message: 'Failed to delete flight information' });
+      }
+    } catch (error) {
+      console.error('Error deleting flight info:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // Search for flights
+  router.get('/flights/search', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const departureCity = req.query.departureCity as string;
+      const arrivalCity = req.query.arrivalCity as string;
+      const dateStr = req.query.date as string;
+      
+      if (!departureCity || !arrivalCity || !dateStr) {
+        return res.status(400).json({ message: 'Missing required search parameters' });
+      }
+      
+      const date = new Date(dateStr);
+      
+      if (isNaN(date.getTime())) {
+        return res.status(400).json({ message: 'Invalid date format' });
+      }
+      
+      const flightResults = await storage.searchFlights(departureCity, arrivalCity, date);
+      res.json(flightResults);
+    } catch (error) {
+      console.error('Error searching flights:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
