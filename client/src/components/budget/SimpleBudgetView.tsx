@@ -237,7 +237,7 @@ const SimpleBudgetView: React.FC<SimpleBudgetViewProps> = ({ tripId, destination
                       
                       <div className="flex-1 flex justify-center">
                         <div className="w-16 h-0.5 bg-gray-300 relative">
-                          <Airplane className="absolute -top-[10px] text-blue-500 transform rotate-90 w-5 h-5" />
+                          <Plane className="absolute -top-[10px] text-blue-500 transform rotate-90 w-5 h-5" />
                         </div>
                       </div>
                       
@@ -328,7 +328,7 @@ const SimpleBudgetView: React.FC<SimpleBudgetViewProps> = ({ tripId, destination
                             
                             <div className="flex-1 flex justify-center">
                               <div className="w-16 h-0.5 bg-gray-300 relative">
-                                <Airplane className="absolute -top-[10px] text-blue-500 transform rotate-90 w-5 h-5" />
+                                <Plane className="absolute -top-[10px] text-blue-500 transform rotate-90 w-5 h-5" />
                               </div>
                             </div>
                             
