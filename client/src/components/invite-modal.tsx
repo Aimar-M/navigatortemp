@@ -181,17 +181,25 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
                             <div className="text-xs text-gray-500 mb-1">
                               Expires: {formatExpiryDate(link.expiresAt)}
                             </div>
-                            <div className="flex items-center gap-2">
-                              <div className="text-sm bg-gray-50 p-2 rounded border border-gray-200 overflow-hidden text-ellipsis w-full">
-                                <p className="truncate">{link.inviteUrl}</p>
+                            <div className="flex flex-col gap-2">
+                              <div className="text-sm border p-2 rounded border-gray-200 bg-gray-50">
+                                <div className="w-full overflow-hidden">
+                                  <p className="text-xs text-gray-700 break-all">{
+                                    // Show a shortened version of the link
+                                    link.inviteUrl.length > 60 
+                                      ? link.inviteUrl.substring(0, 60) + "..." 
+                                      : link.inviteUrl
+                                  }</p>
+                                </div>
                               </div>
                               <Button 
                                 variant="outline" 
                                 size="sm" 
                                 onClick={() => copyToClipboard(link.inviteUrl)}
-                                className="h-8 px-2 flex-shrink-0"
+                                className="h-8 px-2 w-full"
                               >
-                                <Copy className="h-3.5 w-3.5" />
+                                <Copy className="h-3.5 w-3.5 mr-2" />
+                                Copy Link
                               </Button>
                             </div>
                           </CardContent>
