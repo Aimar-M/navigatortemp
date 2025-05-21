@@ -24,11 +24,18 @@ export default function InvitationPage() {
     queryKey: [`/api/invite/${token}`],
     queryFn: async () => {
       try {
+        // Make sure we're using the correct API endpoint
+        console.log(`Fetching invitation details for token: ${token}`);
+        // The server routes are mounted under /api
         const response = await fetch(`/api/invite/${token}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch invitation details');
+          const errorText = await response.text();
+          console.error(`Error response: ${response.status}, ${errorText}`);
+          throw new Error(`Failed to fetch invitation details: ${response.status} ${errorText}`);
         }
-        return response.json();
+        const data = await response.json();
+        console.log("Invitation data:", data);
+        return data;
       } catch (error) {
         console.error('Error fetching invitation:', error);
         throw error;
