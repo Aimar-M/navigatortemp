@@ -4,7 +4,7 @@ import TripTabs from "@/components/trip-tabs";
 import MobileNavigation from "@/components/mobile-navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function TripDetailsNew() {
+export default function TripDetailsClean() {
   const { id } = useParams<{ id: string }>();
   const tripId = parseInt(id);
   
@@ -13,7 +13,7 @@ export default function TripDetailsNew() {
       <Header />
       <TripTabs tripId={tripId} />
       
-      <main className="flex-1 p-4 pb-20 md:pb-4">
+      <main className="flex-1 p-4 pb-16 md:pb-4">
         <div className="space-y-4">
           <Skeleton className="h-8 w-1/3" />
           <Skeleton className="h-32 w-full" />
@@ -21,8 +21,10 @@ export default function TripDetailsNew() {
         </div>
       </main>
       
-      {/* Mobile navigation is already fixed in the component itself */}
-      <MobileNavigation />
+      {/* Fixed mobile navigation */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t border-gray-200 shadow-md">
+        <MobileNavigation />
+      </div>
     </div>
   );
 }
