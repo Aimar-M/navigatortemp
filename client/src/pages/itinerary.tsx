@@ -41,6 +41,26 @@ export default function Itinerary() {
     duration: "",
     cost: "",
   });
+  
+  // Helper function to generate an array of dates between start and end dates
+  const getDaysBetweenDates = (startDate: Date, endDate: Date): string[] => {
+    const dates: string[] = [];
+    // Clone the start date to avoid modifying the original date
+    const currentDate = new Date(startDate);
+    
+    // Set hours to 0 to compare dates only
+    currentDate.setHours(0, 0, 0, 0);
+    const lastDate = new Date(endDate);
+    lastDate.setHours(0, 0, 0, 0);
+    
+    // Add each date until we reach the end date
+    while (currentDate <= lastDate) {
+      dates.push(new Date(currentDate).toISOString().split('T')[0]);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return dates;
+  };
 
   // Fetch trip details
   const { data: trip, isLoading: isTripLoading } = useQuery({
@@ -383,14 +403,52 @@ export default function Itinerary() {
                   <label htmlFor="date" className="text-sm font-medium text-gray-700 mb-1 block">
                     Date & Time
                   </label>
-                  <Input
-                    type="datetime-local"
-                    id="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleChange}
-                    required
-                  />
+                  <div className="space-y-2">
+                    <Input
+                      type="datetime-local"
+                      id="date"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleChange}
+                      required
+                    />
+                    
+                    {/* Quick date selection options */}
+                    {trip && trip.startDate && trip.endDate && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="w-full text-xs text-gray-500 mb-1">Quick select:</div>
+                        {/* Generate buttons for each day of the trip */}
+                        {(() => {
+                          const days = getDaysBetweenDates(new Date(trip.startDate), new Date(trip.endDate));
+                          return days.map((day: string, index: number) => {
+                            const formattedDate = new Date(day);
+                            // Set to noon by default for better UX
+                            formattedDate.setHours(12, 0, 0, 0);
+                            
+                            const dateValue = formattedDate.toISOString().slice(0, 16);
+                            const dayLabel = index === 0 
+                              ? 'Day 1' 
+                              : index === days.length - 1 
+                                ? `Day ${index + 1}`
+                                : `Day ${index + 1}`;
+                            
+                            return (
+                              <Button
+                                key={day}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="text-xs px-2 py-1 h-auto"
+                                onClick={() => setFormData(prev => ({ ...prev, date: dateValue }))}
+                              >
+                                {dayLabel}
+                              </Button>
+                            );
+                          });
+                        })()}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>
