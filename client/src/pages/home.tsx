@@ -69,34 +69,28 @@ export default function Home() {
     enabled: !!user && !!token,
   });
 
-  // Group trips by status
-  const activeTrips = trips?.filter((trip: any) => 
-    trip.status === "active" &&
-    (searchTerm === "" || 
-      trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.destination.toLowerCase().includes(searchTerm.toLowerCase()))
-  ) || [];
+  // Group trips by simplified categories (past, upcoming, and invitations)
+  const currentDate = new Date();
   
-  const planningTrips = trips?.filter((trip: any) => 
-    trip.status === "planning" &&
-    (searchTerm === "" || 
-      trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.destination.toLowerCase().includes(searchTerm.toLowerCase()))
-  ) || [];
+  // Past trips = trips with end date before current date
+  const pastTrips = trips?.filter((trip: any) => {
+    const endDate = new Date(trip.endDate);
+    return endDate < currentDate && 
+      (searchTerm === "" || 
+        trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
+  }) || [];
   
-  const upcomingTrips = trips?.filter((trip: any) => 
-    trip.status === "upcoming" &&
-    (searchTerm === "" || 
-      trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.destination.toLowerCase().includes(searchTerm.toLowerCase()))
-  ) || [];
+  // Upcoming trips = trips with end date on or after current date
+  const upcomingTrips = trips?.filter((trip: any) => {
+    const endDate = new Date(trip.endDate);
+    return endDate >= currentDate && 
+      (searchTerm === "" || 
+        trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
+  }) || [];
   
-  const completedTrips = trips?.filter((trip: any) => 
-    trip.status === "completed" &&
-    (searchTerm === "" || 
-      trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.destination.toLowerCase().includes(searchTerm.toLowerCase()))
-  ) || [];
+  // Invitations are handled separately through pendingInvitations
 
   if (authLoading) {
     return (
@@ -159,83 +153,7 @@ export default function Home() {
               </Button>
             </div>
 
-            {/* Invitations Section */}
-            {pendingInvitations && pendingInvitations.length > 0 && (
-              <div className="mb-4">
-                <div className="px-4 pb-2">
-                  <h3 className="text-sm font-medium text-orange-600 uppercase flex items-center">
-                    Pending Invitations
-                    <span className="ml-2 bg-orange-100 text-orange-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                      {pendingInvitations.length}
-                    </span>
-                  </h3>
-                </div>
-                <div className="space-y-2 px-1">
-                  {pendingInvitations.map((invitation: any) => (
-                    <Card key={invitation.membership.tripId} className="border-orange-200 bg-orange-50">
-                      <CardContent className="p-3">
-                        <div className="flex flex-col">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <h4 className="font-medium text-gray-900">{invitation.trip?.name}</h4>
-                              <p className="text-xs text-gray-600">
-                                Invited by {invitation.organizer?.name || invitation.organizer?.username}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="default"
-                              className="w-full"
-                              onClick={() => {
-                                // Update status to confirmed
-                                fetch(`/api/trips/${invitation.membership.tripId}/members/${user.id}`, {
-                                  method: 'PUT',
-                                  headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${token}`
-                                  },
-                                  body: JSON.stringify({ status: 'confirmed' })
-                                })
-                                .then(() => {
-                                  // Refresh data
-                                  window.location.reload();
-                                });
-                              }}
-                            >
-                              Accept
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="w-full"
-                              onClick={() => {
-                                // Update status to declined
-                                fetch(`/api/trips/${invitation.membership.tripId}/members/${user.id}`, {
-                                  method: 'PUT',
-                                  headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${token}`
-                                  },
-                                  body: JSON.stringify({ status: 'declined' })
-                                })
-                                .then(() => {
-                                  // Refresh data
-                                  window.location.reload();
-                                });
-                              }}
-                            >
-                              Decline
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* We've moved the invitations section to the Tabs, so this section is no longer needed */}
             
             {isLoading ? (
               <div className="space-y-3 p-4">
@@ -254,9 +172,16 @@ export default function Home() {
                 <Tabs defaultValue="all" className="w-full">
                   <TabsList className="w-full justify-start px-4 pb-2">
                     <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
-                    <TabsTrigger value="active" className="text-xs">Active</TabsTrigger>
-                    <TabsTrigger value="planning" className="text-xs">Planning</TabsTrigger>
                     <TabsTrigger value="upcoming" className="text-xs">Upcoming</TabsTrigger>
+                    <TabsTrigger value="past" className="text-xs">Past</TabsTrigger>
+                    <TabsTrigger value="invitations" className="text-xs">
+                      Invitations
+                      {pendingInvitations && pendingInvitations.length > 0 && (
+                        <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
+                          {pendingInvitations.length}
+                        </span>
+                      )}
+                    </TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="all">
@@ -279,46 +204,6 @@ export default function Home() {
                     ))}
                   </TabsContent>
                   
-                  <TabsContent value="active">
-                    {activeTrips.length > 0 ? (
-                      activeTrips.map((trip: any) => (
-                        <div key={trip.id} className="px-1">
-                          <TripCard
-                            id={trip.id}
-                            name={trip.name}
-                            destination={trip.destination}
-                            startDate={trip.startDate}
-                            endDate={trip.endDate}
-                            status={trip.status}
-                            memberCount={5}
-                          />
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-center text-gray-500 py-4">No active trips found.</p>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="planning">
-                    {planningTrips.length > 0 ? (
-                      planningTrips.map((trip: any) => (
-                        <div key={trip.id} className="px-1">
-                          <TripCard
-                            id={trip.id}
-                            name={trip.name}
-                            destination={trip.destination}
-                            startDate={trip.startDate}
-                            endDate={trip.endDate}
-                            status={trip.status}
-                            memberCount={5}
-                          />
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-center text-gray-500 py-4">No trips in planning.</p>
-                    )}
-                  </TabsContent>
-                  
                   <TabsContent value="upcoming">
                     {upcomingTrips.length > 0 ? (
                       upcomingTrips.map((trip: any) => (
@@ -336,6 +221,97 @@ export default function Home() {
                       ))
                     ) : (
                       <p className="text-center text-gray-500 py-4">No upcoming trips.</p>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="past">
+                    {pastTrips.length > 0 ? (
+                      pastTrips.map((trip: any) => (
+                        <div key={trip.id} className="px-1">
+                          <TripCard
+                            id={trip.id}
+                            name={trip.name}
+                            destination={trip.destination}
+                            startDate={trip.startDate}
+                            endDate={trip.endDate}
+                            status={trip.status}
+                            memberCount={5}
+                          />
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-center text-gray-500 py-4">No past trips.</p>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="invitations">
+                    {pendingInvitations && pendingInvitations.length > 0 ? (
+                      <div className="space-y-2 px-1">
+                        {pendingInvitations.map((invitation: any) => (
+                          <Card key={invitation.membership.tripId} className="border-orange-200 bg-orange-50">
+                            <CardContent className="p-3">
+                              <div className="flex flex-col">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <h4 className="font-medium text-gray-900">{invitation.trip?.name}</h4>
+                                    <p className="text-xs text-gray-600">
+                                      Invited by {invitation.organizer?.name || invitation.organizer?.username}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button 
+                                    size="sm" 
+                                    variant="default"
+                                    className="w-full"
+                                    onClick={() => {
+                                      // Update status to confirmed
+                                      fetch(`/api/trips/${invitation.membership.tripId}/members/${user.id}`, {
+                                        method: 'PUT',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          'Authorization': `Bearer ${token}`
+                                        },
+                                        body: JSON.stringify({ status: 'confirmed' })
+                                      })
+                                      .then(() => {
+                                        // Refresh data
+                                        window.location.reload();
+                                      });
+                                    }}
+                                  >
+                                    Accept
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    className="w-full"
+                                    onClick={() => {
+                                      // Update status to declined
+                                      fetch(`/api/trips/${invitation.membership.tripId}/members/${user.id}`, {
+                                        method: 'PUT',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          'Authorization': `Bearer ${token}`
+                                        },
+                                        body: JSON.stringify({ status: 'declined' })
+                                      })
+                                      .then(() => {
+                                        // Refresh data
+                                        window.location.reload();
+                                      });
+                                    }}
+                                  >
+                                    Decline
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center text-gray-500 py-4">No pending invitations.</p>
                     )}
                   </TabsContent>
                 </Tabs>
