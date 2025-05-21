@@ -129,7 +129,9 @@ export default function Login() {
 
         {/* Test credentials note */}
         <div className="mt-4 text-center text-sm text-gray-500">
-          <p>Test account: username: "testuser", password: "password123"</p>
+          <p>Test accounts: </p>
+          <p>username: "testuser", password: "password123"</p>
+          <p>username: "demo", password: "password123"</p>
         </div>
       </div>
     </div>

@@ -70,7 +70,15 @@ export default function TripForm({ onComplete }: TripFormProps) {
         endDate,
       };
       
-      const response = await apiRequest("POST", "/api/trips", tripData);
+      // Use fetch directly to avoid the json() parsing issue
+      const response = await fetch("/api/trips", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(tripData),
+      });
+      
       const trip = await response.json();
       
       toast({
