@@ -193,9 +193,11 @@ export default function Home() {
                   
                   <TabsContent value="all">
                     {trips.filter((trip: any) => 
-                      searchTerm === "" || 
-                      trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      trip.destination.toLowerCase().includes(searchTerm.toLowerCase())
+                      // Exclude any trips that are in pending invitations
+                      !pendingInvitationTripIds.includes(trip.id) &&
+                      (searchTerm === "" || 
+                        trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        trip.destination.toLowerCase().includes(searchTerm.toLowerCase()))
                     ).map((trip: any) => (
                       <div key={trip.id} className="px-1">
                         <TripCard
