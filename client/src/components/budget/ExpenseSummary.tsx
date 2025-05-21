@@ -62,7 +62,20 @@ const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ tripId, currentUserId }
     );
   }
 
-  if (error || !summary) {
+  // Default empty summary data if not available
+  const emptySummary = {
+    total: 0,
+    byCategory: {},
+    byPayer: {},
+    perPersonCost: 0,
+    memberCount: 0,
+    currency: "USD"
+  };
+  
+  // Use empty summary data if none is available
+  const summaryData = summary || emptySummary;
+
+  if (error) {
     return (
       <Card>
         <CardHeader>
@@ -79,14 +92,14 @@ const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ tripId, currentUserId }
   }
 
   // Format category data for pie chart
-  const categoryData = Object.entries(summary.byCategory || {}).map(([category, amount]) => ({
+  const categoryData = Object.entries(summaryData.byCategory || {}).map(([category, amount]) => ({
     name: category.charAt(0).toUpperCase() + category.slice(1),
     value: Number(amount),
     color: getCategoryColors()[category as keyof ReturnType<typeof getCategoryColors>] || "#6b7280"
   }));
 
   // Format payer data for pie chart
-  const payerData = Object.entries(summary.byPayer || {}).map(([payerId, data]) => {
+  const payerData = Object.entries(summaryData.byPayer || {}).map(([payerId, data]) => {
     const { amount, user } = data as { amount: number; user: any };
     return {
       name: user?.name || user?.username || `User ${payerId}`,
@@ -104,7 +117,7 @@ const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ tripId, currentUserId }
         <div className="bg-white p-2 border rounded shadow text-sm">
           <p className="font-medium">{payload[0].name}</p>
           <p>
-            {summary.currency || "USD"} {payload[0].value.toFixed(2)} ({((payload[0].value / summary.total) * 100).toFixed(1)}%)
+            {summaryData.currency || "USD"} {payload[0].value.toFixed(2)} ({((payload[0].value / (summaryData.total || 1)) * 100).toFixed(1)}%)
           </p>
         </div>
       );
@@ -117,7 +130,7 @@ const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ tripId, currentUserId }
       <CardHeader>
         <CardTitle>Trip Expense Summary</CardTitle>
         <CardDescription>
-          Total: {summary.currency || "USD"} {summary.total.toFixed(2)} • Per Person: {summary.currency || "USD"} {summary.perPersonCost.toFixed(2)}
+          Total: {summaryData.currency || "USD"} {summaryData.total.toFixed(2)} • Per Person: {summaryData.currency || "USD"} {summaryData.perPersonCost.toFixed(2)}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -186,33 +199,39 @@ const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ tripId, currentUserId }
         {/* Detailed breakdown by person */}
         <div className="mt-8">
           <h4 className="font-medium mb-4">Detailed Breakdown</h4>
-          <div className="space-y-4">
-            {payerData.map((payer) => (
-              <div 
-                key={payer.id} 
-                className={`flex items-center justify-between p-3 rounded-lg border 
-                  ${payer.id === currentUserId ? 'border-blue-200 bg-blue-50' : ''}`}
-              >
-                <div className="flex items-center space-x-3">
-                  <UserAvatar user={{ id: payer.id, avatar: payer.avatar }} />
-                  <div>
-                    <div className="font-medium">{payer.name}</div>
+          {payerData.length > 0 ? (
+            <div className="space-y-4">
+              {payerData.map((payer) => (
+                <div 
+                  key={payer.id} 
+                  className={`flex items-center justify-between p-3 rounded-lg border 
+                    ${payer.id === currentUserId ? 'border-blue-200 bg-blue-50' : ''}`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <UserAvatar user={{ id: payer.id, avatar: payer.avatar }} />
+                    <div>
+                      <div className="font-medium">{payer.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {payer.id === currentUserId ? "You" : ""}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">
+                      {summaryData.currency || "USD"} {payer.value.toFixed(2)}
+                    </div>
                     <div className="text-sm text-gray-500">
-                      {payer.id === currentUserId ? "You" : ""}
+                      {((payer.value / (summaryData.total || 1)) * 100).toFixed(1)}% of total
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-medium">
-                    {summary.currency || "USD"} {payer.value.toFixed(2)}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {((payer.value / summary.total) * 100).toFixed(1)}% of total
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center p-6 border rounded-lg text-gray-500">
+              No expense data available yet. Add your first expense to see the breakdown.
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
