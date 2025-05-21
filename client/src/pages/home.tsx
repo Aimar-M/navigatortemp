@@ -159,6 +159,84 @@ export default function Home() {
               </Button>
             </div>
 
+            {/* Invitations Section */}
+            {pendingInvitations && pendingInvitations.length > 0 && (
+              <div className="mb-4">
+                <div className="px-4 pb-2">
+                  <h3 className="text-sm font-medium text-orange-600 uppercase flex items-center">
+                    Pending Invitations
+                    <span className="ml-2 bg-orange-100 text-orange-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                      {pendingInvitations.length}
+                    </span>
+                  </h3>
+                </div>
+                <div className="space-y-2 px-1">
+                  {pendingInvitations.map((invitation: any) => (
+                    <Card key={invitation.membership.tripId} className="border-orange-200 bg-orange-50">
+                      <CardContent className="p-3">
+                        <div className="flex flex-col">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h4 className="font-medium text-gray-900">{invitation.trip?.name}</h4>
+                              <p className="text-xs text-gray-600">
+                                Invited by {invitation.organizer?.name || invitation.organizer?.username}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="default"
+                              className="w-full"
+                              onClick={() => {
+                                // Update status to confirmed
+                                fetch(`/api/trips/${invitation.membership.tripId}/members/${user.id}`, {
+                                  method: 'PUT',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                  },
+                                  body: JSON.stringify({ status: 'confirmed' })
+                                })
+                                .then(() => {
+                                  // Refresh data
+                                  window.location.reload();
+                                });
+                              }}
+                            >
+                              Accept
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => {
+                                // Update status to declined
+                                fetch(`/api/trips/${invitation.membership.tripId}/members/${user.id}`, {
+                                  method: 'PUT',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                  },
+                                  body: JSON.stringify({ status: 'declined' })
+                                })
+                                .then(() => {
+                                  // Refresh data
+                                  window.location.reload();
+                                });
+                              }}
+                            >
+                              Decline
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {isLoading ? (
               <div className="space-y-3 p-4">
                 {[1, 2, 3].map((i) => (
