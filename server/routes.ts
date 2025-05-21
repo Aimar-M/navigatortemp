@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { 
   insertUserSchema, insertTripSchema, insertTripMemberSchema, 
   insertActivitySchema, insertActivityRsvpSchema, insertMessageSchema,
-  insertSurveyQuestionSchema, insertSurveyResponseSchema,
+  insertSurveyQuestionSchema, insertSurveyResponseSchema, insertInvitationLinkSchema,
   User
 } from "@shared/schema";
 import { z } from "zod";
