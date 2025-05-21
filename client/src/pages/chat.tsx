@@ -226,36 +226,37 @@ export default function Chat() {
             </div>
           ) : messages && messages.length > 0 ? (
             <div className="space-y-4 py-2">
-              {messages.map((msg) => {
-                console.log("Rendering message:", msg);
-                
-                // Simple debug messages to show directly in the UI if there are formatting issues
-                if (!msg) {
-                  return <div key="error-null" className="text-red-500">Error: null message</div>;
-                }
-                
-                if (!msg.user) {
-                  console.error("Message missing user data:", msg);
-                  return (
-                    <div key={msg.id || 'unknown'} className="p-2 bg-yellow-100 rounded">
-                      <p className="font-bold">Message format error</p>
-                      <p className="text-xs">{msg.content || 'No content'}</p>
-                      <p className="text-xs">{new Date(msg.timestamp || Date.now()).toLocaleString()}</p>
+              {/* Direct inline message rendering */}
+              {messages.map((msg) => (
+                <div key={msg.id} className={`flex items-start mb-4 ${msg.user?.id === user?.id ? "flex-row-reverse" : ""}`}>
+                  {msg.user?.id !== user?.id && (
+                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-2 text-sm font-medium">
+                      {msg.user?.name ? msg.user.name.charAt(0).toUpperCase() : "?"}
                     </div>
-                  );
-                }
-                
-                // If everything is good, render the normal message
-                return (
-                  <ChatMessage
-                    key={msg.id}
-                    id={msg.id}
-                    content={msg.content}
-                    timestamp={msg.timestamp}
-                    user={msg.user}
-                  />
-                );
-              })}
+                  )}
+                  <div className="max-w-[80%]">
+                    {msg.user?.id !== user?.id && (
+                      <p className="text-xs font-medium text-gray-900 mb-1">{msg.user?.name}</p>
+                    )}
+                    <div
+                      className={`rounded-lg py-2 px-3 ${
+                        msg.user?.id === user?.id
+                          ? "bg-blue-600 text-white rounded-tr-sm ml-auto"
+                          : "bg-gray-100 text-gray-800 rounded-tl-sm"
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                    <span
+                      className={`text-xs mt-1 block ${
+                        msg.user?.id === user?.id ? "text-right text-gray-400" : "text-gray-500"
+                      }`}
+                    >
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                </div>
+              ))}
               <div ref={messagesEndRef} />
             </div>
           ) : (
