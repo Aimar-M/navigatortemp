@@ -1,6 +1,13 @@
+import { useState } from "react";
 import { formatDateTime } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CheckIcon, XIcon } from "lucide-react";
 
 interface ActivityCardProps {
   id: number;
@@ -12,6 +19,7 @@ interface ActivityCardProps {
   cost?: string;
   confirmedCount: number;
   totalCount: number;
+  rsvps?: any[];
 }
 
 export default function ActivityCard({
@@ -22,7 +30,48 @@ export default function ActivityCard({
   location,
   confirmedCount,
   totalCount,
+  rsvps = [],
 }: ActivityCardProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Find user's current RSVP status
+  const userRsvp = rsvps?.find(rsvp => rsvp.userId === user?.id);
+  const userStatus = userRsvp?.status || "none";
+  
+  const handleRsvp = async (status: string) => {
+    if (!user) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      await apiRequest(`/api/activities/${id}/rsvp`, {
+        method: "POST",
+        data: { status }
+      });
+      
+      // Invalidate and refetch activities to update the UI
+      await queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
+      
+      toast({
+        title: status === "going" ? "You're going!" : "You're not going",
+        description: status === "going" 
+          ? "You've been added to the attendee list" 
+          : "You've been removed from the attendee list",
+      });
+    } catch (error) {
+      console.error("RSVP error:", error);
+      toast({
+        title: "RSVP Failed",
+        description: "There was a problem with your RSVP. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
   return (
     <Card className="border border-gray-200 rounded-lg">
       <CardContent className="p-3">
@@ -55,6 +104,30 @@ export default function ActivityCard({
           <Badge variant="outline" className="bg-primary-100 text-primary-800 text-xs font-medium px-2 py-1 rounded-full">
             {confirmedCount}/{totalCount} Going
           </Badge>
+        </div>
+        
+        {/* RSVP Buttons */}
+        <div className="flex justify-end space-x-2 mt-3">
+          <Button
+            size="sm"
+            variant={userStatus === "going" ? "default" : "outline"}
+            onClick={() => handleRsvp("going")}
+            disabled={isSubmitting}
+            className="flex items-center h-8"
+          >
+            <CheckIcon className="h-4 w-4 mr-1" />
+            Going
+          </Button>
+          <Button
+            size="sm"
+            variant={userStatus === "not going" ? "default" : "outline"}
+            onClick={() => handleRsvp("not going")}
+            disabled={isSubmitting}
+            className="flex items-center h-8"
+          >
+            <XIcon className="h-4 w-4 mr-1" />
+            Not Going
+          </Button>
         </div>
       </CardContent>
     </Card>
