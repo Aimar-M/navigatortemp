@@ -294,7 +294,7 @@ export default function TripsCalendar() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0">
         <div className="p-4 border-b border-gray-200 bg-white">
           <div className="flex items-center justify-between">
             <div>
