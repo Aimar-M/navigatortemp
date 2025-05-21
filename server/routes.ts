@@ -128,8 +128,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Username and password are required' });
       }
       
+      // Debug log to help diagnose issues
+      console.log(`Attempting login for user: ${username}`);
+      
       const user = await storage.getUserByUsername(username);
+      
+      // Debug log to check if user was found
+      console.log('User found in database:', !!user);
+      
       if (!user || user.password !== password) {
+        console.log('Login failed: Invalid username or password');
         return res.status(401).json({ message: 'Invalid username or password' });
       }
       
@@ -138,6 +146,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate token (in this simple implementation, just use the user ID)
       const token = `${user.id}`;
+      
+      console.log('Login successful for:', username);
       
       // Return user data with token
       res.json({

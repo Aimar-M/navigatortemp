@@ -49,9 +49,16 @@ export default function Login() {
     if (!validate()) return;
 
     try {
+      console.log("Attempting to log in with:", username);
       await login(username, password);
+      console.log("Login successful");
     } catch (error) {
       console.error("Login error:", error);
+      // Display login error directly on the page for easier debugging
+      setErrors({
+        ...errors,
+        username: "Login failed. Please check your credentials."
+      });
     }
   };
 
@@ -120,9 +127,9 @@ export default function Login() {
           </form>
         </Card>
 
-        {/* Demo credentials note */}
+        {/* Test credentials note */}
         <div className="mt-4 text-center text-sm text-gray-500">
-          <p>Demo account: username: "demo", password: "password123"</p>
+          <p>Test account: username: "testuser", password: "password123"</p>
         </div>
       </div>
     </div>
