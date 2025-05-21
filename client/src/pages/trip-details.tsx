@@ -212,18 +212,86 @@ export default function TripDetails() {
                 ) : members && members.length > 0 ? (
                   <div className="flex flex-col space-y-3">
                     {members.map((member: any) => (
-                      <div key={member.userId} className="flex items-center">
-                        <UserAvatar
-                          user={member.user}
-                          className="h-10 w-10"
-                        />
-                        <div className="ml-3">
-                          <p className="text-sm font-medium text-gray-900">{member.user.name}</p>
-                          <p className={`text-xs ${getMemberStatusColor(member.status)}`}>
-                            {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
-                            {member.userId === trip.organizer && " • Trip Organizer"}
-                          </p>
+                      <div key={member.userId} className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <UserAvatar
+                            user={member.user}
+                            className="h-10 w-10"
+                          />
+                          <div className="ml-3">
+                            <p className="text-sm font-medium text-gray-900">{member.user.name}</p>
+                            <p className={`text-xs ${getMemberStatusColor(member.status)}`}>
+                              {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
+                              {member.userId === trip.organizer && " • Trip Organizer"}
+                            </p>
+                          </div>
                         </div>
+                        
+                        {/* Show accept/decline buttons for the current user if their status is pending */}
+                        {member.userId === user?.id && member.status === 'pending' && (
+                          <div className="flex space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="default" 
+                              onClick={async () => {
+                                try {
+                                  const token = localStorage.getItem('auth_token');
+                                  const headers: Record<string, string> = {
+                                    'Content-Type': 'application/json'
+                                  };
+                                  if (token) {
+                                    headers['Authorization'] = `Bearer ${token}`;
+                                  }
+                                  
+                                  const response = await fetch(`/api/trips/${tripId}/members/${user.id}`, {
+                                    method: 'PUT',
+                                    headers,
+                                    body: JSON.stringify({ status: 'confirmed' })
+                                  });
+                                  
+                                  if (!response.ok) throw new Error('Failed to accept invitation');
+                                  
+                                  // Refresh the members data
+                                  window.location.reload();
+                                } catch (error) {
+                                  console.error('Error accepting invitation:', error);
+                                }
+                              }}
+                            >
+                              Accept
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={async () => {
+                                try {
+                                  const token = localStorage.getItem('auth_token');
+                                  const headers: Record<string, string> = {
+                                    'Content-Type': 'application/json'
+                                  };
+                                  if (token) {
+                                    headers['Authorization'] = `Bearer ${token}`;
+                                  }
+                                  
+                                  const response = await fetch(`/api/trips/${tripId}/members/${user.id}`, {
+                                    method: 'PUT',
+                                    headers,
+                                    body: JSON.stringify({ status: 'declined' })
+                                  });
+                                  
+                                  if (!response.ok) throw new Error('Failed to decline invitation');
+                                  
+                                  // Navigate back to home page after declining
+                                  navigate('/');
+                                } catch (error) {
+                                  console.error('Error declining invitation:', error);
+                                }
+                              }}
+                            >
+                              Decline
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
