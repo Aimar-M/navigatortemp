@@ -379,7 +379,7 @@ export default function Home() {
             alt="Group of friends on vacation"
             className="rounded-lg mb-6 w-full max-w-xl object-cover shadow-md"
           />
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to TripTogether!</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Navigator!</h1>
           <p className="text-gray-600 max-w-md mb-6">
             Plan trips with friends, create itineraries, chat with your travel group,
             and make your next adventure unforgettable.
