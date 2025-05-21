@@ -23,7 +23,16 @@ export default function Login() {
 
   // Redirect if already logged in
   if (user) {
-    navigate("/");
+    // Check if there's a pending invitation to accept
+    const pendingInvitation = localStorage.getItem('pendingInvitation');
+    if (pendingInvitation) {
+      // Clear the pending invitation
+      localStorage.removeItem('pendingInvitation');
+      // Redirect to the invitation page to complete the acceptance process
+      navigate(`/invite/${pendingInvitation}`);
+    } else {
+      navigate("/");
+    }
     return null;
   }
 
