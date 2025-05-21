@@ -66,7 +66,21 @@ export default function Chat() {
   useEffect(() => {
     if (chatMessages) {
       console.log("Received chat messages:", chatMessages);
-      setMessages(chatMessages);
+      
+      // Ensure messages have the correct structure for ChatMessage component
+      const formattedMessages = chatMessages.map((msg: any) => ({
+        id: msg.id,
+        content: msg.content,
+        timestamp: msg.timestamp,
+        user: {
+          id: msg.user ? msg.user.id : msg.userId,
+          name: msg.user ? msg.user.name : "Unknown User",
+          avatar: msg.user ? msg.user.avatar : null
+        }
+      }));
+      
+      console.log("Formatted messages:", formattedMessages);
+      setMessages(formattedMessages);
     }
   }, [chatMessages]);
 

@@ -92,6 +92,7 @@ export default function Itinerary() {
   // Group activities by date
   const groupedActivities = activities
     ? activities.reduce((grouped: Record<string, any[]>, activity: any) => {
+        console.log("Processing activity:", activity);
         const date = formatDate(new Date(activity.date));
         if (!grouped[date]) {
           grouped[date] = [];
@@ -100,6 +101,8 @@ export default function Itinerary() {
         return grouped;
       }, {})
     : {};
+    
+  console.log("Grouped activities:", groupedActivities);
 
   // Sort dates
   const sortedDates = Object.keys(groupedActivities).sort(
