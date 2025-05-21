@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-// Removing dependency on apiRequest to handle login/auth directly
+import { loginUser, registerUser, logoutUser, getAuthToken, setAuthToken, removeAuthToken, getPendingInvitation, removePendingInvitation } from "@/lib/auth";
 import { wsClient } from "@/lib/websocket";
 
 interface User {
@@ -82,28 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
-      // Make a direct fetch request to the login endpoint to get JSON response
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username,
-          password,
-        }),
-      });
+      const userData = await loginUser(username, password);
       
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || "Invalid username or password");
-      }
-      
-      const userData = await response.json();
-      
-      // Store the token in localStorage
+      // Store the token
       if (userData.token) {
-        localStorage.setItem('auth_token', userData.token);
+        setAuthToken(userData.token);
       }
       
       setUser(userData);
@@ -112,10 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       wsClient.connect(userData.id, []);
       
       // Check for pending invitation
-      const pendingInvitation = localStorage.getItem('pendingInvitation');
+      const pendingInvitation = getPendingInvitation();
       if (pendingInvitation) {
         // Clear the pending invitation
-        localStorage.removeItem('pendingInvitation');
+        removePendingInvitation();
         // Redirect to the invitation page to complete the acceptance process
         navigate(`/invite/${pendingInvitation}`);
       } else {
@@ -137,25 +120,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (userData: RegisterData) => {
     setIsLoading(true);
     try {
-      // Make a direct fetch request to the register endpoint to get JSON response
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || "Unable to create account");
-      }
-      
-      const newUser = await response.json();
+      const newUser = await registerUser(userData);
       
       // Store the token in localStorage
       if (newUser.token) {
-        localStorage.setItem('auth_token', newUser.token);
+        setAuthToken(newUser.token);
       }
       
       setUser(newUser);
@@ -164,10 +133,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       wsClient.connect(newUser.id, []);
       
       // Check for pending invitation
-      const pendingInvitation = localStorage.getItem('pendingInvitation');
+      const pendingInvitation = getPendingInvitation();
       if (pendingInvitation) {
         // Clear the pending invitation
-        localStorage.removeItem('pendingInvitation');
+        removePendingInvitation();
         // Redirect to the invitation page to complete the acceptance process
         navigate(`/invite/${pendingInvitation}`);
       } else {
@@ -187,12 +156,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      // Use direct fetch instead of apiRequest
-      await fetch("/api/auth/logout", {
-        method: "POST"
-      });
+      await logoutUser();
       // Remove the token from localStorage
-      localStorage.removeItem('auth_token');
+      removeAuthToken();
       setUser(null);
       wsClient.disconnect();
       navigate("/login");
