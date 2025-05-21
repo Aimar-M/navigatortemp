@@ -194,15 +194,13 @@ export default function Chat() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       
-      <main className="flex-1 flex flex-col overflow-hidden pb-0">
-        {/* Trip Header */}
-        <div className="bg-white border-b border-gray-200 p-4">
-          <div className="flex items-start justify-between">
+      <main className="flex-1 flex flex-col overflow-hidden pb-0 max-h-[calc(100vh-60px)]">
+        {/* Trip Header - More compact on mobile */}
+        <div className="bg-white border-b border-gray-200 p-2 md:p-4">
+          <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center">
-                <h2 className="text-xl font-bold text-gray-900">{trip.name}</h2>
-              </div>
-              <p className="text-sm text-gray-600">Group Chat</p>
+              <h2 className="text-lg md:text-xl font-bold text-gray-900">{trip.name}</h2>
+              <p className="text-xs md:text-sm text-gray-600">Group Chat</p>
             </div>
           </div>
         </div>
@@ -210,8 +208,8 @@ export default function Chat() {
         {/* Tab Navigation */}
         <TripTabs tripId={tripId} />
 
-        {/* Chat Content */}
-        <div className="flex-1 overflow-y-auto p-4 bg-white">
+        {/* Chat Content - More compact for mobile */}
+        <div className="flex-1 overflow-y-auto p-2 md:p-4 bg-white">
           {isMessagesLoading ? (
             <div className="space-y-4 py-2">
               {[1, 2, 3].map((i) => (
@@ -225,30 +223,30 @@ export default function Chat() {
               ))}
             </div>
           ) : messages && messages.length > 0 ? (
-            <div className="space-y-4 py-2">
-              {/* Direct inline message rendering */}
+            <div className="space-y-2 py-1">
+              {/* Optimized mobile message rendering */}
               {messages.map((msg) => (
-                <div key={msg.id} className={`flex items-start mb-4 ${msg.user?.id === user?.id ? "flex-row-reverse" : ""}`}>
+                <div key={msg.id} className={`flex items-start mb-3 ${msg.user?.id === user?.id ? "flex-row-reverse" : ""}`}>
                   {msg.user?.id !== user?.id && (
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-2 text-sm font-medium">
+                    <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mr-2 text-sm font-medium">
                       {msg.user?.name ? msg.user.name.charAt(0).toUpperCase() : "?"}
                     </div>
                   )}
-                  <div className="max-w-[80%]">
+                  <div className="max-w-[85%]">
                     {msg.user?.id !== user?.id && (
-                      <p className="text-xs font-medium text-gray-900 mb-1">{msg.user?.name}</p>
+                      <p className="text-xs font-medium text-gray-900 mb-1">{msg.user?.name || msg.user?.username || 'Anonymous'}</p>
                     )}
                     <div
-                      className={`rounded-lg py-2 px-3 ${
+                      className={`rounded-lg py-1.5 px-2.5 md:py-2 md:px-3 ${
                         msg.user?.id === user?.id
                           ? "bg-blue-600 text-white rounded-tr-sm ml-auto"
                           : "bg-gray-100 text-gray-800 rounded-tl-sm"
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                     </div>
                     <span
-                      className={`text-xs mt-1 block ${
+                      className={`text-[10px] md:text-xs mt-0.5 block ${
                         msg.user?.id === user?.id ? "text-right text-gray-400" : "text-gray-500"
                       }`}
                     >
@@ -279,19 +277,21 @@ export default function Chat() {
           )}
         </div>
 
-        {/* Message Input */}
-        <div className="bg-white border-t border-gray-200 p-3">
+        {/* Message Input - More compact for mobile */}
+        <div className="bg-white border-t border-gray-200 p-2 md:p-3">
           <form onSubmit={handleSubmit} className="flex items-center space-x-2">
             <Input
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type a message..."
-              className="flex-1"
+              className="flex-1 h-10 text-sm"
+              autoComplete="off"
             />
             <Button 
               type="submit" 
-              size="icon"
+              size="sm"
+              className="h-10 w-10 p-0 min-w-0 flex-shrink-0"
               disabled={isSubmitting || !message.trim()}
             >
               <Send className="h-4 w-4" />
