@@ -54,7 +54,7 @@ export default function Register() {
     if (!formData.email.trim()) newErrors.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Email is invalid";
     
-    if (!formData.name.trim()) newErrors.name = "Name is required";
+    // Name is optional, no validation needed
     
     if (!formData.password) newErrors.password = "Password is required";
     else if (formData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
@@ -131,11 +131,11 @@ export default function Register() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">Full Name (Optional)</Label>
                 <Input
                   id="name"
                   name="name"
-                  placeholder="Enter your full name"
+                  placeholder="Enter your full name (optional)"
                   value={formData.name}
                   onChange={handleChange}
                 />
