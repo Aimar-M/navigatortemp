@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import Header from "@/components/header";
 import TripTabs from "@/components/trip-tabs";
-import SimpleBudgetView from "@/components/budget/SimpleBudgetView";
+import ComprehensiveBudgetView from "@/components/budget/ComprehensiveBudgetView";
 import MobileNavigation from "@/components/mobile-navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -46,13 +46,13 @@ export default function TripBudget() {
       <main className="flex-1 p-4 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Travel Budget</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Trip Budget</h1>
             <p className="text-gray-600">
-              Search for flights and manage your travel information for your trip to {destination}.
+              Plan and track all expenses for your trip to {destination}.
             </p>
           </div>
 
-          <SimpleBudgetView 
+          <ComprehensiveBudgetView 
             tripId={tripId} 
             destination={destination}
           />
