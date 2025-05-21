@@ -52,7 +52,15 @@ export default function Header() {
   useEffect(() => {
     if (!pendingInvitations) return;
     
-    const newNotifications = [];
+    const newNotifications: Array<{
+      id: string;
+      type: string;
+      title: string;
+      message: string;
+      time: Date;
+      data: any;
+      isRead: boolean;
+    }> = [];
     
     // Add trip invitation notifications
     if (pendingInvitations.length > 0) {
