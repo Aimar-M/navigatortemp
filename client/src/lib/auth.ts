@@ -1,20 +1,32 @@
 // Simple auth utilities to handle login/register/logout
 
 export async function loginUser(username: string, password: string) {
-  const response = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ username, password }),
-  });
+  try {
+    console.log('Sending login request for:', username);
+    
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || 'Failed to login');
+    console.log('Login response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Login error response:', errorText);
+      throw new Error(errorText || 'Failed to login');
+    }
+
+    const data = await response.json();
+    console.log('Login successful, received data:', { ...data, token: '***' });
+    return data;
+  } catch (error) {
+    console.error('Login request failed:', error);
+    throw error;
   }
-
-  return response.json();
 }
 
 export async function registerUser(userData: {
