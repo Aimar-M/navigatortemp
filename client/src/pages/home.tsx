@@ -72,19 +72,26 @@ export default function Home() {
   // Group trips by simplified categories (past, upcoming, and invitations)
   const currentDate = new Date();
   
-  // Past trips = trips with end date before current date
+  // Get pending invitation trip IDs to filter them out of other sections
+  const pendingInvitationTripIds = pendingInvitations?.map((invitation: any) => 
+    invitation.membership.tripId
+  ) || [];
+  
+  // Past trips = trips with end date before current date (excluding pending invitations)
   const pastTrips = trips?.filter((trip: any) => {
     const endDate = new Date(trip.endDate);
     return endDate < currentDate && 
+      !pendingInvitationTripIds.includes(trip.id) &&
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
   }) || [];
   
-  // Upcoming trips = trips with end date on or after current date
+  // Upcoming trips = trips with end date on or after current date (excluding pending invitations)
   const upcomingTrips = trips?.filter((trip: any) => {
     const endDate = new Date(trip.endDate);
     return endDate >= currentDate && 
+      !pendingInvitationTripIds.includes(trip.id) &&
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));

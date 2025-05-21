@@ -4,7 +4,8 @@ import { useAuth } from "@/hooks/use-auth";
 
 interface User {
   id: number;
-  name: string;
+  name?: string;
+  username?: string;
   avatar?: string;
 }
 
@@ -34,7 +35,9 @@ export default function ChatMessage({ id, content, timestamp, user }: MessagePro
       )}
       <div className="max-w-[80%]">
         {!isCurrentUser && (
-          <p className="text-xs font-medium text-gray-900 mb-1">{user.name}</p>
+          <p className="text-xs font-medium text-gray-900 mb-1">
+            {user.name || user.username || `User ${user.id}`}
+          </p>
         )}
         <div
           className={`rounded-lg py-2 px-3 ${
