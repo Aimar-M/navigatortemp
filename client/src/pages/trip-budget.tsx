@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import Header from "@/components/header";
 import TripTabs from "@/components/trip-tabs";
-import BudgetContent from "@/components/budget/BudgetContent";
+import SimpleBudgetView from "@/components/budget/SimpleBudgetView";
 import MobileNavigation from "@/components/mobile-navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -18,13 +18,7 @@ export default function TripBudget() {
     enabled: !!tripId,
   });
 
-  // Fetch trip members
-  const { data: members, isLoading: isLoadingMembers } = useQuery({
-    queryKey: ['/api/trips', tripId, 'members'],
-    enabled: !!tripId,
-  });
-
-  if (isLoadingTrip || isLoadingMembers) {
+  if (isLoadingTrip) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header />
@@ -41,11 +35,8 @@ export default function TripBudget() {
     );
   }
 
-  // Check if current user is the trip organizer
-  const isOrganizer = trip && user ? trip.organizer === user.id : false;
-
   // Get trip destination or use a fallback
-  const destination = trip ? trip.destination : "your destination";
+  const destination = trip?.destination || "your destination";
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -61,13 +52,10 @@ export default function TripBudget() {
             </p>
           </div>
 
-          {user && (
-            <BudgetContent 
-              tripId={tripId} 
-              currentUserId={user.id} 
-              isOrganizer={isOrganizer}
-            />
-          )}
+          <SimpleBudgetView 
+            tripId={tripId} 
+            destination={destination}
+          />
         </div>
       </main>
       
