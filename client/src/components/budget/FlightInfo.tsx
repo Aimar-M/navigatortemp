@@ -114,16 +114,27 @@ const FlightInfo: React.FC<FlightInfoProps> = ({ tripId, currentUserId }) => {
     return flight.userId === currentUserId;
   };
 
-  // Calculate flight duration
+  // Calculate flight duration safely
   const getFlightDuration = (departure: string, arrival: string) => {
-    const departureTime = new Date(departure);
-    const arrivalTime = new Date(arrival);
-    const durationMs = arrivalTime.getTime() - departureTime.getTime();
-    
-    const hours = Math.floor(durationMs / (1000 * 60 * 60));
-    const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-    
-    return `${hours}h ${minutes}m`;
+    try {
+      const departureTime = new Date(departure);
+      const arrivalTime = new Date(arrival);
+      
+      // Check if dates are valid
+      if (isNaN(departureTime.getTime()) || isNaN(arrivalTime.getTime())) {
+        return "Duration unknown";
+      }
+      
+      const durationMs = arrivalTime.getTime() - departureTime.getTime();
+      
+      const hours = Math.floor(durationMs / (1000 * 60 * 60));
+      const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+      
+      return `${hours}h ${minutes}m`;
+    } catch (error) {
+      console.error("Error calculating flight duration:", error);
+      return "Duration unknown";
+    }
   };
 
   if (isLoading) {
@@ -220,16 +231,30 @@ const FlightInfo: React.FC<FlightInfoProps> = ({ tripId, currentUserId }) => {
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-1">
                     <div className="text-lg font-semibold">
-                      {format(new Date(flight.departureTime), "HH:mm")}
+                      {(() => {
+                        try {
+                          const date = new Date(flight.departureTime);
+                          return isNaN(date.getTime()) ? "Time N/A" : format(date, "HH:mm");
+                        } catch (e) {
+                          return "Time N/A";
+                        }
+                      })()}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {format(new Date(flight.departureTime), "MMM d, yyyy")}
+                      {(() => {
+                        try {
+                          const date = new Date(flight.departureTime);
+                          return isNaN(date.getTime()) ? "Date N/A" : format(date, "MMM d, yyyy");
+                        } catch (e) {
+                          return "Date N/A";
+                        }
+                      })()}
                     </div>
                     <div className="text-sm font-medium mt-1">
-                      {flight.departureCity}
+                      {flight.departureCity || "City N/A"}
                     </div>
                     <div className="text-xs">
-                      {flight.departureAirport}
+                      {flight.departureAirport || "Airport N/A"}
                     </div>
                   </div>
 
@@ -247,16 +272,30 @@ const FlightInfo: React.FC<FlightInfoProps> = ({ tripId, currentUserId }) => {
 
                   <div className="col-span-1 text-right">
                     <div className="text-lg font-semibold">
-                      {format(new Date(flight.arrivalTime), "HH:mm")}
+                      {(() => {
+                        try {
+                          const date = new Date(flight.arrivalTime);
+                          return isNaN(date.getTime()) ? "Time N/A" : format(date, "HH:mm");
+                        } catch (e) {
+                          return "Time N/A";
+                        }
+                      })()}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {format(new Date(flight.arrivalTime), "MMM d, yyyy")}
+                      {(() => {
+                        try {
+                          const date = new Date(flight.arrivalTime);
+                          return isNaN(date.getTime()) ? "Date N/A" : format(date, "MMM d, yyyy");
+                        } catch (e) {
+                          return "Date N/A";
+                        }
+                      })()}
                     </div>
                     <div className="text-sm font-medium mt-1">
-                      {flight.arrivalCity}
+                      {flight.arrivalCity || "City N/A"}
                     </div>
                     <div className="text-xs">
-                      {flight.arrivalAirport}
+                      {flight.arrivalAirport || "Airport N/A"}
                     </div>
                   </div>
                 </div>
