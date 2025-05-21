@@ -138,7 +138,7 @@ export default function Chats() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0">
         <div className="p-4 border-b border-gray-200 bg-white">
           <h1 className="text-xl font-bold text-gray-900 mb-1">Chats</h1>
           <p className="text-sm text-gray-600">Your group conversations</p>
