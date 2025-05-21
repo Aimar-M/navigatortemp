@@ -3,9 +3,9 @@ import {
   User, InsertUser, Trip, InsertTrip, TripMember, InsertTripMember,
   Activity, InsertActivity, ActivityRSVP, InsertActivityRSVP,
   Message, InsertMessage, SurveyQuestion, InsertSurveyQuestion,
-  SurveyResponse, InsertSurveyResponse,
+  SurveyResponse, InsertSurveyResponse, InvitationLink, InsertInvitationLink,
   users, trips, tripMembers, activities, activityRsvp, 
-  messages, surveyQuestions, surveyResponses 
+  messages, surveyQuestions, surveyResponses, invitationLinks
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -51,6 +51,12 @@ export interface IStorage {
   getSurveyQuestionsByTrip(tripId: number): Promise<SurveyQuestion[]>;
   createSurveyResponse(response: InsertSurveyResponse): Promise<SurveyResponse>;
   getSurveyResponses(questionId: number): Promise<SurveyResponse[]>;
+  
+  // Invitation methods
+  createInvitationLink(invitation: InsertInvitationLink): Promise<InvitationLink>;
+  getInvitationLink(token: string): Promise<InvitationLink | undefined>;
+  getInvitationLinksByTrip(tripId: number): Promise<InvitationLink[]>;
+  deactivateInvitationLink(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -349,6 +355,47 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(surveyResponses)
       .where(eq(surveyResponses.questionId, questionId));
+  }
+
+  // Invitation methods
+  async createInvitationLink(invitation: InsertInvitationLink): Promise<InvitationLink> {
+    const [link] = await db
+      .insert(invitationLinks)
+      .values(invitation)
+      .returning();
+    
+    return link;
+  }
+
+  async getInvitationLink(token: string): Promise<InvitationLink | undefined> {
+    const [link] = await db
+      .select()
+      .from(invitationLinks)
+      .where(eq(invitationLinks.token, token));
+    
+    return link || undefined;
+  }
+
+  async getInvitationLinksByTrip(tripId: number): Promise<InvitationLink[]> {
+    return db
+      .select()
+      .from(invitationLinks)
+      .where(
+        and(
+          eq(invitationLinks.tripId, tripId),
+          eq(invitationLinks.isActive, true)
+        )
+      );
+  }
+
+  async deactivateInvitationLink(id: number): Promise<boolean> {
+    const [link] = await db
+      .update(invitationLinks)
+      .set({ isActive: false })
+      .where(eq(invitationLinks.id, id))
+      .returning();
+    
+    return !!link;
   }
 }
 
