@@ -98,8 +98,22 @@ export default function Chat() {
 
     // Listen for new messages
     const handleNewMessage = (data: any) => {
+      console.log("Received new WebSocket message:", data);
       if (data.data.tripId === tripId) {
-        setMessages(prev => [...prev, data.data]);
+        // Format message to match ChatMessage component format
+        const formattedMessage = {
+          id: data.data.id,
+          content: data.data.content,
+          timestamp: data.data.timestamp,
+          user: {
+            id: data.data.user.id,
+            name: data.data.user.name,
+            avatar: data.data.user.avatar
+          }
+        };
+        
+        console.log("Formatted new message:", formattedMessage);
+        setMessages(prev => [...prev, formattedMessage]);
       }
     };
 
@@ -210,15 +224,28 @@ export default function Chat() {
                 </div>
               ))}
             </div>
-          ) : messages.length > 0 ? (
+          ) : messages && messages.length > 0 ? (
             <div className="space-y-4 py-2">
               {messages.map((msg) => {
-                // Make sure the message has the required properties for the ChatMessage component
-                if (!msg.user) {
-                  console.error("Message missing user data:", msg);
-                  return null;
+                console.log("Rendering message:", msg);
+                
+                // Simple debug messages to show directly in the UI if there are formatting issues
+                if (!msg) {
+                  return <div key="error-null" className="text-red-500">Error: null message</div>;
                 }
                 
+                if (!msg.user) {
+                  console.error("Message missing user data:", msg);
+                  return (
+                    <div key={msg.id || 'unknown'} className="p-2 bg-yellow-100 rounded">
+                      <p className="font-bold">Message format error</p>
+                      <p className="text-xs">{msg.content || 'No content'}</p>
+                      <p className="text-xs">{new Date(msg.timestamp || Date.now()).toLocaleString()}</p>
+                    </div>
+                  );
+                }
+                
+                // If everything is good, render the normal message
                 return (
                   <ChatMessage
                     key={msg.id}
