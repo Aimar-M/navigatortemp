@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+// Removing dependency on apiRequest to handle login/auth directly
 import { wsClient } from "@/lib/websocket";
 
 interface User {
@@ -187,7 +187,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await apiRequest("POST", "/api/auth/logout");
+      // Use direct fetch instead of apiRequest
+      await fetch("/api/auth/logout", {
+        method: "POST"
+      });
       // Remove the token from localStorage
       localStorage.removeItem('auth_token');
       setUser(null);

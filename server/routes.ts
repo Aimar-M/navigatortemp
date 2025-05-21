@@ -133,11 +133,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Invalid username or password' });
       }
       
+      // Set up user in session
+      if (req.session) {
+        req.session.userId = user.id;
+      }
+      
       // Don't send password in the response
       const { password: _, ...userWithoutPassword } = user;
       
       // Generate token (in this simple implementation, just use the user ID)
-      const token = user.id.toString();
+      const token = `${user.id}_token`;
       
       // Return user data with token
       res.json({
@@ -145,6 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token
       });
     } catch (error) {
+      console.error('Login error:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
