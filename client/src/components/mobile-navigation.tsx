@@ -19,7 +19,7 @@ export default function MobileNavigation() {
   };
 
   return (
-    <div className="md:hidden bg-white border-t border-gray-200 flex">
+    <div className="md:hidden bg-white border-t border-gray-200 flex shadow-lg">
       {tabs.map((tab) => (
         <button
           key={tab.name}
