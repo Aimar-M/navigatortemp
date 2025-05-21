@@ -46,7 +46,7 @@ export default function InvitationPage() {
 
     setAcceptingInvite(true);
     try {
-      const result = await apiRequest('POST', `/api/invite/${token}/accept`, {});
+      const result = await apiRequest<{tripId: number}>('POST', `/api/invite/${token}/accept`, {});
       toast({
         title: 'Success!',
         description: 'You have joined the trip',

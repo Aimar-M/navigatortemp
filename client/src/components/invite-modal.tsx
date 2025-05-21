@@ -81,7 +81,7 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
   const generateInviteLink = async () => {
     setIsGeneratingLink(true);
     try {
-      const link = await apiRequest("POST", `/api/trips/${tripId}/invite`, {});
+      const link = await apiRequest<InvitationLink>("POST", `/api/trips/${tripId}/invite`, {});
       setInviteLinks([link, ...inviteLinks]);
       toast({
         title: "Invitation link created",
