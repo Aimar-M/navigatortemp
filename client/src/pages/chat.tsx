@@ -300,7 +300,7 @@ export default function Chat() {
         </div>
       </main>
       
-      <MobileNavigation />
+      {/* Hide mobile navigation in chat to prevent it from blocking the message input */}
     </div>
   );
 }
