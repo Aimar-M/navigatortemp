@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, foreignKey, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, foreignKey, uuid, decimal, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
@@ -269,3 +269,115 @@ export const insertInvitationLinkSchema = createInsertSchema(invitationLinks).pi
 
 export type InvitationLink = typeof invitationLinks.$inferSelect;
 export type InsertInvitationLink = z.infer<typeof insertInvitationLinkSchema>;
+
+// Trip Expenses schema
+export const expenses = pgTable("expenses", {
+  id: serial("id").primaryKey(),
+  tripId: integer("trip_id").notNull().references(() => trips.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default("USD"),
+  category: text("category").notNull(), // accommodation, transportation, food, activities, other
+  date: timestamp("date").notNull().defaultNow(),
+  description: text("description"),
+  paidBy: integer("paid_by").notNull().references(() => users.id),
+  splitMethod: text("split_method").notNull().default("equal"), // equal, percentage, fixed, etc.
+  splitDetails: jsonb("split_details"), // For storing details of custom splits
+  isSettled: boolean("is_settled").notNull().default(false),
+  receiptUrl: text("receipt_url"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const expensesRelations = relations(expenses, ({ one }) => ({
+  trip: one(trips, {
+    fields: [expenses.tripId],
+    references: [trips.id]
+  }),
+  user: one(users, {
+    fields: [expenses.userId],
+    references: [users.id]
+  }),
+  payer: one(users, {
+    fields: [expenses.paidBy],
+    references: [users.id]
+  })
+}));
+
+export const insertExpenseSchema = createInsertSchema(expenses).pick({
+  tripId: true,
+  userId: true,
+  title: true,
+  amount: true,
+  currency: true,
+  category: true,
+  date: true,
+  description: true,
+  paidBy: true,
+  splitMethod: true,
+  splitDetails: true,
+  receiptUrl: true,
+});
+
+// Flight Information schema
+export const flightInfo = pgTable("flight_info", {
+  id: serial("id").primaryKey(),
+  tripId: integer("trip_id").notNull().references(() => trips.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  airline: text("airline").notNull(),
+  flightNumber: text("flight_number").notNull(),
+  departureAirport: text("departure_airport").notNull(),
+  departureCity: text("departure_city").notNull(),
+  departureTime: timestamp("departure_time").notNull(),
+  arrivalAirport: text("arrival_airport").notNull(),
+  arrivalCity: text("arrival_city").notNull(),
+  arrivalTime: timestamp("arrival_time").notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }),
+  currency: text("currency").default("USD"),
+  bookingReference: text("booking_reference"),
+  bookingStatus: text("booking_status").notNull().default("confirmed"), // confirmed, pending, cancelled
+  seatNumber: text("seat_number"),
+  notes: text("notes"),
+  flightDetails: jsonb("flight_details"), // For storing additional flight details
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const flightInfoRelations = relations(flightInfo, ({ one }) => ({
+  trip: one(trips, {
+    fields: [flightInfo.tripId],
+    references: [trips.id]
+  }),
+  user: one(users, {
+    fields: [flightInfo.userId],
+    references: [users.id]
+  })
+}));
+
+export const insertFlightInfoSchema = createInsertSchema(flightInfo).pick({
+  tripId: true,
+  userId: true,
+  airline: true,
+  flightNumber: true,
+  departureAirport: true,
+  departureCity: true,
+  departureTime: true,
+  arrivalAirport: true,
+  arrivalCity: true,
+  arrivalTime: true,
+  price: true,
+  currency: true,
+  bookingReference: true,
+  bookingStatus: true,
+  seatNumber: true,
+  notes: true,
+  flightDetails: true,
+});
+
+// Define new types
+export type Expense = typeof expenses.$inferSelect;
+export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+
+export type FlightInfo = typeof flightInfo.$inferSelect;
+export type InsertFlightInfo = z.infer<typeof insertFlightInfoSchema>;

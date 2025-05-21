@@ -4,8 +4,10 @@ import {
   Activity, InsertActivity, ActivityRSVP, InsertActivityRSVP,
   Message, InsertMessage, SurveyQuestion, InsertSurveyQuestion,
   SurveyResponse, InsertSurveyResponse, InvitationLink, InsertInvitationLink,
+  Expense, InsertExpense, FlightInfo, InsertFlightInfo,
   users, trips, tripMembers, activities, activityRsvp, 
-  messages, surveyQuestions, surveyResponses, invitationLinks
+  messages, surveyQuestions, surveyResponses, invitationLinks,
+  expenses, flightInfo
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -57,6 +59,24 @@ export interface IStorage {
   getInvitationLink(token: string): Promise<InvitationLink | undefined>;
   getInvitationLinksByTrip(tripId: number): Promise<InvitationLink[]>;
   deactivateInvitationLink(id: number): Promise<boolean>;
+  
+  // Expense methods
+  createExpense(expense: InsertExpense): Promise<Expense>;
+  getExpensesByTrip(tripId: number): Promise<Expense[]>;
+  getExpensesByUser(userId: number): Promise<Expense[]>;
+  getExpense(id: number): Promise<Expense | undefined>;
+  updateExpense(id: number, expense: Partial<InsertExpense>): Promise<Expense | undefined>;
+  deleteExpense(id: number): Promise<boolean>;
+  getTripExpenseSummary(tripId: number): Promise<any>; // Summary statistics for trip expenses
+  
+  // Flight Info methods
+  createFlightInfo(flight: InsertFlightInfo): Promise<FlightInfo>;
+  getFlightInfoByTrip(tripId: number): Promise<FlightInfo[]>;
+  getFlightInfoByUser(userId: number): Promise<FlightInfo[]>;
+  getFlightInfo(id: number): Promise<FlightInfo | undefined>;
+  updateFlightInfo(id: number, flight: Partial<InsertFlightInfo>): Promise<FlightInfo | undefined>;
+  deleteFlightInfo(id: number): Promise<boolean>;
+  searchFlights(departureCity: string, arrivalCity: string, date: Date): Promise<any[]>; // Search flights API
 }
 
 export class DatabaseStorage implements IStorage {
