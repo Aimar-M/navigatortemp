@@ -194,7 +194,7 @@ export default function Chat() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       
-      <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0">
+      <main className="flex-1 flex flex-col overflow-hidden pb-0">
         {/* Trip Header */}
         <div className="bg-white border-b border-gray-200 p-4">
           <div className="flex items-start justify-between">
