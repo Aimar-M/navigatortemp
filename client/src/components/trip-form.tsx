@@ -35,7 +35,10 @@ export default function TripForm({ onComplete }: TripFormProps) {
   };
 
   const nextStep = () => {
-    setStep((prev) => Math.min(prev + 1, totalSteps));
+    // Only move to the next step within the form, not to another page
+    if (step < totalSteps) {
+      setStep((prev) => prev + 1);
+    }
   };
 
   const prevStep = () => {
@@ -70,11 +73,13 @@ export default function TripForm({ onComplete }: TripFormProps) {
         endDate,
       };
       
-      // Use fetch directly to avoid the json() parsing issue
+      // Use fetch directly with authentication token
+      const token = localStorage.getItem('auth_token');
       const response = await fetch("/api/trips", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify(tripData),
       });
