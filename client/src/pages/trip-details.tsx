@@ -1,28 +1,121 @@
 import { useParams } from "wouter";
-import Header from "@/components/header";
-import TripTabs from "@/components/trip-tabs";
-import MobileNavigation from "@/components/mobile-navigation";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { MapPin, Calendar, Users, Info } from "lucide-react";
+import TripDetailLayout from "@/components/trip-detail-layout";
+import UserAvatar from "@/components/user-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 
-export default function TripDetailsNew() {
+export default function TripDetails() {
   const { id } = useParams<{ id: string }>();
   const tripId = parseInt(id);
   
-  return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header />
-      <TripTabs tripId={tripId} />
-      
-      <main className="flex-1 p-4 pb-24 md:pb-4">
+  // Fetch trip details
+  const { data: trip, isLoading } = useQuery({
+    queryKey: [`/api/trips/${tripId}`],
+  });
+
+  // Fetch trip members
+  const { data: members = [], isLoading: isMembersLoading } = useQuery({
+    queryKey: [`/api/trips/${tripId}/members`],
+    enabled: !!tripId,
+  });
+  
+  if (isLoading) {
+    return (
+      <TripDetailLayout tripId={tripId}>
         <div className="space-y-4 mb-4">
           <Skeleton className="h-8 w-1/3" />
           <Skeleton className="h-32 w-full" />
           <Skeleton className="h-64 w-full" />
         </div>
-      </main>
-      
-      {/* Mobile navigation is already fixed in the component itself */}
-      <MobileNavigation />
-    </div>
+      </TripDetailLayout>
+    );
+  }
+  
+  return (
+    <TripDetailLayout 
+      tripId={tripId}
+      title={trip.name}
+      description={`Trip to ${trip.destination}`}
+    >
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Trip Details Card */}
+        <Card className="col-span-1 md:col-span-2">
+          <CardContent className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Trip Details</h2>
+            
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <Calendar className="h-5 w-5 text-gray-500 mt-0.5" />
+                <div>
+                  <h3 className="font-medium">Dates</h3>
+                  <p className="text-gray-600">
+                    {format(new Date(trip.startDate), "MMM d, yyyy")} - {format(new Date(trip.endDate), "MMM d, yyyy")}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
+                <div>
+                  <h3 className="font-medium">Destination</h3>
+                  <p className="text-gray-600">{trip.destination}</p>
+                </div>
+              </div>
+              
+              {trip.description && (
+                <div className="flex items-start space-x-3">
+                  <Info className="h-5 w-5 text-gray-500 mt-0.5" />
+                  <div>
+                    <h3 className="font-medium">Description</h3>
+                    <p className="text-gray-600">{trip.description}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Members Card */}
+        <Card className="col-span-1">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Members</h2>
+              <Users className="h-5 w-5 text-gray-500" />
+            </div>
+            
+            {isMembersLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center space-x-2">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {members.map((member: any) => (
+                  <div key={member.userId} className="flex items-center space-x-2">
+                    <UserAvatar 
+                      user={member.user} 
+                      size="sm" 
+                    />
+                    <span className="text-sm">
+                      {member.user?.name || member.user?.username || 'Anonymous'}
+                      {member.isOrganizer && (
+                        <span className="text-xs text-blue-600 ml-1">(Organizer)</span>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </TripDetailLayout>
   );
 }
