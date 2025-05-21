@@ -14,6 +14,8 @@ import UserAvatar from "@/components/user-avatar";
 
 // Chat list item component
 const ChatItem = ({ trip, lastMessages }: { trip: any, lastMessages: any[] }) => {
+  const [, navigate] = useLocation();
+  
   // Find the last message for this trip, if any
   const tripMessages = lastMessages?.filter(msg => msg.tripId === trip.id) || [];
   const lastMessage = tripMessages.length > 0 ? tripMessages[0] : { 
@@ -22,8 +24,12 @@ const ChatItem = ({ trip, lastMessages }: { trip: any, lastMessages: any[] }) =>
     user: { name: "" } 
   };
 
+  const goToChat = () => {
+    navigate(`/trips/${trip.id}/chat`);
+  };
+
   return (
-    <div onClick={() => window.location.href = `/chat/${trip.id}`} className="cursor-pointer">
+    <div onClick={goToChat} className="cursor-pointer">
       <Card className="hover:bg-gray-50 transition-colors">
         <CardContent className="p-4">
           <div className="flex items-center space-x-3">
