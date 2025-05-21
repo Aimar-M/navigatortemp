@@ -21,6 +21,7 @@ export default function Home() {
   const { user, isLoading: authLoading } = useAuth();
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
+  const [hasNewNotifications, setHasNewNotifications] = useState(false);
 
   const token = user ? localStorage.getItem('auth_token') : null;
   
@@ -38,6 +39,32 @@ export default function Home() {
       const response = await fetch("/api/trips", { headers });
       if (!response.ok) throw new Error("Failed to fetch trips");
       return response.json();
+    },
+    enabled: !!user && !!token,
+  });
+  
+  // Fetch pending invitations (trip memberships with "pending" status)
+  const { data: pendingInvitations, isLoading: pendingInvitationsLoading } = useQuery({
+    queryKey: ["/api/trips/invitations/pending", !!user, token],
+    queryFn: async () => {
+      if (!user || !token) return [];
+      
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${token}`
+      };
+      
+      // This would be the endpoint for pending invitations
+      const response = await fetch("/api/trips/memberships/pending", { headers });
+      if (!response.ok) throw new Error("Failed to fetch pending invitations");
+      
+      const data = await response.json();
+      
+      // Set notification indicator if there are pending invitations
+      if (data.length > 0) {
+        setHasNewNotifications(true);
+      }
+      
+      return data;
     },
     enabled: !!user && !!token,
   });
