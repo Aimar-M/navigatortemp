@@ -21,6 +21,19 @@ export default function Chat() {
   const [messages, setMessages] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showBackButton, setShowBackButton] = useState(false);
+  
+  // Check if we navigated from the chats page
+  useEffect(() => {
+    // Get referrer from sessionStorage
+    const referrer = sessionStorage.getItem('chatReferrer');
+    setShowBackButton(referrer === 'chats');
+    
+    // Clean up
+    return () => {
+      sessionStorage.removeItem('chatReferrer');
+    };
+  }, []);
 
   // Fetch trip details
   const { data: trip, isLoading: isTripLoading } = useQuery({
@@ -202,15 +215,17 @@ export default function Chat() {
         <div className="bg-white border-b border-gray-200 p-2 md:p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="mr-2 p-1 h-8 w-8" 
-                onClick={() => navigate("/chats")}
-              >
-                <ArrowLeft className="h-5 w-5" />
-                <span className="sr-only">Back to chats</span>
-              </Button>
+              {showBackButton && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="mr-2 p-1 h-8 w-8" 
+                  onClick={() => navigate("/chats")}
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                  <span className="sr-only">Back to chats</span>
+                </Button>
+              )}
               <div>
                 <h2 className="text-lg md:text-xl font-bold text-gray-900">{trip.name}</h2>
                 <p className="text-xs md:text-sm text-gray-600">Group Chat</p>

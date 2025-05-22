@@ -36,6 +36,8 @@ const ChatItem = ({ trip, lastMessages }: { trip: any, lastMessages: any[] }) =>
   const goToChat = () => {
     // Update last visit timestamp when navigating to a chat
     localStorage.setItem(`lastChatVisit_${trip.id}`, new Date().toISOString());
+    // Set the referrer so the chat page knows we came from the chats list
+    sessionStorage.setItem('chatReferrer', 'chats');
     navigate(`/trips/${trip.id}/chat`);
   };
 
