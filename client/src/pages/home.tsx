@@ -133,18 +133,45 @@ export default function Home() {
         'Authorization': `Bearer ${token}`
       };
       
-      // This would be the endpoint for pending invitations
+      // This is the endpoint for pending invitations
       const response = await fetch("/api/trips/memberships/pending", { headers });
       if (!response.ok) throw new Error("Failed to fetch pending invitations");
       
-      const data = await response.json();
+      const memberships = await response.json();
+      console.log("Pending memberships:", memberships);
       
       // Set notification indicator if there are pending invitations
-      if (data.length > 0) {
+      if (memberships.length > 0) {
         setHasNewNotifications(true);
       }
       
-      return data;
+      // Fetch details for each trip the user has a pending invitation for
+      const invitationsWithDetails = await Promise.all(memberships.map(async (membership: any) => {
+        // Get trip details
+        const tripResponse = await fetch(`/api/trips/${membership.tripId}`, { headers });
+        if (!tripResponse.ok) return null;
+        const trip = await tripResponse.json();
+        
+        // Get organizer details
+        let organizer = null;
+        try {
+          const organizerResponse = await fetch(`/api/users/${trip.organizer}`, { headers });
+          if (organizerResponse.ok) {
+            organizer = await organizerResponse.json();
+          }
+        } catch (error) {
+          console.error("Error fetching organizer:", error);
+        }
+        
+        return {
+          membership,
+          trip,
+          organizer
+        };
+      }));
+      
+      // Filter out any nulls (failed requests)
+      return invitationsWithDetails.filter(Boolean);
     },
     enabled: !!user && !!token,
   });
