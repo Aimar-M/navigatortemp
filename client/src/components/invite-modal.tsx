@@ -181,25 +181,98 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
     
     setIsSubmitting(true);
     try {
-      // Send invitations in parallel
+      // Send invitations and track detailed results
       const results = await Promise.allSettled(
-        usernamesToSend.map(username => 
-          apiRequest("POST", `/api/trips/${tripId}/members`, { username })
-        )
+        usernamesToSend.map(async username => {
+          try {
+            const response = await apiRequest("POST", `/api/trips/${tripId}/members`, { username });
+            return { username, success: true, response };
+          } catch (error: any) {
+            const errorMessage = error.message || "Unknown error";
+            const alreadyMember = errorMessage.includes("already a member");
+            
+            // Update validation state based on the error
+            setValidationState(prev => ({
+              ...prev,
+              [username]: alreadyMember ? "already-invited" : false
+            }));
+            
+            return { 
+              username, 
+              success: false, 
+              error: errorMessage,
+              alreadyMember
+            };
+          }
+        })
       );
       
-      // Count successful invitations
-      const successful = results.filter(r => r.status === 'fulfilled').length;
+      // Process results to categorize failures
+      const successful = [];
+      const alreadyMembers = [];
+      const notFound = [];
       
-      toast({
-        title: "Invitations sent",
-        description: `Successfully sent ${successful} of ${usernamesToSend.length} invitations`,
-      });
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          const data = result.value;
+          if (data.success) {
+            successful.push(data.username);
+          } else if (data.alreadyMember) {
+            alreadyMembers.push(data.username);
+          } else {
+            notFound.push(data.username);
+          }
+        }
+      }
       
-      // Clear selected users and input field
-      setSelectedUsers([]);
-      setUsername("");
-      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
+      // Determine which usernames to keep in the input (failures)
+      const keepUsernames = [...alreadyMembers, ...notFound];
+      
+      // Choose the right message based on results
+      if (successful.length > 0 && keepUsernames.length === 0) {
+        // All succeeded
+        toast({
+          title: "Invitations sent",
+          description: `Successfully sent ${successful.length} invitation${successful.length !== 1 ? 's' : ''}`,
+        });
+        // Clear all
+        setSelectedUsers([]);
+        setUsername("");
+      } else if (successful.length === 0 && alreadyMembers.length > 0 && notFound.length === 0) {
+        // All were already members
+        toast({
+          title: "Already members",
+          description: `All ${alreadyMembers.length} user${alreadyMembers.length !== 1 ? 's' : ''} already belong to this trip`,
+          variant: "destructive",
+        });
+        // Keep these in the selection
+        setSelectedUsers(alreadyMembers);
+        setUsername(alreadyMembers.join(", "));
+      } else if (successful.length === 0 && notFound.length > 0 && alreadyMembers.length === 0) {
+        // All were not found
+        toast({
+          title: "Users not found",
+          description: `No valid users found among ${notFound.length} username${notFound.length !== 1 ? 's' : ''}`,
+          variant: "destructive",
+        });
+        // Keep these in the selection
+        setSelectedUsers(notFound);
+        setUsername(notFound.join(", "));
+      } else {
+        // Mixed results
+        toast({
+          title: "Partial success",
+          description: `Sent ${successful.length} invitation${successful.length !== 1 ? 's' : ''}, ${alreadyMembers.length} already member${alreadyMembers.length !== 1 ? 's' : ''}, ${notFound.length} not found`,
+        });
+        // Keep failures in the selection
+        setSelectedUsers(keepUsernames);
+        setUsername(keepUsernames.join(", "));
+      }
+      
+      // Update the trip members list if we had any success
+      if (successful.length > 0) {
+        queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
+      }
     } catch (error) {
       toast({
         title: "Error sending invitations",
@@ -234,95 +307,20 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
     }
   };
   
-  // Handle submission of form
+  // Handle submission of form 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Parse input to get all usernames (supports comma/space separated values)
-    const usernamesToInvite = parseUsernames(username);
-    
-    // If no usernames entered, don't do anything
-    if (usernamesToInvite.length === 0) return;
-    
-    // For any number of users, send invitations
-    setIsSubmitting(true);
-    
-    try {
-      // Send invitations in parallel and track results with usernames
-      const results = await Promise.allSettled(
-        usernamesToInvite.map(username => 
-          apiRequest("POST", `/api/trips/${tripId}/members`, { username })
-            .then(result => ({ username, success: true, result }))
-            .catch(error => ({ username, success: false, error }))
-        )
-      );
+    // If we have usernames, use the sendMultipleInvitations function
+    // which handles all the complex error cases
+    if (username.trim()) {
+      // Make sure our selected users match what's in the input field
+      const parsedUsernames = parseUsernames(username);
+      setSelectedUsers(parsedUsernames);
       
-      // Extract successful and failed usernames
-      const successful = results
-        .filter(r => r.status === 'fulfilled' && r.value.success)
-        .map(r => (r as PromiseFulfilledResult<any>).value.username);
-      
-      const failed = results
-        .filter(r => r.status === 'fulfilled' && !r.value.success)
-        .map(r => (r as PromiseFulfilledResult<any>).value.username);
-      
-      // Update validation state based on results
-      const newValidationState = { ...validationState };
-      successful.forEach(username => { newValidationState[username] = true; });
-      failed.forEach(username => { newValidationState[username] = false; });
-      setValidationState(newValidationState);
-      
-      // Show appropriate message based on number of users
-      if (usernamesToInvite.length === 1) {
-        if (successful.length === 1) {
-          toast({
-            title: "Invitation sent",
-            description: `Invitation sent to ${usernamesToInvite[0]}`,
-          });
-          // Clear the form only if successful
-          setUsername("");
-          setSelectedUsers([]);
-        } else {
-          toast({
-            title: "Invalid username",
-            description: `Could not invite ${usernamesToInvite[0]} - user not found`,
-            variant: "destructive",
-          });
-          // Keep the username for editing
-        }
-      } else {
-        if (failed.length === 0) {
-          toast({
-            title: "Invitations sent",
-            description: `Successfully sent invitations to all ${successful.length} users`,
-          });
-          // Clear the form only on complete success
-          setUsername("");
-          setSelectedUsers([]);
-        } else {
-          toast({
-            title: "Some invitations failed",
-            description: `Sent ${successful.length} of ${usernamesToInvite.length} invitations. Invalid usernames are highlighted.`,
-            variant: "destructive",
-          });
-          // Keep invalid usernames but remove valid ones
-          setSelectedUsers(failed);
-          setUsername(failed.join(", "));
-        }
+      if (parsedUsernames.length > 0) {
+        await sendMultipleInvitations();
       }
-      
-      // Only refresh members if some invitations were successful
-      if (successful.length > 0) {
-        queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
-      }
-    } catch (error) {
-      toast({
-        title: "Failed to send invitations",
-        description: error instanceof Error ? error.message : "Something went wrong",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
