@@ -42,7 +42,7 @@ interface SuggestedCompanion {
 }
 
 // Type for validation status of each username
-type ValidationStatus = boolean | "already-invited";
+type ValidationStatus = boolean | "already-invited" | "permission-denied" | "other-error";
 
 export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProps) {
   const [username, setUsername] = useState("");
@@ -173,15 +173,89 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
       .filter(name => name.length > 0);
   };
 
+  // Get the error reason from server responses
+  const getErrorReason = (errorMessage: string) => {
+    if (errorMessage.includes("already a member")) {
+      return "already-invited";
+    } else if (errorMessage.includes("not found")) {
+      return false; // Not found
+    } else if (errorMessage.includes("Only the trip organizer")) {
+      return "permission-denied";
+    } else {
+      return "other-error";
+    }
+  };
+
   // Send invitations to all selected users
   const sendMultipleInvitations = async () => {
-    const usernamesToSend = selectedUsers.filter(username => username.trim().length > 0);
+    // First check which usernames are valid and which already exist in the trip
+    // to provide accurate feedback
+    await Promise.all(
+      selectedUsers
+        .filter(username => username.trim().length > 0)
+        .map(async username => {
+          try {
+            // First validate if the username exists
+            const validateResponse = await fetch(`/api/users/validate?username=${encodeURIComponent(username)}`);
+            const userValid = validateResponse.ok;
+            
+            if (userValid) {
+              // Then check if they're already in the trip
+              const memberCheckResponse = await fetch(`/api/trips/${tripId}/check-member?username=${encodeURIComponent(username)}`);
+              const memberData = await memberCheckResponse.json();
+              const isMember = memberData.isMember;
+              
+              // Update validation state
+              setValidationState(prev => ({
+                ...prev,
+                [username]: isMember ? "already-invited" : true
+              }));
+            } else {
+              // Username doesn't exist
+              setValidationState(prev => ({
+                ...prev,
+                [username]: false
+              }));
+            }
+          } catch (err) {
+            console.error("Error validating username:", err);
+          }
+        })
+    );
     
-    if (usernamesToSend.length === 0) return;
+    const usernamesToSend = selectedUsers
+      .filter(username => username.trim().length > 0)
+      .filter(username => validationState[username] === true); // Only send for valid usernames that aren't already members
+    
+    if (usernamesToSend.length === 0) {
+      // All usernames were invalid or already members - show appropriate message
+      if (selectedUsers.every(u => validationState[u] === "already-invited")) {
+        toast({
+          title: "Already members",
+          description: `All ${selectedUsers.length} user(s) are already in this trip`,
+          variant: "destructive",
+        });
+      } else if (selectedUsers.every(u => validationState[u] === false)) {
+        toast({
+          title: "Invalid usernames",
+          description: `Could not find any of the ${selectedUsers.length} username(s)`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "No valid invitations",
+          description: "All usernames were either invalid or already in the trip",
+          variant: "destructive",
+        });
+      }
+      setIsSubmitting(false);
+      return;
+    }
     
     setIsSubmitting(true);
+    
     try {
-      // Send invitations and track detailed results
+      // Send invitations only for valid usernames that aren't already members
       const results = await Promise.allSettled(
         usernamesToSend.map(async username => {
           try {
@@ -189,47 +263,63 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
             return { username, success: true, response };
           } catch (error: any) {
             const errorMessage = error.message || "Unknown error";
-            const alreadyMember = errorMessage.includes("already a member");
+            const errorReason = getErrorReason(errorMessage);
             
             // Update validation state based on the error
             setValidationState(prev => ({
               ...prev,
-              [username]: alreadyMember ? "already-invited" : false
+              [username]: errorReason
             }));
             
             return { 
               username, 
               success: false, 
               error: errorMessage,
-              alreadyMember
+              errorReason
             };
           }
         })
       );
       
-      // Process results to categorize failures
+      // Process results to categorize successes and failures
       const successful = [];
-      const alreadyMembers = [];
-      const notFound = [];
+      const failedByReason: Record<string, string[]> = {
+        "already-invited": [],
+        "permission-denied": [],
+        "not-found": [],
+        "other": []
+      };
       
       for (const result of results) {
         if (result.status === 'fulfilled') {
           const data = result.value;
           if (data.success) {
             successful.push(data.username);
-          } else if (data.alreadyMember) {
-            alreadyMembers.push(data.username);
           } else {
-            notFound.push(data.username);
+            // Group by error reason
+            if (data.errorReason === "already-invited") {
+              failedByReason["already-invited"].push(data.username);
+            } else if (data.errorReason === "permission-denied") {
+              failedByReason["permission-denied"].push(data.username);
+            } else if (data.errorReason === false) {
+              failedByReason["not-found"].push(data.username);
+            } else {
+              failedByReason["other"].push(data.username);
+            }
           }
         }
       }
       
-      // Determine which usernames to keep in the input (failures)
-      const keepUsernames = [...alreadyMembers, ...notFound];
+      // Calculate total failed usernames to keep in selection
+      const failedUsernames = [
+        ...failedByReason["already-invited"],
+        ...failedByReason["permission-denied"],
+        ...failedByReason["not-found"],
+        ...failedByReason["other"]
+      ];
       
       // Choose the right message based on results
-      if (successful.length > 0 && keepUsernames.length === 0) {
+      if (successful.length > 0 && failedUsernames.length === 0) {
         // All succeeded
         toast({
           title: "Invitations sent",
@@ -238,35 +328,45 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
         // Clear all
         setSelectedUsers([]);
         setUsername("");
-      } else if (successful.length === 0 && alreadyMembers.length > 0 && notFound.length === 0) {
-        // All were already members
-        toast({
-          title: "Already members",
-          description: `All ${alreadyMembers.length} user${alreadyMembers.length !== 1 ? 's' : ''} already belong to this trip`,
-          variant: "destructive",
-        });
-        // Keep these in the selection
-        setSelectedUsers(alreadyMembers);
-        setUsername(alreadyMembers.join(", "));
-      } else if (successful.length === 0 && notFound.length > 0 && alreadyMembers.length === 0) {
-        // All were not found
-        toast({
-          title: "Users not found",
-          description: `No valid users found among ${notFound.length} username${notFound.length !== 1 ? 's' : ''}`,
-          variant: "destructive",
-        });
-        // Keep these in the selection
-        setSelectedUsers(notFound);
-        setUsername(notFound.join(", "));
+      } else if (successful.length === 0) {
+        // All failed for some reason - use first failure reason
+        if (failedByReason["permission-denied"].length > 0) {
+          toast({
+            title: "Permission denied",
+            description: "Only the trip organizer can invite members",
+            variant: "destructive",
+          });
+        } else if (failedByReason["already-invited"].length > 0) {
+          toast({
+            title: "Already members",
+            description: `The user${failedByReason["already-invited"].length !== 1 ? 's' : ''} already belong to this trip`,
+            variant: "destructive",
+          });
+        } else if (failedByReason["not-found"].length > 0) {
+          toast({
+            title: "Users not found",
+            description: `Could not find username${failedByReason["not-found"].length !== 1 ? 's' : ''}`,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Invitation failed",
+            description: "Could not send invitation(s)",
+            variant: "destructive",
+          });
+        }
+        // Keep failed usernames in selection
+        setSelectedUsers(failedUsernames);
+        setUsername(failedUsernames.join(", "));
       } else {
-        // Mixed results
+        // Mixed results - some succeeded, some failed
         toast({
           title: "Partial success",
-          description: `Sent ${successful.length} invitation${successful.length !== 1 ? 's' : ''}, ${alreadyMembers.length} already member${alreadyMembers.length !== 1 ? 's' : ''}, ${notFound.length} not found`,
+          description: `Sent ${successful.length} invitation${successful.length !== 1 ? 's' : ''}, ${failedUsernames.length} failed`,
         });
-        // Keep failures in the selection
-        setSelectedUsers(keepUsernames);
-        setUsername(keepUsernames.join(", "));
+        // Keep failed usernames in selection
+        setSelectedUsers(failedUsernames);
+        setUsername(failedUsernames.join(", "));
       }
       
       // Update the trip members list if we had any success
