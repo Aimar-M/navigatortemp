@@ -204,6 +204,19 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
     // Parse usernames and update selected users
     const parsedUsernames = parseUsernames(input);
     setSelectedUsers(parsedUsernames);
+    
+    // Validate usernames if we have some
+    if (parsedUsernames.length > 0) {
+      // Validate each username with a small delay to avoid too many requests
+      parsedUsernames.forEach(username => {
+        // Only validate if we don't already have a validation state
+        if (validationState[username] === undefined) {
+          setTimeout(() => {
+            validateUsername(username);
+          }, 500);
+        }
+      });
+    }
   };
   
   // Handle submission of form
@@ -220,36 +233,76 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
     setIsSubmitting(true);
     
     try {
-      // Send invitations in parallel
+      // Send invitations in parallel and track results with usernames
       const results = await Promise.allSettled(
         usernamesToInvite.map(username => 
           apiRequest("POST", `/api/trips/${tripId}/members`, { username })
+            .then(result => ({ username, success: true, result }))
+            .catch(error => ({ username, success: false, error }))
         )
       );
       
-      // Count successful invitations
-      const successful = results.filter(r => r.status === 'fulfilled').length;
+      // Extract successful and failed usernames
+      const successful = results
+        .filter(r => r.status === 'fulfilled' && r.value.success)
+        .map(r => (r as PromiseFulfilledResult<any>).value.username);
+      
+      const failed = results
+        .filter(r => r.status === 'fulfilled' && !r.value.success)
+        .map(r => (r as PromiseFulfilledResult<any>).value.username);
+      
+      // Update validation state based on results
+      const newValidationState = { ...validationState };
+      successful.forEach(username => { newValidationState[username] = true; });
+      failed.forEach(username => { newValidationState[username] = false; });
+      setValidationState(newValidationState);
       
       // Show appropriate message based on number of users
       if (usernamesToInvite.length === 1) {
-        toast({
-          title: "Invitation sent",
-          description: `Invitation sent to ${usernamesToInvite[0]}`,
-        });
+        if (successful.length === 1) {
+          toast({
+            title: "Invitation sent",
+            description: `Invitation sent to ${usernamesToInvite[0]}`,
+          });
+          // Clear the form only if successful
+          setUsername("");
+          setSelectedUsers([]);
+        } else {
+          toast({
+            title: "Invalid username",
+            description: `Could not invite ${usernamesToInvite[0]} - user not found`,
+            variant: "destructive",
+          });
+          // Keep the username for editing
+        }
       } else {
-        toast({
-          title: "Invitations sent",
-          description: `Successfully sent ${successful} of ${usernamesToInvite.length} invitations`,
-        });
+        if (failed.length === 0) {
+          toast({
+            title: "Invitations sent",
+            description: `Successfully sent invitations to all ${successful.length} users`,
+          });
+          // Clear the form only on complete success
+          setUsername("");
+          setSelectedUsers([]);
+        } else {
+          toast({
+            title: "Some invitations failed",
+            description: `Sent ${successful.length} of ${usernamesToInvite.length} invitations. Invalid usernames are highlighted.`,
+            variant: "destructive",
+          });
+          // Keep invalid usernames but remove valid ones
+          setSelectedUsers(failed);
+          setUsername(failed.join(", "));
+        }
       }
       
-      // Clear the form
-      setUsername("");
-      setSelectedUsers([]);
-      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
+      // Only refresh members if some invitations were successful
+      if (successful.length > 0) {
+        queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
+      }
     } catch (error) {
       toast({
-        title: "Failed to send invitation",
+        title: "Failed to send invitations",
         description: error instanceof Error ? error.message : "Something went wrong",
         variant: "destructive",
       });
@@ -345,21 +398,36 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
                   
                   {selectedUsers.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {selectedUsers.map(user => (
-                        <Badge 
-                          key={user} 
-                          className="px-2 py-1 flex items-center gap-1 bg-primary-100 text-primary-800 hover:bg-primary-200"
-                          onClick={() => {
-                            // Remove this user from selection
-                            const newSelection = selectedUsers.filter(u => u !== user);
-                            setSelectedUsers(newSelection);
-                            setUsername(newSelection.join(", "));
-                          }}
-                        >
-                          {user}
-                          <X className="h-3 w-3 cursor-pointer" />
-                        </Badge>
-                      ))}
+                      {selectedUsers.map(user => {
+                        // Get validation status
+                        const isValidated = validationState[user] !== undefined;
+                        const isValid = validationState[user] === true;
+                        
+                        return (
+                          <Badge 
+                            key={user} 
+                            className={`px-2 py-1 flex items-center gap-1 
+                              ${isValidated && !isValid 
+                                ? "bg-red-100 text-red-800 hover:bg-red-200 border border-red-300" 
+                                : isValidated && isValid
+                                  ? "bg-green-100 text-green-800 hover:bg-green-200" 
+                                  : "bg-primary-100 text-primary-800 hover:bg-primary-200"
+                              }`}
+                            onClick={() => {
+                              // Remove this user from selection
+                              const newSelection = selectedUsers.filter(u => u !== user);
+                              setSelectedUsers(newSelection);
+                              setUsername(newSelection.join(", "));
+                            }}
+                          >
+                            {user}
+                            {isValidated && !isValid && (
+                              <span className="text-red-600 text-xs ml-1">(invalid)</span>
+                            )}
+                            <X className="h-3 w-3 cursor-pointer ml-1" />
+                          </Badge>
+                        );
+                      })}
                     </div>
                   )}
                   
@@ -481,8 +549,8 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
                 <Button 
                   type="submit" 
                   disabled={isSubmitting || !username.trim()}
-                  className="bg-primary-500 hover:bg-primary-600 text-white"
-                  size="default"
+                  variant="default"
+                  className="!bg-blue-600 hover:!bg-blue-700 text-white font-medium"
                 >
                   {isSubmitting 
                     ? "Sending..." 
