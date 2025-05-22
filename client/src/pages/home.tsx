@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { Search, Plus } from "lucide-react";
 import TripCard from "@/components/trip-card";
+import EnhancedTripCard from "@/components/enhanced-trip-card";
 import Header from "@/components/header";
 import MobileNavigation from "@/components/mobile-navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 import {
   Tabs,
   TabsContent,
@@ -22,6 +24,9 @@ export default function Home() {
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [hasNewNotifications, setHasNewNotifications] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const token = user ? localStorage.getItem('auth_token') : null;
   
@@ -41,6 +46,81 @@ export default function Home() {
       return response.json();
     },
     enabled: !!user && !!token,
+  });
+  
+  // Define mutations for pinning and archiving trips
+  const pinTripMutation = useMutation({
+    mutationFn: async (tripId: number) => {
+      if (!token) throw new Error("Not authenticated");
+      
+      const trip = trips?.find((t: any) => t.id === tripId);
+      if (!trip) throw new Error("Trip not found");
+      
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+      
+      const response = await fetch(`/api/trips/${tripId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ isPinned: !trip.isPinned })
+      });
+      
+      if (!response.ok) throw new Error("Failed to update trip");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
+      toast({
+        title: "Success",
+        description: "Trip pin status updated",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Something went wrong",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const archiveTripMutation = useMutation({
+    mutationFn: async (tripId: number) => {
+      if (!token) throw new Error("Not authenticated");
+      
+      const trip = trips?.find((t: any) => t.id === tripId);
+      if (!trip) throw new Error("Trip not found");
+      
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+      
+      const response = await fetch(`/api/trips/${tripId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ isArchived: !trip.isArchived })
+      });
+      
+      if (!response.ok) throw new Error("Failed to update trip");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
+      toast({
+        title: "Success",
+        description: "Trip archive status updated",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Something went wrong",
+        variant: "destructive",
+      });
+    }
   });
   
   // Fetch pending invitations (trip memberships with "pending" status)
@@ -77,8 +157,17 @@ export default function Home() {
     invitation.membership.tripId
   ) || [];
   
-  // Helper to sort trips by date (closest to today first)
-  const sortTripsByProximity = (tripA: any, tripB: any) => {
+  // Helper to sort trips by pinned status first, then by date proximity
+  const sortTripsByPinnedAndProximity = (tripA: any, tripB: any) => {
+    // Pinned trips always come first
+    if (tripA.isPinned && !tripB.isPinned) {
+      return -1;
+    }
+    if (!tripA.isPinned && tripB.isPinned) {
+      return 1;
+    }
+    
+    // If both are pinned or both are not pinned, sort by date proximity
     const dateA = new Date(tripA.startDate);
     const dateB = new Date(tripB.startDate);
     
@@ -89,31 +178,45 @@ export default function Home() {
     return diffA - diffB; // Closest dates first
   };
   
+  // Handler functions for pinning and archiving
+  const handlePinTrip = (id: number) => {
+    pinTripMutation.mutate(id);
+  };
+  
+  const handleArchiveTrip = (id: number) => {
+    archiveTripMutation.mutate(id);
+  };
+  
   // Past trips = trips with end date before current date (excluding pending invitations)
   const pastTrips = trips?.filter((trip: any) => {
     const endDate = new Date(trip.endDate);
     return endDate < currentDate && 
       !pendingInvitationTripIds.includes(trip.id) &&
+      (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
-  }).sort((a: any, b: any) => {
-    // Most recent past trips first
-    return new Date(b.endDate).getTime() - new Date(a.endDate).getTime();
-  }) || [];
+  }).sort(sortTripsByPinnedAndProximity) || [];
   
   // Upcoming trips = trips with end date on or after current date (excluding pending invitations)
   const upcomingTrips = trips?.filter((trip: any) => {
     const endDate = new Date(trip.endDate);
     return endDate >= currentDate && 
       !pendingInvitationTripIds.includes(trip.id) &&
+      (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
-  }).sort((a: any, b: any) => {
-    // Soonest upcoming trips first
-    return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-  }) || [];
+  }).sort(sortTripsByPinnedAndProximity) || [];
+  
+  // All trips (filtered for search and archive status)
+  const filteredTrips = trips?.filter((trip: any) => {
+    return !pendingInvitationTripIds.includes(trip.id) &&
+      (showArchived ? true : !trip.isArchived) && // Only show archived if selected
+      (searchTerm === "" || 
+        trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
+  }).sort(sortTripsByPinnedAndProximity) || [];
   
   // Invitations are handled separately through pendingInvitations
 
@@ -202,21 +305,9 @@ export default function Home() {
                   </TabsList>
                   
                   <TabsContent value="all">
-                    {trips.filter((trip: any) => {
-                      // Check if this trip is in the pending invitations list
-                      const isPendingInvitation = pendingInvitationTripIds.includes(trip.id);
-                      
-                      // Only show trips that are NOT pending invitations
-                      return !isPendingInvitation && 
-                        (searchTerm === "" || 
-                          trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
-                    })
-                    // Sort by proximity to current date
-                    .sort(sortTripsByProximity)
-                    .map((trip: any) => (
+                    {filteredTrips.map((trip: any) => (
                       <div key={trip.id} className="px-1">
-                        <TripCard
+                        <EnhancedTripCard
                           id={trip.id}
                           name={trip.name}
                           destination={trip.destination}
@@ -225,6 +316,10 @@ export default function Home() {
                           status={trip.status}
                           memberCount={trip.memberCount} 
                           imageUrl={trip.imageUrl}
+                          isPinned={!!trip.isPinned}
+                          isArchived={!!trip.isArchived}
+                          onPin={handlePinTrip}
+                          onArchive={handleArchiveTrip}
                         />
                       </div>
                     ))}
@@ -234,10 +329,22 @@ export default function Home() {
                   </TabsContent>
                   
                   <TabsContent value="upcoming">
+                    <div className="flex justify-between items-center px-4 mb-2">
+                      <label className="text-sm text-gray-500 flex items-center space-x-1">
+                        <input 
+                          type="checkbox" 
+                          checked={showArchived} 
+                          onChange={(e) => setShowArchived(e.target.checked)}
+                          className="rounded text-primary-500 focus:ring-primary-500"
+                        />
+                        <span>Show archived trips</span>
+                      </label>
+                    </div>
+                    
                     {upcomingTrips.length > 0 ? (
                       upcomingTrips.map((trip: any) => (
                         <div key={trip.id} className="px-1">
-                          <TripCard
+                          <EnhancedTripCard
                             id={trip.id}
                             name={trip.name}
                             destination={trip.destination}
@@ -246,6 +353,10 @@ export default function Home() {
                             status={trip.status}
                             memberCount={trip.memberCount}
                             imageUrl={trip.imageUrl}
+                            isPinned={!!trip.isPinned}
+                            isArchived={!!trip.isArchived}
+                            onPin={handlePinTrip}
+                            onArchive={handleArchiveTrip}
                           />
                         </div>
                       ))
@@ -255,10 +366,22 @@ export default function Home() {
                   </TabsContent>
                   
                   <TabsContent value="past">
+                    <div className="flex justify-between items-center px-4 mb-2">
+                      <label className="text-sm text-gray-500 flex items-center space-x-1">
+                        <input 
+                          type="checkbox" 
+                          checked={showArchived} 
+                          onChange={(e) => setShowArchived(e.target.checked)}
+                          className="rounded text-primary-500 focus:ring-primary-500"
+                        />
+                        <span>Show archived trips</span>
+                      </label>
+                    </div>
+                    
                     {pastTrips.length > 0 ? (
                       pastTrips.map((trip: any) => (
                         <div key={trip.id} className="px-1">
-                          <TripCard
+                          <EnhancedTripCard
                             id={trip.id}
                             name={trip.name}
                             destination={trip.destination}
@@ -267,6 +390,10 @@ export default function Home() {
                             status={trip.status}
                             memberCount={trip.memberCount}
                             imageUrl={trip.imageUrl}
+                            isPinned={!!trip.isPinned}
+                            isArchived={!!trip.isArchived}
+                            onPin={handlePinTrip}
+                            onArchive={handleArchiveTrip}
                           />
                         </div>
                       ))
