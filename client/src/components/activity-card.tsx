@@ -110,17 +110,17 @@ export default function ActivityCard({
             variant={userStatus === "going" ? "default" : "outline"}
             onClick={() => handleRsvp("going")}
             disabled={isSubmitting}
-            className="flex items-center h-8"
+            className={`flex items-center h-8 ${userStatus === "going" ? "bg-green-600 hover:bg-green-700" : ""}`}
           >
             <CheckIcon className="h-4 w-4 mr-1" />
-            Going
+            {userStatus === "going" ? "You're Going" : "Going"}
           </Button>
           <Button
             size="sm"
             variant={userStatus === "not going" ? "default" : "outline"}
             onClick={() => handleRsvp("not going")}
             disabled={isSubmitting}
-            className="flex items-center h-8"
+            className={`flex items-center h-8 ${userStatus === "not going" ? "bg-red-600 hover:bg-red-700" : ""}`}
           >
             <XIcon className="h-4 w-4 mr-1" />
             Not Going
