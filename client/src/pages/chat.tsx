@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Send, ArrowLeft, PieChart, Plus } from "lucide-react";
+import { Send, ArrowLeft, PieChart, Plus, ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { wsClient } from "@/lib/websocket";
 import ChatMessage from "@/components/chat-message";
@@ -12,7 +12,8 @@ import TripTabs from "@/components/trip-tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-// Poll functionality will be added in the next step
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CreatePollDialog } from "@/components/polls/create-poll-dialog";
 
 export default function Chat() {
   const { id } = useParams<{ id: string }>();
@@ -75,6 +76,25 @@ export default function Chat() {
       return response.json();
     },
     enabled: !!tripId && !!user,
+  });
+  
+  // Fetch polls for this trip to display in chat
+  const { data: polls = [] } = useQuery({
+    queryKey: [`/api/trips/${tripId}/polls`],
+    refetchInterval: 10000, // Refresh every 10 seconds
+    queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/trips/${tripId}/polls`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch polls');
+      }
+      return response.json();
+    },
+    enabled: !!tripId && !!user && isFromChatsPage, // Only fetch polls when coming from chats page
   });
 
   // Update local messages when fetched from API
@@ -292,6 +312,16 @@ export default function Chat() {
                   </div>
                 </div>
               ))}
+              {/* Display polls in chat when in chat view */}
+              {isFromChatsPage && Array.isArray(polls) && polls.length > 0 && (
+                <div className="my-4">
+                  <div className="text-center text-xs uppercase tracking-wide text-gray-500 my-3">Polls</div>
+                  {polls.map((poll: any) => (
+                    <ChatPoll key={poll.id} poll={poll} tripId={tripId} />
+                  ))}
+                </div>
+              )}
+              
               <div ref={messagesEndRef} />
             </div>
           ) : (
@@ -310,6 +340,16 @@ export default function Chat() {
               </svg>
               <h3 className="text-lg font-medium text-gray-700">No messages yet</h3>
               <p className="text-gray-500 mt-1 mb-4">Be the first to start the conversation!</p>
+              
+              {/* Show polls even when there are no messages */}
+              {isFromChatsPage && Array.isArray(polls) && polls.length > 0 && (
+                <div className="my-4 w-full max-w-md">
+                  <div className="text-center text-xs uppercase tracking-wide text-gray-500 my-3">Polls</div>
+                  {polls.map((poll: any) => (
+                    <ChatPoll key={poll.id} poll={poll} tripId={tripId} />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -317,6 +357,32 @@ export default function Chat() {
         {/* Message Input - More compact for mobile */}
         <div className="bg-white border-t border-gray-200 p-2 md:p-3">
           <form onSubmit={handleSubmit} className="flex items-center space-x-2">
+            {/* Add option button - Only show when coming from chats page */}
+            {isFromChatsPage && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-10 w-10 text-gray-500 hover:text-primary-500"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent side="top" align="start" className="w-48 p-2">
+                  <div className="space-y-1">
+                    <CreatePollDialog tripId={tripId} variant="compact">
+                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                        <PieChart className="h-4 w-4 mr-2" />
+                        Create Poll
+                      </Button>
+                    </CreatePollDialog>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+            
             <Input
               type="text"
               value={message}
