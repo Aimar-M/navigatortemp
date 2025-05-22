@@ -94,7 +94,7 @@ export default function Chat() {
       }
       return response.json();
     },
-    enabled: !!tripId && !!user && isFromChatsPage, // Only fetch polls when coming from chats page
+    enabled: !!tripId && !!user, // Fetch polls regardless of navigation path
   });
 
   // Update local messages when fetched from API
@@ -313,7 +313,7 @@ export default function Chat() {
                 </div>
               ))}
               {/* Display polls integrated with messages */}
-              {isFromChatsPage && Array.isArray(polls) && polls.length > 0 && polls.map((poll: any) => (
+              {Array.isArray(polls) && polls.length > 0 && polls.map((poll: any) => (
                 <div key={`poll-${poll.id}`} className="flex items-start mb-3">
                   <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mr-2 text-sm font-medium">
                     {poll.creator?.name ? poll.creator.name.charAt(0).toUpperCase() : "?"}
@@ -350,7 +350,7 @@ export default function Chat() {
               <p className="text-gray-500 mt-1 mb-4">Be the first to start the conversation!</p>
               
               {/* Show polls integrated with chat flow even when there are no messages */}
-              {isFromChatsPage && Array.isArray(polls) && polls.length > 0 && polls.map((poll: any) => (
+              {Array.isArray(polls) && polls.length > 0 && polls.map((poll: any) => (
                 <div key={`poll-${poll.id}`} className="flex items-start mb-3 w-full max-w-md mx-auto">
                   <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mr-2 text-sm font-medium">
                     {poll.creator?.name ? poll.creator.name.charAt(0).toUpperCase() : "?"}
