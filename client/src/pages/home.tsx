@@ -351,7 +351,7 @@ export default function Home() {
                                   <Button 
                                     size="sm" 
                                     variant="default"
-                                    className="w-full"
+                                    className="w-full bg-green-600 hover:bg-green-700"
                                     onClick={() => {
                                       // Update status to confirmed
                                       fetch(`/api/trips/${invitation.membership.tripId}/members/${user.id}`, {
