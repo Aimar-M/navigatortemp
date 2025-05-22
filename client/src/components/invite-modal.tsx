@@ -461,28 +461,23 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
                   </Button>
                   {selectedUsers.length > 0 && (
                     <Badge variant="secondary" className="px-2 py-1">
-                      {selectedUsers.length} selected
+                      {selectedUsers.length} user{selectedUsers.length !== 1 ? 's' : ''} selected
                     </Badge>
                   )}
                 </div>
                 
-                {selectedUsers.length > 0 ? (
-                  <Button 
-                    type="button" 
-                    disabled={isSubmitting}
-                    onClick={sendMultipleInvitations}
-                    className="bg-primary-600 hover:bg-primary-700"
-                  >
-                    {isSubmitting ? "Sending..." : `Invite ${selectedUsers.length} users`}
-                  </Button>
-                ) : (
-                  <Button 
-                    type="submit" 
-                    disabled={isSubmitting || !username.trim()}
-                  >
-                    {isSubmitting ? "Sending..." : "Send Invitation"}
-                  </Button>
-                )}
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || !username.trim()}
+                  className={selectedUsers.length > 0 ? "bg-primary-600 hover:bg-primary-700" : ""}
+                >
+                  {isSubmitting 
+                    ? "Sending..." 
+                    : selectedUsers.length > 1 
+                      ? `Invite ${selectedUsers.length} users` 
+                      : "Send Invitation"
+                  }
+                </Button>
               </DialogFooter>
             </form>
           </TabsContent>
