@@ -88,7 +88,25 @@ const CreatePollDialog = ({ tripId }: { tripId: number }) => {
   
   const createPollMutation = useMutation({
     mutationFn: (data: CreatePollFormValues) => {
-      return apiRequest("POST", `/api/trips/${tripId}/polls`, data);
+      // Get token from localStorage
+      const token = localStorage.getItem('auth_token');
+      
+      return fetch(`/api/trips/${tripId}/polls`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      }).then(res => {
+        if (!res.ok) {
+          return res.json().then(err => {
+            console.error("Poll creation error:", err);
+            throw new Error(err.message || 'Failed to create poll');
+          });
+        }
+        return res.json();
+      });
     },
     onSuccess: () => {
       // Invalidate the polls query to refetch the data
@@ -96,6 +114,9 @@ const CreatePollDialog = ({ tripId }: { tripId: number }) => {
       setOpen(false);
       form.reset();
     },
+    onError: (error) => {
+      console.error("Error creating poll:", error);
+    }
   });
   
   const handleSubmit = (data: CreatePollFormValues) => {
