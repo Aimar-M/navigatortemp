@@ -357,12 +357,34 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
                 )}
               </div>
               <DialogFooter className="mt-4 sm:justify-between">
-                <Button type="button" variant="outline" onClick={onClose}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting || !username.trim()}>
-                  {isSubmitting ? "Sending..." : "Send Invitation"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  {selectedUsers.length > 0 && (
+                    <Badge variant="secondary" className="px-2 py-1">
+                      {selectedUsers.length} selected
+                    </Badge>
+                  )}
+                </div>
+                
+                {selectedUsers.length > 0 ? (
+                  <Button 
+                    type="button" 
+                    disabled={isSubmitting}
+                    onClick={sendMultipleInvitations}
+                    className="bg-primary-600 hover:bg-primary-700"
+                  >
+                    {isSubmitting ? "Sending..." : `Invite ${selectedUsers.length} users`}
+                  </Button>
+                ) : (
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting || !username.trim()}
+                  >
+                    {isSubmitting ? "Sending..." : "Send Invitation"}
+                  </Button>
+                )}
               </DialogFooter>
             </form>
           </TabsContent>
