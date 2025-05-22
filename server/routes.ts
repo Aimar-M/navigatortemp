@@ -6,7 +6,7 @@ import {
   insertUserSchema, insertTripSchema, insertTripMemberSchema, 
   insertActivitySchema, insertActivityRsvpSchema, insertMessageSchema,
   insertSurveyQuestionSchema, insertSurveyResponseSchema, insertInvitationLinkSchema,
-  insertExpenseSchema, insertFlightInfoSchema,
+  insertExpenseSchema, insertFlightInfoSchema, insertPollSchema, insertPollVoteSchema,
   User
 } from "@shared/schema";
 import { z } from "zod";
@@ -1738,6 +1738,280 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(flightResults);
     } catch (error) {
       console.error('Error searching flights:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // POLL ROUTES
+  
+  // Create a new poll
+  router.post('/trips/:id/polls', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: 'Invalid trip ID' });
+      }
+      
+      // Check if user is a member of the trip
+      const members = await storage.getTripMembers(tripId);
+      const isMember = members.some(member => 
+        member.userId === user.id && member.status === 'confirmed'
+      );
+      
+      if (!isMember) {
+        return res.status(403).json({ message: 'Must be a confirmed member to create polls' });
+      }
+      
+      const pollData = insertPollSchema.parse({
+        ...req.body,
+        tripId,
+        createdBy: user.id
+      });
+      
+      const newPoll = await storage.createPoll(pollData);
+      
+      // Notify trip members about new poll via WebSocket
+      broadcastToTrip(wss, tripId, {
+        type: 'NEW_POLL',
+        data: newPoll
+      });
+      
+      res.status(201).json(newPoll);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error('Error creating poll:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // Get all polls for a trip
+  router.get('/trips/:id/polls', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: 'Invalid trip ID' });
+      }
+      
+      // Check if user is a member of the trip
+      const members = await storage.getTripMembers(tripId);
+      const isMember = members.some(member => member.userId === user.id);
+      
+      if (!isMember) {
+        return res.status(403).json({ message: 'Not a member of this trip' });
+      }
+      
+      const polls = await storage.getPollsByTrip(tripId);
+      
+      // For each poll, fetch votes to calculate results
+      const pollsWithVotes = await Promise.all(polls.map(async (poll) => {
+        const votes = await storage.getPollVotes(poll.id);
+        const userVotes = await storage.getUserPollVotes(poll.id, user.id);
+        
+        // Create an array to track votes per option
+        const voteCounts = poll.options.map(() => 0);
+        
+        // Count votes for each option
+        votes.forEach(vote => {
+          if (vote.optionIndex >= 0 && vote.optionIndex < voteCounts.length) {
+            voteCounts[vote.optionIndex]++;
+          }
+        });
+        
+        // Get creator info
+        const creator = await storage.getUser(poll.createdBy);
+        
+        return {
+          ...poll,
+          voteCounts,
+          totalVotes: votes.length,
+          hasVoted: userVotes.length > 0,
+          userVotes,
+          creator: creator ? {
+            id: creator.id,
+            name: creator.name || creator.username,
+            avatar: creator.avatar
+          } : null
+        };
+      }));
+      
+      res.json(pollsWithVotes);
+    } catch (error) {
+      console.error('Error fetching polls:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // Vote on a poll
+  router.post('/polls/:id/vote', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const pollId = parseInt(req.params.id);
+      if (isNaN(pollId)) {
+        return res.status(400).json({ message: 'Invalid poll ID' });
+      }
+      
+      // Get the poll to check permissions
+      const poll = await storage.getPoll(pollId);
+      if (!poll) {
+        return res.status(404).json({ message: 'Poll not found' });
+      }
+      
+      // Check if user is a member of the associated trip
+      const members = await storage.getTripMembers(poll.tripId);
+      const isMember = members.some(member => 
+        member.userId === user.id && member.status === 'confirmed'
+      );
+      
+      if (!isMember) {
+        return res.status(403).json({ message: 'Must be a confirmed member to vote' });
+      }
+      
+      // Check if poll is still active
+      if (!poll.isActive) {
+        return res.status(400).json({ message: 'This poll is no longer active' });
+      }
+      
+      // If end date is set and has passed, poll is expired
+      if (poll.endDate && new Date(poll.endDate) < new Date()) {
+        return res.status(400).json({ message: 'This poll has expired' });
+      }
+      
+      const voteData = insertPollVoteSchema.parse({
+        pollId,
+        userId: user.id,
+        optionIndex: req.body.optionIndex
+      });
+      
+      // For single-choice polls, delete previous votes if any
+      if (!poll.multipleChoice) {
+        const userVotes = await storage.getUserPollVotes(pollId, user.id);
+        for (const vote of userVotes) {
+          await storage.deletePollVote(vote.id);
+        }
+      }
+      
+      const newVote = await storage.createPollVote(voteData);
+      
+      // Get updated votes for the poll
+      const votes = await storage.getPollVotes(pollId);
+      
+      // Create vote counts array
+      const voteCounts = poll.options.map(() => 0);
+      votes.forEach(vote => {
+        if (vote.optionIndex >= 0 && vote.optionIndex < voteCounts.length) {
+          voteCounts[vote.optionIndex]++;
+        }
+      });
+      
+      // Notify trip members about new vote via WebSocket
+      broadcastToTrip(wss, poll.tripId, {
+        type: 'POLL_VOTE',
+        data: {
+          pollId,
+          vote: newVote,
+          voteCounts,
+          totalVotes: votes.length
+        }
+      });
+      
+      res.status(201).json({
+        vote: newVote,
+        pollVotes: votes,
+        voteCounts,
+        totalVotes: votes.length
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ errors: error.errors });
+      }
+      console.error('Error voting on poll:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // Remove a vote from a poll
+  router.delete('/polls/:pollId/votes/:voteId', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const pollId = parseInt(req.params.pollId);
+      const voteId = parseInt(req.params.voteId);
+      
+      if (isNaN(pollId) || isNaN(voteId)) {
+        return res.status(400).json({ message: 'Invalid poll or vote ID' });
+      }
+      
+      // Get the poll to check permissions
+      const poll = await storage.getPoll(pollId);
+      if (!poll) {
+        return res.status(404).json({ message: 'Poll not found' });
+      }
+      
+      // Check if user is a member of the associated trip
+      const members = await storage.getTripMembers(poll.tripId);
+      const isMember = members.some(member => 
+        member.userId === user.id && member.status === 'confirmed'
+      );
+      
+      if (!isMember) {
+        return res.status(403).json({ message: 'Must be a confirmed member to manage votes' });
+      }
+      
+      // Get all votes for this poll by the user
+      const votes = await storage.getUserPollVotes(pollId, user.id);
+      const voteExists = votes.some(vote => vote.id === voteId);
+      
+      if (!voteExists) {
+        return res.status(404).json({ message: 'Vote not found or not owned by you' });
+      }
+      
+      const success = await storage.deletePollVote(voteId);
+      
+      if (!success) {
+        return res.status(500).json({ message: 'Failed to delete vote' });
+      }
+      
+      // Get updated votes for the poll
+      const updatedVotes = await storage.getPollVotes(pollId);
+      
+      // Create vote counts array
+      const voteCounts = poll.options.map(() => 0);
+      updatedVotes.forEach(vote => {
+        if (vote.optionIndex >= 0 && vote.optionIndex < voteCounts.length) {
+          voteCounts[vote.optionIndex]++;
+        }
+      });
+      
+      // Notify trip members about vote deletion via WebSocket
+      broadcastToTrip(wss, poll.tripId, {
+        type: 'POLL_VOTE_REMOVED',
+        data: {
+          pollId,
+          voteId,
+          voteCounts,
+          totalVotes: updatedVotes.length
+        }
+      });
+      
+      res.json({
+        success: true,
+        pollVotes: updatedVotes,
+        voteCounts,
+        totalVotes: updatedVotes.length
+      });
+    } catch (error) {
+      console.error('Error removing poll vote:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
