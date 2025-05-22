@@ -101,7 +101,7 @@ export default function TripCard({
               <div className="mt-2 flex items-center text-xs text-gray-500 border-t pt-2 transition-all duration-300">
                 <Users className="h-3.5 w-3.5 mr-1 transition-transform duration-300 group-hover:text-primary-500 group-hover:scale-110" />
                 <span className="transition-all duration-300 group-hover:font-medium">
-                  {memberCount} {memberCount === 1 ? "person" : "people"} confirmed
+                  {memberCount || 0} {(memberCount || 0) === 1 ? "person" : "people"} confirmed
                 </span>
               </div>
             </div>
