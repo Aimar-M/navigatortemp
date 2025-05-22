@@ -4,8 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Send, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { wsClient } from "@/lib/websocket";
-// @ts-ignore - Missing type definitions for use-swipe
-import { useSwipe } from "use-swipe";
 import ChatMessage from "@/components/chat-message";
 import Header from "@/components/header";
 import MobileNavigation from "@/components/mobile-navigation";
@@ -23,19 +21,6 @@ export default function Chat() {
   const [messages, setMessages] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  
-  // Set up swipe navigation
-  const swipeHandlers = useSwipe({
-    onSwipedLeft: () => {
-      // Handle swipe left (future usage if needed)
-    },
-    onSwipedRight: () => {
-      // Navigate back to chats page when swiping right
-      navigate("/chats");
-    },
-    threshold: 60, // Minimum swipe distance
-  });
 
   // Fetch trip details
   const { data: trip, isLoading: isTripLoading } = useQuery({
@@ -209,7 +194,7 @@ export default function Chat() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50" ref={chatContainerRef} {...swipeHandlers}>
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       
       <main className="flex-1 flex flex-col overflow-hidden pb-0 max-h-[calc(100vh-60px)]">
