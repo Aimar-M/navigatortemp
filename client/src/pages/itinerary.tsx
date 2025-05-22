@@ -375,7 +375,7 @@ export default function Itinerary() {
 
       {/* Add Activity Modal */}
       <Dialog open={isAddActivityModalOpen} onOpenChange={setIsAddActivityModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Activity</DialogTitle>
             <DialogDescription>

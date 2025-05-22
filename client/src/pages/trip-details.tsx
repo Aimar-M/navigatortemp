@@ -1,15 +1,19 @@
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { MapPin, Calendar, Users, Info } from "lucide-react";
+import { MapPin, Calendar, Users, Info, UserPlus } from "lucide-react";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import UserAvatar from "@/components/user-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import InviteModal from "@/components/invite-modal";
 
 export default function TripDetails() {
   const { id } = useParams<{ id: string }>();
   const tripId = parseInt(id);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   
   // Fetch trip details
   const { data: trip, isLoading } = useQuery({
@@ -83,7 +87,17 @@ export default function TripDetails() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Members</h2>
-              <Users className="h-5 w-5 text-gray-500" />
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-1"
+                  onClick={() => setIsInviteModalOpen(true)}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>Invite</span>
+                </Button>
+              </div>
             </div>
             
             {isMembersLoading ? (
