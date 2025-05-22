@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Send } from "lucide-react";
+import { Send, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { wsClient } from "@/lib/websocket";
+// @ts-ignore - Missing type definitions for use-swipe
+import { useSwipe } from "use-swipe";
 import ChatMessage from "@/components/chat-message";
 import Header from "@/components/header";
 import MobileNavigation from "@/components/mobile-navigation";
@@ -21,6 +23,19 @@ export default function Chat() {
   const [messages, setMessages] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Set up swipe navigation
+  const swipeHandlers = useSwipe({
+    onSwipedLeft: () => {
+      // Handle swipe left (future usage if needed)
+    },
+    onSwipedRight: () => {
+      // Navigate back to chats page when swiping right
+      navigate("/chats");
+    },
+    threshold: 60, // Minimum swipe distance
+  });
 
   // Fetch trip details
   const { data: trip, isLoading: isTripLoading } = useQuery({
@@ -194,16 +209,27 @@ export default function Chat() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50" ref={chatContainerRef} {...swipeHandlers}>
       <Header />
       
       <main className="flex-1 flex flex-col overflow-hidden pb-0 max-h-[calc(100vh-60px)]">
         {/* Trip Header - More compact on mobile */}
         <div className="bg-white border-b border-gray-200 p-2 md:p-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg md:text-xl font-bold text-gray-900">{trip.name}</h2>
-              <p className="text-xs md:text-sm text-gray-600">Group Chat</p>
+            <div className="flex items-center">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="mr-2 p-1 h-8 w-8" 
+                onClick={() => navigate("/chats")}
+              >
+                <ArrowLeft className="h-5 w-5" />
+                <span className="sr-only">Back to chats</span>
+              </Button>
+              <div>
+                <h2 className="text-lg md:text-xl font-bold text-gray-900">{trip.name}</h2>
+                <p className="text-xs md:text-sm text-gray-600">Group Chat</p>
+              </div>
             </div>
           </div>
         </div>
