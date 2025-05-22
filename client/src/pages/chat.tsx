@@ -102,14 +102,15 @@ export default function Chat() {
     enabled: !!tripId && !!user, // Fetch polls regardless of navigation path
   });
 
-  // Update local messages when fetched from API
+  // Combine polls and messages into a single chronological timeline
   useEffect(() => {
     if (chatMessages) {
       console.log("Received chat messages:", chatMessages);
       
       // Ensure messages have the correct structure for ChatMessage component
       const formattedMessages = chatMessages.map((msg: any) => ({
-        id: msg.id,
+        id: `msg-${msg.id}`,
+        type: 'message',
         content: msg.content,
         timestamp: msg.timestamp,
         user: {
@@ -119,10 +120,28 @@ export default function Chat() {
         }
       }));
       
-      console.log("Formatted messages:", formattedMessages);
-      setMessages(formattedMessages);
+      // Add polls to the timeline with a consistent format
+      const formattedPolls = polls ? polls.map((poll: any) => ({
+        id: `poll-${poll.id}`,
+        type: 'poll',
+        pollData: poll,
+        timestamp: poll.createdAt,
+        user: {
+          id: poll.creator?.id || poll.createdBy,
+          name: poll.creator?.name || "Unknown User",
+          avatar: poll.creator?.avatar || null
+        }
+      })) : [];
+      
+      // Combine messages and polls, then sort by timestamp
+      const combinedItems = [...formattedMessages, ...formattedPolls].sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+      
+      console.log("Combined timeline:", combinedItems);
+      setMessages(combinedItems);
     }
-  }, [chatMessages]);
+  }, [chatMessages, polls]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -286,54 +305,106 @@ export default function Chat() {
             </div>
           ) : messages && messages.length > 0 ? (
             <div className="space-y-2 py-1">
-              {/* Optimized mobile message rendering */}
-              {messages.map((msg) => (
-                <div key={msg.id} className={`flex items-start mb-3 ${msg.user?.id === user?.id ? "flex-row-reverse" : ""}`}>
-                  {msg.user?.id !== user?.id && (
-                    <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mr-2 text-sm font-medium">
-                      {msg.user?.name ? msg.user.name.charAt(0).toUpperCase() : "?"}
-                    </div>
-                  )}
-                  <div className="max-w-[85%]">
-                    {msg.user?.id !== user?.id && (
-                      <p className="text-xs font-medium text-gray-900 mb-1">{msg.user?.name || msg.user?.username || 'Anonymous'}</p>
-                    )}
-                    <div
-                      className={`rounded-lg py-1.5 px-2.5 md:py-2 md:px-3 ${
-                        msg.user?.id === user?.id
-                          ? "bg-blue-600 text-white rounded-tr-sm ml-auto"
-                          : "bg-gray-100 text-gray-800 rounded-tl-sm"
-                      }`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
-                    </div>
-                    <span
-                      className={`text-[10px] md:text-xs mt-0.5 block ${
-                        msg.user?.id === user?.id ? "text-right text-gray-400" : "text-gray-500"
-                      }`}
-                    >
-                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-              ))}
-              {/* Display polls integrated with messages */}
-              {Array.isArray(polls) && polls.length > 0 && polls.map((poll: any) => (
-                <div key={`poll-${poll.id}`} className="flex items-start mb-3">
-                  <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mr-2 text-sm font-medium">
-                    {poll.creator?.name ? poll.creator.name.charAt(0).toUpperCase() : "?"}
-                  </div>
-                  <div className="max-w-[85%]">
-                    <p className="text-xs font-medium text-gray-900 mb-1">{poll.creator?.name || "Anonymous"}</p>
-                    <div className="w-full">
-                      <ChatPoll poll={poll} tripId={tripId} />
-                    </div>
-                    <span className="text-[10px] md:text-xs mt-1 block text-gray-500">
-                      {new Date(poll.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              {/* Combined message and poll timeline */}
+              {(() => {
+                // Create arrays for messages and polls
+                const messageItems = messages.map(msg => ({
+                  id: `msg-${msg.id}`,
+                  type: 'message',
+                  content: msg.content,
+                  timestamp: msg.timestamp,
+                  user: msg.user
+                }));
+                
+                const pollItems = Array.isArray(polls) ? polls.map(poll => ({
+                  id: `poll-${poll.id}`,
+                  type: 'poll',
+                  poll: poll,
+                  timestamp: poll.createdAt,
+                  user: {
+                    id: poll.createdBy,
+                    name: poll.creator?.name || "Anonymous"
+                  }
+                })) : [];
+                
+                // Combine and sort chronologically
+                const timelineItems = [...messageItems, ...pollItems].sort((a, b) => 
+                  new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                );
+                
+                // Render each item based on its type
+                return timelineItems.map(item => {
+                  if (item.type === 'message') {
+                    // Regular message rendering
+                    return (
+                      <div key={item.id} className={`flex items-start mb-3 ${item.user?.id === user?.id ? "flex-row-reverse" : ""}`}>
+                        {item.user?.id !== user?.id && (
+                          <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mr-2 text-sm font-medium">
+                            {item.user?.name ? item.user.name.charAt(0).toUpperCase() : "?"}
+                          </div>
+                        )}
+                        <div className="max-w-[85%]">
+                          {item.user?.id !== user?.id && (
+                            <p className="text-xs font-medium text-gray-900 mb-1">{item.user?.name || item.user?.username || 'Anonymous'}</p>
+                          )}
+                          <div
+                            className={`rounded-lg py-1.5 px-2.5 md:py-2 md:px-3 ${
+                              item.user?.id === user?.id
+                                ? "bg-blue-600 text-white rounded-tr-sm ml-auto"
+                                : "bg-gray-100 text-gray-800 rounded-tl-sm"
+                            }`}
+                          >
+                            <p className="text-sm whitespace-pre-wrap break-words">{item.content}</p>
+                          </div>
+                          <span
+                            className={`text-[10px] md:text-xs mt-0.5 block ${
+                              item.user?.id === user?.id ? "text-right text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    // Poll rendering
+                    const poll = item.poll;
+                    const isOwnPoll = poll.createdBy === user?.id;
+                    
+                    return (
+                      <div key={item.id} className={`flex items-start mb-3 ${isOwnPoll ? "flex-row-reverse" : ""}`}>
+                        {!isOwnPoll && (
+                          <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mr-2 text-sm font-medium">
+                            {item.user?.name ? item.user.name.charAt(0).toUpperCase() : "?"}
+                          </div>
+                        )}
+                        <div className="max-w-[85%]">
+                          {!isOwnPoll && (
+                            <p className="text-xs font-medium text-gray-900 mb-1">{item.user?.name}</p>
+                          )}
+                          <div className={`rounded-lg p-2 ${
+                            isOwnPoll 
+                              ? "bg-blue-50 border border-blue-100 rounded-tr-sm" 
+                              : "bg-gray-50 border border-gray-100 rounded-tl-sm"
+                          }`}>
+                            <p className={`text-xs font-medium mb-1 ${
+                              isOwnPoll ? "text-blue-700" : "text-gray-700"
+                            }`}>
+                              Poll: {poll.title}
+                            </p>
+                            <ChatPoll poll={poll} tripId={tripId} />
+                          </div>
+                          <span className={`text-[10px] md:text-xs mt-0.5 block ${
+                            isOwnPoll ? "text-right text-gray-400" : "text-gray-500"
+                          }`}>
+                            {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+                });
+              })()}
               
               <div ref={messagesEndRef} />
             </div>
