@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Send, ArrowLeft } from "lucide-react";
+import { Send, ArrowLeft, PieChart, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { wsClient } from "@/lib/websocket";
 import ChatMessage from "@/components/chat-message";
+import ChatPoll from "@/components/chat-poll";
 import Header from "@/components/header";
 import MobileNavigation from "@/components/mobile-navigation";
 import TripTabs from "@/components/trip-tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+// Poll functionality will be added in the next step
 
 export default function Chat() {
   const { id } = useParams<{ id: string }>();
