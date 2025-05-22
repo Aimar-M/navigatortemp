@@ -41,6 +41,8 @@ export const trips = pgTable("trips", {
   status: text("status").notNull().default("planning"), // planning, active, completed
   cover: text("cover"),
   organizer: integer("organizer").notNull().references(() => users.id),
+  isPinned: boolean("is_pinned").notNull().default(false),
+  isArchived: boolean("is_archived").notNull().default(false),
 });
 
 export const tripsRelations = relations(trips, ({ one, many }) => ({
@@ -65,6 +67,8 @@ export const insertTripSchema = createInsertSchema(trips).pick({
   status: true,
   cover: true,
   organizer: true,
+  isPinned: true,
+  isArchived: true,
 });
 
 // TripMembers schema (to handle trip participants)

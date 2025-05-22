@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { formatDateRange, getTripStatusColor } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Users, Calendar } from "lucide-react";
+import { MapPin, Users, Calendar, Pin, Archive } from "lucide-react";
 
 interface TripCardProps {
   id: number;
@@ -14,6 +14,10 @@ interface TripCardProps {
   memberCount: number;
   isActive?: boolean;
   imageUrl?: string;
+  isPinned?: boolean;
+  isArchived?: boolean;
+  onPin?: (id: number) => void;
+  onArchive?: (id: number) => void;
 }
 
 export default function TripCard({

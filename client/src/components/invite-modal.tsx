@@ -293,7 +293,7 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
       );
       
       // Process results to categorize successes and failures
-      const successful = [];
+      const successful: string[] = [];
       const failedByReason: Record<string, string[]> = {
         "already-invited": [],
         "permission-denied": [],
@@ -301,12 +301,18 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
         "other": []
       };
       
+      // Also track usernames by original capitalization
+      const failedUsernamesToKeep: string[] = [];
+      
       for (const result of results) {
         if (result.status === 'fulfilled') {
           const data = result.value;
           if (data.success) {
             successful.push(data.username);
           } else {
+            // Keep track of all failed usernames with original casing
+            failedUsernamesToKeep.push(data.username);
+            
             // Group by error reason
             if (data.errorReason === "already-invited") {
               failedByReason["already-invited"].push(data.username);
@@ -321,16 +327,11 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
         }
       }
       
-      // Calculate total failed usernames to keep in selection
-      const failedUsernames = [
-        ...failedByReason["already-invited"],
-        ...failedByReason["permission-denied"],
-        ...failedByReason["not-found"],
-        ...failedByReason["other"]
-      ];
+      // We'll now use the actual usernames entered by the user 
+      // instead of the normalized ones for display and persistence
       
       // Choose the right message based on results
-      if (successful.length > 0 && failedUsernames.length === 0) {
+      if (successful.length > 0 && failedUsernamesToKeep.length === 0) {
         // All succeeded
         toast({
           title: "Invitations sent",
@@ -366,18 +367,18 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
             variant: "destructive",
           });
         }
-        // Keep failed usernames in selection
-        setSelectedUsers(failedUsernames);
-        setUsername(failedUsernames.join(", "));
+        // Keep failed usernames in selection with original casing
+        setSelectedUsers([...failedUsernamesToKeep]);
+        setUsername(failedUsernamesToKeep.join(", "));
       } else {
         // Mixed results - some succeeded, some failed
         toast({
           title: "Partial success",
-          description: `Sent ${successful.length} invitation${successful.length !== 1 ? 's' : ''}, ${failedUsernames.length} failed`,
+          description: `Sent ${successful.length} invitation${successful.length !== 1 ? 's' : ''}, ${failedUsernamesToKeep.length} failed`,
         });
-        // Keep failed usernames in selection
-        setSelectedUsers(failedUsernames);
-        setUsername(failedUsernames.join(", "));
+        // Keep failed usernames in selection with original casing
+        setSelectedUsers([...failedUsernamesToKeep]);
+        setUsername(failedUsernamesToKeep.join(", "));
       }
       
       // Update the trip members list if we had any success
