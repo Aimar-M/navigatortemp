@@ -486,6 +486,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get travel companions from past trips (for suggestions)
+  router.get('/trips/:id/past-companions', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return; // Response already sent by ensureUser
+      
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: 'Invalid trip ID' });
+      }
+      
+      // Get all trips this user has been a part of
+      const userTrips = await storage.getTripsByUser(user.id);
+      
+      // Filter to only include past trips (end date before current date)
+      const now = new Date();
+      const pastTrips = userTrips.filter(trip => {
+        const endDate = new Date(trip.endDate);
+        return endDate < now && trip.id !== tripId;
+      });
+      
+      // Get all members from those past trips
+      const companionsMap = new Map();
+      
+      await Promise.all(pastTrips.map(async (trip) => {
+        const tripMembers = await storage.getTripMembers(trip.id);
+        
+        // Only include confirmed members who aren't the current user
+        tripMembers
+          .filter(member => member.status === 'confirmed' && member.userId !== user.id)
+          .forEach(member => {
+            if (!companionsMap.has(member.userId)) {
+              companionsMap.set(member.userId, {
+                userId: member.userId,
+                user: member.user,
+                tripCount: 1,
+                lastTripName: trip.name,
+                lastTripDate: trip.endDate
+              });
+            } else {
+              const companion = companionsMap.get(member.userId);
+              companion.tripCount += 1;
+              
+              // Update last trip if this one is more recent
+              const existingDate = new Date(companion.lastTripDate);
+              const newDate = new Date(trip.endDate);
+              if (newDate > existingDate) {
+                companion.lastTripName = trip.name;
+                companion.lastTripDate = trip.endDate;
+              }
+            }
+          });
+      }));
+      
+      // Convert map to array and sort by trip count (most frequent companions first)
+      const companions = Array.from(companionsMap.values())
+        .sort((a, b) => b.tripCount - a.tripCount);
+      
+      res.json(companions);
+    } catch (error) {
+      console.error('Error fetching past companions:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   router.put('/trips/:tripId/members/:userId', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
