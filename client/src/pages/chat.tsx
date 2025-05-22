@@ -21,13 +21,13 @@ export default function Chat() {
   const [messages, setMessages] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [showBackButton, setShowBackButton] = useState(false);
+  const [isFromChatsPage, setIsFromChatsPage] = useState(false);
   
   // Check if we navigated from the chats page
   useEffect(() => {
     // Get referrer from sessionStorage
     const referrer = sessionStorage.getItem('chatReferrer');
-    setShowBackButton(referrer === 'chats');
+    setIsFromChatsPage(referrer === 'chats');
     
     // Clean up
     return () => {
@@ -208,14 +208,15 @@ export default function Chat() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header />
+      {/* Only show header when not coming from chats page */}
+      {!isFromChatsPage && <Header />}
       
-      <main className="flex-1 flex flex-col overflow-hidden pb-0 max-h-[calc(100vh-60px)]">
+      <main className={`flex-1 flex flex-col overflow-hidden pb-0 ${isFromChatsPage ? 'max-h-screen' : 'max-h-[calc(100vh-60px)]'}`}>
         {/* Trip Header - More compact on mobile */}
-        <div className="bg-white border-b border-gray-200 p-2 md:p-4">
+        <div className="bg-white border-b border-gray-200 p-3 md:p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              {showBackButton && (
+              {isFromChatsPage && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -226,16 +227,21 @@ export default function Chat() {
                   <span className="sr-only">Back to chats</span>
                 </Button>
               )}
-              <div>
+              <div 
+                className={isFromChatsPage ? "cursor-pointer" : ""}
+                onClick={isFromChatsPage ? () => navigate(`/trips/${tripId}`) : undefined}
+              >
                 <h2 className="text-lg md:text-xl font-bold text-gray-900">{trip.name}</h2>
-                <p className="text-xs md:text-sm text-gray-600">Group Chat</p>
+                <p className="text-xs md:text-sm text-gray-600">
+                  {isFromChatsPage ? "Tap to see trip details" : "Group Chat"}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <TripTabs tripId={tripId} />
+        {/* Tab Navigation - only show when not coming from chats page */}
+        {!isFromChatsPage && <TripTabs tripId={tripId} />}
 
         {/* Chat Content - More compact for mobile */}
         <div className="flex-1 overflow-y-auto p-2 md:p-4 bg-white">
