@@ -9,11 +9,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import InviteModal from "@/components/invite-modal";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function TripDetails() {
   const { id } = useParams<{ id: string }>();
   const tripId = parseInt(id);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const { user } = useAuth();
   
   // Define trip interface
   interface Trip {
@@ -114,17 +116,20 @@ export default function TripDetails() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Members</h2>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="flex items-center gap-1"
-                  onClick={() => setIsInviteModalOpen(true)}
-                >
-                  <UserPlus className="h-4 w-4" />
-                  <span>Invite</span>
-                </Button>
-              </div>
+              {/* Only show invite button if current user is the trip organizer */}
+              {user && trip.organizer === user.id && (
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="flex items-center gap-1"
+                    onClick={() => setIsInviteModalOpen(true)}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    <span>Invite</span>
+                  </Button>
+                </div>
+              )}
             </div>
             
             {isMembersLoading ? (
