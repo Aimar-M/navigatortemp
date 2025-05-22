@@ -410,42 +410,52 @@ export default function Itinerary() {
                       name="date"
                       value={formData.date}
                       onChange={handleChange}
+                      min={trip?.startDate ? new Date(trip.startDate).toISOString().slice(0, 16) : undefined}
+                      max={trip?.endDate ? new Date(new Date(trip.endDate).setHours(23, 59)).toISOString().slice(0, 16) : undefined}
                       required
                     />
                     
                     {/* Quick date selection options */}
                     {trip && trip.startDate && trip.endDate && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <div className="w-full text-xs text-gray-500 mb-1">Quick select:</div>
-                        {/* Generate buttons for each day of the trip */}
-                        {(() => {
-                          const days = getDaysBetweenDates(new Date(trip.startDate), new Date(trip.endDate));
-                          return days.map((day: string, index: number) => {
-                            const formattedDate = new Date(day);
-                            // Set to noon by default for better UX
-                            formattedDate.setHours(12, 0, 0, 0);
+                      <div className="mt-2">
+                        <div className="text-xs text-gray-500 mb-1">Quick select from trip dates:</div>
+                        {/* Generate buttons for first few days of the trip */}
+                        <div className="flex flex-wrap gap-2">
+                          {(() => {
+                            const days = getDaysBetweenDates(new Date(trip.startDate), new Date(trip.endDate));
                             
-                            const dateValue = formattedDate.toISOString().slice(0, 16);
-                            const dayLabel = index === 0 
-                              ? 'Day 1' 
-                              : index === days.length - 1 
-                                ? `Day ${index + 1}`
-                                : `Day ${index + 1}`;
-                            
-                            return (
-                              <Button
-                                key={day}
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="text-xs px-2 py-1 h-auto"
-                                onClick={() => setFormData(prev => ({ ...prev, date: dateValue }))}
-                              >
-                                {dayLabel}
-                              </Button>
-                            );
-                          });
-                        })()}
+                            // Only show max 4 days for cleaner UI
+                            return days.slice(0, Math.min(4, days.length)).map((day: string, index: number) => {
+                              const formattedDate = new Date(day);
+                              // Set to noon by default for better UX
+                              formattedDate.setHours(12, 0, 0, 0);
+                              
+                              const dateValue = formattedDate.toISOString().slice(0, 16);
+                              
+                              // Format like "Tue, May 12"
+                              const dateFormatter = new Intl.DateTimeFormat('en-US', { 
+                                weekday: 'short', 
+                                month: 'short', 
+                                day: 'numeric' 
+                              });
+                              const formattedDateStr = dateFormatter.format(formattedDate);
+                              
+                              return (
+                                <Button
+                                  key={day}
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs px-2 py-1 h-auto flex flex-col items-center"
+                                  onClick={() => setFormData(prev => ({ ...prev, date: dateValue }))}
+                                >
+                                  <span className="font-medium">Day {index + 1}</span>
+                                  <span className="text-gray-500">{formattedDateStr}</span>
+                                </Button>
+                              );
+                            });
+                          })()}
+                        </div>
                       </div>
                     )}
                   </div>
