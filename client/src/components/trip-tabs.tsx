@@ -40,7 +40,13 @@ export default function TripTabs({ tripId }: TripTabsProps) {
               ? "text-primary-600 border-primary-600"
               : "text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300"
           )}
-          onClick={() => navigate(tab.href)}
+          onClick={() => {
+            // When navigating to chat from tabs, clear any previous referrer
+            if (tab.name === "Chat") {
+              sessionStorage.removeItem('chatReferrer');
+            }
+            navigate(tab.href);
+          }}
         >
           {tab.name}
         </button>
