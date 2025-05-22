@@ -339,7 +339,10 @@ export default function Home() {
                                 <div className="flex justify-between items-start mb-2">
                                   <div>
                                     <h4 className="font-medium text-gray-900">{invitation.trip?.name}</h4>
-                                    <p className="text-xs text-gray-600">
+                                    <p className="text-sm text-gray-600">
+                                      {invitation.trip?.destination} • {new Date(invitation.trip?.startDate).toLocaleDateString()} - {new Date(invitation.trip?.endDate).toLocaleDateString()}
+                                    </p>
+                                    <p className="text-xs text-gray-600 mt-1">
                                       Invited by {invitation.organizer?.name || invitation.organizer?.username}
                                     </p>
                                   </div>

@@ -340,17 +340,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) return; // Response already sent by ensureUser
       
       const trips = await storage.getTripsByUser(user.id);
+      const tripMemberships = await storage.getTripMembershipsByUser(user.id);
       
-      // Fetch member counts for each trip
+      // Fetch member counts and user settings for each trip
       const tripsWithMemberCounts = await Promise.all(trips.map(async (trip) => {
         const members = await storage.getTripMembers(trip.id);
         // Count only confirmed members
         const confirmedMembers = members.filter(member => member.status === 'confirmed');
+        
+        // Get user-specific settings for this trip
+        const settings = await storage.getUserTripSettings(user.id, trip.id);
+        
+        // Get the membership status for this trip
+        const membership = tripMemberships.find(m => m.tripId === trip.id);
+        
         return {
           ...trip,
           memberCount: confirmedMembers.length,
           totalMembers: members.length,
-          confirmedMembers: confirmedMembers.map(m => m.userId)
+          confirmedMembers: confirmedMembers.map(m => m.userId),
+          isPinned: settings?.isPinned || false,
+          isArchived: settings?.isArchived || false,
+          memberStatus: membership?.status || 'none'
         };
       }));
       
