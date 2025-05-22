@@ -481,7 +481,8 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
                 <Button 
                   type="submit" 
                   disabled={isSubmitting || !username.trim()}
-                  className={selectedUsers.length > 0 ? "bg-primary-600 hover:bg-primary-700" : ""}
+                  className="bg-primary-500 hover:bg-primary-600 text-white"
+                  size="default"
                 >
                   {isSubmitting 
                     ? "Sending..." 
