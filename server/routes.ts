@@ -1942,14 +1942,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid trip ID' });
       }
       
-      // Check if user is a member of the trip
+      // Check if user is a member of the trip (any status)
       const members = await storage.getTripMembers(tripId);
       const isMember = members.some(member => 
-        member.userId === user.id && member.status === 'confirmed'
+        member.userId === user.id
       );
       
       if (!isMember) {
-        return res.status(403).json({ message: 'Must be a confirmed member to create polls' });
+        return res.status(403).json({ message: 'Must be a member of this trip to create polls' });
       }
       
       const pollData = insertPollSchema.parse({
