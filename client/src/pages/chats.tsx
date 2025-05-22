@@ -16,22 +16,25 @@ import UserAvatar from "@/components/user-avatar";
 const ChatItem = ({ trip, lastMessages, currentUser }: { trip: any, lastMessages: any[], currentUser: any }) => {
   const [, navigate] = useLocation();
   
-  // Find the last message for this trip, if any
+  // Find all messages for this trip
   const tripMessages = lastMessages?.filter(msg => msg.tripId === trip.id) || [];
+  
+  // Get the last message for display
   const lastMessage = tripMessages.length > 0 ? tripMessages[0] : { 
     content: "No messages yet", 
     timestamp: trip.startDate,
     user: { name: "" } 
   };
   
-  // Check if there are unread messages (only from other users)
+  // Get last visit time from localStorage, or default to beginning of time
   const lastChatVisit = localStorage.getItem(`lastChatVisit_${trip.id}`) 
     ? new Date(localStorage.getItem(`lastChatVisit_${trip.id}`)!) 
-    : new Date(0); // If never visited, all messages are unread
+    : new Date(0);
     
+  // Count unread messages (only from other users, newer than last visit)
   const unreadCount = tripMessages.filter(msg => 
     new Date(msg.timestamp) > lastChatVisit && 
-    msg.user?.id !== currentUser?.id // Only count messages from other users
+    msg.userId !== currentUser?.id // Only count messages from other users
   ).length;
 
   const goToChat = () => {
@@ -93,12 +96,18 @@ export default function Chats() {
   // Function to sort trips by most recent message
   const sortTripsByLatestMessage = (trips: any[], messages: any[]) => {
     return [...trips].sort((a, b) => {
-      // Find the most recent message for each trip
+      // Group messages by trip
       const aMessages = messages.filter(msg => msg.tripId === a.id);
       const bMessages = messages.filter(msg => msg.tripId === b.id);
       
-      const aLatest = aMessages.length > 0 ? new Date(aMessages[0].timestamp).getTime() : 0;
-      const bLatest = bMessages.length > 0 ? new Date(bMessages[0].timestamp).getTime() : 0;
+      // Get the latest message timestamp or use trip date as fallback
+      const aLatest = aMessages.length > 0 
+        ? new Date(aMessages[0].timestamp).getTime() 
+        : new Date(a.updatedAt || a.startDate).getTime();
+        
+      const bLatest = bMessages.length > 0 
+        ? new Date(bMessages[0].timestamp).getTime() 
+        : new Date(b.updatedAt || b.startDate).getTime();
       
       // Sort by latest message timestamp (newest first)
       return bLatest - aLatest;
@@ -150,7 +159,10 @@ export default function Chats() {
       }
       
       const messages = await response.json();
-      return messages;
+      // Sort messages by timestamp descending (newest first)
+      return messages.sort((a: any, b: any) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
     },
     enabled: !!user,
   });
