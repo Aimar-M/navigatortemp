@@ -133,45 +133,18 @@ export default function Home() {
         'Authorization': `Bearer ${token}`
       };
       
-      // This is the endpoint for pending invitations
+      // This would be the endpoint for pending invitations
       const response = await fetch("/api/trips/memberships/pending", { headers });
       if (!response.ok) throw new Error("Failed to fetch pending invitations");
       
-      const memberships = await response.json();
-      console.log("Pending memberships:", memberships);
+      const data = await response.json();
       
       // Set notification indicator if there are pending invitations
-      if (memberships.length > 0) {
+      if (data.length > 0) {
         setHasNewNotifications(true);
       }
       
-      // Fetch details for each trip the user has a pending invitation for
-      const invitationsWithDetails = await Promise.all(memberships.map(async (membership: any) => {
-        // Get trip details
-        const tripResponse = await fetch(`/api/trips/${membership.tripId}`, { headers });
-        if (!tripResponse.ok) return null;
-        const trip = await tripResponse.json();
-        
-        // Get organizer details
-        let organizer = null;
-        try {
-          const organizerResponse = await fetch(`/api/users/${trip.organizer}`, { headers });
-          if (organizerResponse.ok) {
-            organizer = await organizerResponse.json();
-          }
-        } catch (error) {
-          console.error("Error fetching organizer:", error);
-        }
-        
-        return {
-          membership,
-          trip,
-          organizer
-        };
-      }));
-      
-      // Filter out any nulls (failed requests)
-      return invitationsWithDetails.filter(Boolean);
+      return data;
     },
     enabled: !!user && !!token,
   });
@@ -219,7 +192,6 @@ export default function Home() {
     const endDate = new Date(trip.endDate);
     return endDate < currentDate && 
       !pendingInvitationTripIds.includes(trip.id) &&
-      trip.memberStatus !== 'pending' && // Ensure pending invitations don't show here
       (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -231,7 +203,6 @@ export default function Home() {
     const endDate = new Date(trip.endDate);
     return endDate >= currentDate && 
       !pendingInvitationTripIds.includes(trip.id) &&
-      trip.memberStatus !== 'pending' && // Ensure pending invitations don't show here
       (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -241,7 +212,6 @@ export default function Home() {
   // All trips (filtered for search and archive status)
   const filteredTrips = trips?.filter((trip: any) => {
     return !pendingInvitationTripIds.includes(trip.id) &&
-      trip.memberStatus !== 'pending' && // Ensure pending invitations don't show here
       (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
