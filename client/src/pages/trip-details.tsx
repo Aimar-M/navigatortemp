@@ -15,18 +15,45 @@ export default function TripDetails() {
   const tripId = parseInt(id);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   
+  // Define trip interface
+  interface Trip {
+    id: number;
+    name: string;
+    destination: string;
+    startDate: string;
+    endDate: string;
+    description?: string;
+    organizer: number;
+    status: string;
+  }
+
+  interface TripMember {
+    tripId: number;
+    userId: number;
+    status: string;
+    isOrganizer: boolean;
+    user: {
+      id: number;
+      username: string;
+      name?: string;
+      email?: string;
+      profileImageUrl?: string;
+      avatar?: string;
+    };
+  }
+
   // Fetch trip details
-  const { data: trip, isLoading } = useQuery({
+  const { data: trip, isLoading } = useQuery<Trip>({
     queryKey: [`/api/trips/${tripId}`],
   });
 
   // Fetch trip members
-  const { data: members = [], isLoading: isMembersLoading } = useQuery({
+  const { data: members = [], isLoading: isMembersLoading } = useQuery<TripMember[]>({
     queryKey: [`/api/trips/${tripId}/members`],
     enabled: !!tripId,
   });
   
-  if (isLoading) {
+  if (isLoading || !trip) {
     return (
       <TripDetailLayout tripId={tripId}>
         <div className="space-y-4 mb-4">
@@ -111,11 +138,11 @@ export default function TripDetails() {
               </div>
             ) : (
               <div className="space-y-3">
-                {members.map((member: any) => (
+                {members.map((member) => (
                   <div key={member.userId} className="flex items-center space-x-2">
                     <UserAvatar 
-                      user={member.user} 
-                      size="sm" 
+                      user={member.user}
+                      className="h-8 w-8"
                     />
                     <span className="text-sm">
                       {member.user?.name || member.user?.username || 'Anonymous'}
@@ -130,6 +157,13 @@ export default function TripDetails() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Invite Modal */}
+      <InviteModal 
+        tripId={tripId} 
+        isOpen={isInviteModalOpen} 
+        onClose={() => setIsInviteModalOpen(false)} 
+      />
     </TripDetailLayout>
   );
 }
