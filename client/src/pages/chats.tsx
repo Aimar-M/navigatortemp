@@ -118,6 +118,24 @@ export default function Chats() {
     trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     trip.destination.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
+  
+  // Sort trips by most recent message
+  const sortedTrips = [...filteredTrips].sort((a, b) => {
+    // Find last message for each trip
+    const aMessages = lastMessages?.filter(msg => msg.tripId === a.id) || [];
+    const bMessages = lastMessages?.filter(msg => msg.tripId === b.id) || [];
+    
+    const aLatestTimestamp = aMessages.length > 0 
+      ? new Date(aMessages[0].timestamp).getTime() 
+      : new Date(a.updatedAt || a.startDate).getTime();
+      
+    const bLatestTimestamp = bMessages.length > 0 
+      ? new Date(bMessages[0].timestamp).getTime() 
+      : new Date(b.updatedAt || b.startDate).getTime();
+    
+    // Sort in descending order (most recent first)
+    return bLatestTimestamp - aLatestTimestamp;
+  });
 
   const isLoading = authLoading || tripsLoading || messagesLoading;
   
@@ -176,9 +194,9 @@ export default function Chats() {
                 </Card>
               ))}
             </div>
-          ) : filteredTrips.length > 0 ? (
+          ) : sortedTrips.length > 0 ? (
             <div className="space-y-2 p-4">
-              {filteredTrips.map((trip: any) => (
+              {sortedTrips.map((trip: any) => (
                 <ChatItem 
                   key={trip.id} 
                   trip={trip} 

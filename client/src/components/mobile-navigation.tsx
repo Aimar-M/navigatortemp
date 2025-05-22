@@ -1,6 +1,8 @@
 import { useLocation } from "wouter";
 import { CalendarRange, Home, MessageCircle, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function MobileNavigation() {
   const [location, navigate] = useLocation();
