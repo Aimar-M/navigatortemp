@@ -44,10 +44,12 @@ interface SuggestedCompanion {
 export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProps) {
   const [username, setUsername] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [validationState, setValidationState] = useState<Record<string, boolean>>({});
   const [inviteLinks, setInviteLinks] = useState<InvitationLink[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [activeTab, setActiveTab] = useState("username");
+  const [isValidating, setIsValidating] = useState(false);
   const { toast } = useToast();
 
   // Fetch existing invitation links when the modal opens
@@ -101,15 +103,59 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
     }
   };
 
+  // Validate a username against the server
+  const validateUsername = async (usernameToCheck: string) => {
+    if (!usernameToCheck.trim()) return false;
+    
+    setIsValidating(true);
+    try {
+      // Call the API to check if username exists
+      const response = await fetch(`/api/users/validate?username=${encodeURIComponent(usernameToCheck)}`);
+      const isValid = response.ok;
+      
+      // Update validation state
+      setValidationState(prev => ({
+        ...prev,
+        [usernameToCheck]: isValid
+      }));
+      
+      return isValid;
+    } catch (error) {
+      console.error("Error validating username:", error);
+      return false;
+    } finally {
+      setIsValidating(false);
+    }
+  };
+  
   // Toggle a user selection for batch invites
   const toggleUserSelection = (username: string) => {
     setSelectedUsers(prev => {
       if (prev.includes(username)) {
-        return prev.filter(u => u !== username);
+        // Remove user from selection
+        const newSelection = prev.filter(u => u !== username);
+        // Update input field to show the remaining selections
+        setUsername(newSelection.join(", "));
+        return newSelection;
       } else {
-        return [...prev, username];
+        // Add user to selection
+        const newSelection = [...prev, username];
+        // Update input field to show all selections
+        setUsername(newSelection.join(", "));
+        return newSelection;
       }
     });
+  };
+  
+  // Parse multiple usernames from input field (comma or space separated)
+  const parseUsernames = (input: string): string[] => {
+    if (!input.trim()) return [];
+    
+    // Split by commas or spaces
+    return input
+      .split(/[,\s]+/)
+      .map(name => name.trim())
+      .filter(name => name.length > 0);
   };
 
   // Send invitations to all selected users
@@ -147,26 +193,47 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
     }
   };
 
+  // Handle changes to username input field
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    setUsername(input);
+    
+    // Parse usernames and update selected users
+    const parsedUsernames = parseUsernames(input);
+    setSelectedUsers(parsedUsernames);
+  };
+  
+  // Handle submission of form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // If we have selected users, send batch invitations
-    if (selectedUsers.length > 0) {
+    // Parse input to get all usernames (supports comma/space separated values)
+    const usernamesToInvite = parseUsernames(username);
+    
+    // If no usernames entered, don't do anything
+    if (usernamesToInvite.length === 0) return;
+    
+    // For multiple users, use batch invitation
+    if (usernamesToInvite.length > 1) {
+      setSelectedUsers(usernamesToInvite);
       await sendMultipleInvitations();
       return;
     }
     
-    // Otherwise, send single invitation based on the username input
-    if (!username.trim()) return;
-    
+    // For single username, proceed with single invitation
+    const singleUsername = usernamesToInvite[0];
     setIsSubmitting(true);
+    
     try {
-      await apiRequest("POST", `/api/trips/${tripId}/members`, { username });
+      await apiRequest("POST", `/api/trips/${tripId}/members`, { username: singleUsername });
       toast({
         title: "Invitation sent",
-        description: `Invitation sent to ${username}`,
+        description: `Invitation sent to ${singleUsername}`,
       });
+      
+      // Clear the input and selected users after successful invitation
       setUsername("");
+      setSelectedUsers([]);
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
     } catch (error) {
       toast({
@@ -249,13 +316,44 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
           <TabsContent value="username">
             <form onSubmit={handleSubmit}>
               <div className="space-y-4 py-2">
-                <div className="flex items-center space-x-2">
-                  <Input
-                    placeholder="Enter username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                  />
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Input
+                      placeholder="Enter username(s), separate with comma or space"
+                      value={username}
+                      onChange={handleUsernameChange}
+                      className={selectedUsers.length > 0 ? "bg-primary-50 border-primary-300" : ""}
+                    />
+                    {isValidating && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin h-4 w-4 border-2 border-primary-500 border-t-transparent rounded-full" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {selectedUsers.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {selectedUsers.map(user => (
+                        <Badge 
+                          key={user} 
+                          className="px-2 py-1 flex items-center gap-1 bg-primary-100 text-primary-800 hover:bg-primary-200"
+                          onClick={() => {
+                            // Remove this user from selection
+                            const newSelection = selectedUsers.filter(u => u !== user);
+                            setSelectedUsers(newSelection);
+                            setUsername(newSelection.join(", "));
+                          }}
+                        >
+                          {user}
+                          <X className="h-3 w-3 cursor-pointer" />
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter multiple usernames separated by commas or spaces
+                  </p>
                 </div>
                 
                 {/* Past Travel Companions Section */}
