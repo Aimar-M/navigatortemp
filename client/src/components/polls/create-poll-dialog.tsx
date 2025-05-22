@@ -124,10 +124,15 @@ export const CreatePollDialog = ({
       return;
     }
     
-    createPollMutation.mutate({
+    // Fix the date format issue
+    const formattedData = {
       ...data,
       options: filteredOptions,
-    });
+      // If endDate is provided, convert it to a Date object, otherwise omit it
+      ...(data.endDate ? { endDate: new Date(data.endDate).toISOString() } : {})
+    };
+    
+    createPollMutation.mutate(formattedData);
   };
   
   const addOption = () => {
