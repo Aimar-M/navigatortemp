@@ -289,60 +289,24 @@ export default function Home() {
               </div>
             ) : trips && trips.length > 0 ? (
               <div className="space-y-1">
-                <Tabs defaultValue="all" className="w-full">
+                <Tabs defaultValue="upcoming" className="w-full">
                   <TabsList className="w-full justify-start px-4 pb-2">
-                    <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
                     <TabsTrigger value="upcoming" className="text-xs">Upcoming</TabsTrigger>
-                    <TabsTrigger value="past" className="text-xs">Past</TabsTrigger>
-                    <TabsTrigger value="invitations" className="text-xs">
-                      Invitations
+                    <TabsTrigger value="new" className="text-xs">
+                      New
                       {pendingInvitations && pendingInvitations.length > 0 && (
                         <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
                           {pendingInvitations.length}
                         </span>
                       )}
                     </TabsTrigger>
+                    <TabsTrigger value="archived" className="text-xs">Archived</TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="all">
-                    {filteredTrips.map((trip: any) => (
-                      <div key={trip.id} className="px-1">
-                        <EnhancedTripCard
-                          id={trip.id}
-                          name={trip.name}
-                          destination={trip.destination}
-                          startDate={trip.startDate}
-                          endDate={trip.endDate}
-                          status={trip.status}
-                          memberCount={trip.memberCount} 
-                          imageUrl={trip.imageUrl}
-                          isPinned={!!trip.isPinned}
-                          isArchived={!!trip.isArchived}
-                          onPin={handlePinTrip}
-                          onArchive={handleArchiveTrip}
-                        />
-                      </div>
-                    ))}
-                    {trips?.filter((trip: any) => !pendingInvitationTripIds.includes(trip.id)).length === 0 && (
-                      <p className="text-center text-gray-500 py-4">No trips found. Create your first trip!</p>
-                    )}
-                  </TabsContent>
-                  
                   <TabsContent value="upcoming">
-                    <div className="flex justify-between items-center px-4 mb-2">
-                      <label className="text-sm text-gray-500 flex items-center space-x-1">
-                        <input 
-                          type="checkbox" 
-                          checked={showArchived} 
-                          onChange={(e) => setShowArchived(e.target.checked)}
-                          className="rounded text-primary-500 focus:ring-primary-500"
-                        />
-                        <span>Show archived trips</span>
-                      </label>
-                    </div>
-                    
-                    {upcomingTrips.length > 0 ? (
-                      upcomingTrips.map((trip: any) => (
+                    {/* Only non-archived, upcoming trips */}
+                    {upcomingTrips.filter(trip => !trip.isArchived).length > 0 ? (
+                      upcomingTrips.filter(trip => !trip.isArchived).map((trip: any) => (
                         <div key={trip.id} className="px-1">
                           <EnhancedTripCard
                             id={trip.id}
@@ -365,44 +329,7 @@ export default function Home() {
                     )}
                   </TabsContent>
                   
-                  <TabsContent value="past">
-                    <div className="flex justify-between items-center px-4 mb-2">
-                      <label className="text-sm text-gray-500 flex items-center space-x-1">
-                        <input 
-                          type="checkbox" 
-                          checked={showArchived} 
-                          onChange={(e) => setShowArchived(e.target.checked)}
-                          className="rounded text-primary-500 focus:ring-primary-500"
-                        />
-                        <span>Show archived trips</span>
-                      </label>
-                    </div>
-                    
-                    {pastTrips.length > 0 ? (
-                      pastTrips.map((trip: any) => (
-                        <div key={trip.id} className="px-1">
-                          <EnhancedTripCard
-                            id={trip.id}
-                            name={trip.name}
-                            destination={trip.destination}
-                            startDate={trip.startDate}
-                            endDate={trip.endDate}
-                            status={trip.status}
-                            memberCount={trip.memberCount}
-                            imageUrl={trip.imageUrl}
-                            isPinned={!!trip.isPinned}
-                            isArchived={!!trip.isArchived}
-                            onPin={handlePinTrip}
-                            onArchive={handleArchiveTrip}
-                          />
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-center text-gray-500 py-4">No past trips.</p>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="invitations">
+                  <TabsContent value="new">
                     {pendingInvitations && pendingInvitations.length > 0 ? (
                       <div className="space-y-2 px-1">
                         {pendingInvitations.map((invitation: any) => (
@@ -469,7 +396,33 @@ export default function Home() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-center text-gray-500 py-4">No pending invitations.</p>
+                      <p className="text-center text-gray-500 py-4">No new trip invitations.</p>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="archived">
+                    {/* Only archived trips */}
+                    {trips?.filter(trip => trip.isArchived).length > 0 ? (
+                      trips.filter(trip => trip.isArchived).map((trip: any) => (
+                        <div key={trip.id} className="px-1">
+                          <EnhancedTripCard
+                            id={trip.id}
+                            name={trip.name}
+                            destination={trip.destination}
+                            startDate={trip.startDate}
+                            endDate={trip.endDate}
+                            status={trip.status}
+                            memberCount={trip.memberCount}
+                            imageUrl={trip.imageUrl}
+                            isPinned={!!trip.isPinned}
+                            isArchived={!!trip.isArchived}
+                            onPin={handlePinTrip}
+                            onArchive={handleArchiveTrip}
+                          />
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-center text-gray-500 py-4">No archived trips.</p>
                     )}
                   </TabsContent>
                 </Tabs>
