@@ -562,16 +562,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Activity Routes
   router.post('/trips/:id/activities', isAuthenticated, async (req: Request, res: Response) => {
     try {
+      console.log('Activity creation request received:', req.body);
+      
       const authUser = ensureUser(req, res);
       if (!authUser) return; // Response already sent by ensureUser
       
       const tripId = parseInt(req.params.id);
       if (isNaN(tripId)) {
+        console.log('Invalid trip ID');
         return res.status(400).json({ message: 'Invalid trip ID' });
       }
       
       const trip = await storage.getTrip(tripId);
       if (!trip) {
+        console.log('Trip not found:', tripId);
         return res.status(404).json({ message: 'Trip not found' });
       }
       
@@ -582,6 +586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       if (!isMember) {
+        console.log('User not a confirmed member:', authUser.id, tripId);
         return res.status(403).json({ message: 'Not a confirmed member of this trip' });
       }
       
@@ -592,9 +597,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         date: req.body.date ? new Date(req.body.date) : undefined
       };
       
-      const activityData = insertActivitySchema.parse(data);
+      console.log('Activity data before validation:', data);
       
-      const activity = await storage.createActivity(activityData);
+      try {
+        const activityData = insertActivitySchema.parse(data);
+        console.log('Validated activity data:', activityData);
+        
+        const activity = await storage.createActivity(activityData);
+        console.log('Activity created:', activity);
+      } catch (validationError) {
+        console.error('Validation error:', validationError);
+        return res.status(400).json({ message: 'Invalid activity data', error: validationError });
+      }
       
       // Auto-RSVP the creator as "going"
       await storage.createActivityRSVP({
