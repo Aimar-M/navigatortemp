@@ -35,8 +35,10 @@ export default function MobileNavigation() {
           ? new Date(localStorage.getItem('lastChatVisit')!) 
           : new Date(0); // If never visited, all messages are unread
         
+        // Only count messages from other users
         const unreadMessages = messages.filter((msg: any) => 
-          new Date(msg.timestamp) > lastChatVisit
+          new Date(msg.timestamp) > lastChatVisit && 
+          msg.userId !== user?.id
         );
         
         return unreadMessages.length;

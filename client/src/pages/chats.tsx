@@ -13,7 +13,7 @@ import { formatDateTime, formatDate, getInitials } from "@/lib/utils";
 import UserAvatar from "@/components/user-avatar";
 
 // Chat list item component
-const ChatItem = ({ trip, lastMessages }: { trip: any, lastMessages: any[] }) => {
+const ChatItem = ({ trip, lastMessages, currentUser }: { trip: any, lastMessages: any[], currentUser: any }) => {
   const [, navigate] = useLocation();
   
   // Find the last message for this trip, if any
@@ -24,13 +24,14 @@ const ChatItem = ({ trip, lastMessages }: { trip: any, lastMessages: any[] }) =>
     user: { name: "" } 
   };
   
-  // Check if there are unread messages
+  // Check if there are unread messages (only from other users)
   const lastChatVisit = localStorage.getItem(`lastChatVisit_${trip.id}`) 
     ? new Date(localStorage.getItem(`lastChatVisit_${trip.id}`)!) 
     : new Date(0); // If never visited, all messages are unread
     
   const unreadCount = tripMessages.filter(msg => 
-    new Date(msg.timestamp) > lastChatVisit
+    new Date(msg.timestamp) > lastChatVisit && 
+    msg.user?.id !== currentUser?.id // Only count messages from other users
   ).length;
 
   const goToChat = () => {
@@ -227,7 +228,8 @@ export default function Chats() {
                 <ChatItem 
                   key={trip.id} 
                   trip={trip} 
-                  lastMessages={lastMessages || []} 
+                  lastMessages={lastMessages || []}
+                  currentUser={user}
                 />
               ))}
             </div>

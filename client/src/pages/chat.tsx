@@ -214,29 +214,29 @@ export default function Chat() {
       <main className={`flex-1 flex flex-col overflow-hidden pb-0 ${isFromChatsPage ? 'max-h-screen' : 'max-h-[calc(100vh-60px)]'}`}>
         {/* Trip Header - More compact on mobile */}
         <div className="bg-white border-b border-gray-200 p-3 md:p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              {isFromChatsPage && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="mr-2 p-1 h-8 w-8" 
-                  onClick={() => navigate("/chats")}
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                  <span className="sr-only">Back to chats</span>
-                </Button>
-              )}
-              <div 
-                className={isFromChatsPage ? "cursor-pointer" : ""}
-                onClick={isFromChatsPage ? () => navigate(`/trips/${tripId}`) : undefined}
+          <div className="flex items-center justify-between relative">
+            {isFromChatsPage && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="p-1 h-8 w-8 absolute left-0" 
+                onClick={() => navigate("/chats")}
               >
-                <h2 className="text-lg md:text-xl font-bold text-gray-900">{trip.name}</h2>
-                <p className="text-xs md:text-sm text-gray-600">
-                  {isFromChatsPage ? "Tap to see trip details" : "Group Chat"}
-                </p>
-              </div>
+                <ArrowLeft className="h-5 w-5" />
+                <span className="sr-only">Back to chats</span>
+              </Button>
+            )}
+            <div 
+              className={`${isFromChatsPage ? "cursor-pointer mx-auto" : "ml-0"} text-center`}
+              onClick={isFromChatsPage ? () => navigate(`/trips/${tripId}`) : undefined}
+            >
+              <h2 className="text-lg md:text-xl font-bold text-gray-900">{trip.name}</h2>
+              <p className="text-xs md:text-sm text-gray-600">
+                {isFromChatsPage ? "Tap to see trip details" : "Group Chat"}
+              </p>
             </div>
+            {/* Empty div to balance the header when back button is shown */}
+            {isFromChatsPage && <div className="w-8"></div>}
           </div>
         </div>
 
