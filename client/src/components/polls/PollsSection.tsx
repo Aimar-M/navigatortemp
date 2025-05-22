@@ -154,6 +154,9 @@ const PollCard = ({ poll, tripId }: { poll: any; tripId: number }) => {
                       Remove vote
                     </Button>
                   ) : (
+                    // Show vote button if:
+                    // 1. User hasn't voted at all, or
+                    // 2. It's a multiple choice poll and user hasn't voted for this option
                     (!hasVoted || poll.multipleChoice) && (
                       <Button 
                         variant="ghost" 
@@ -162,7 +165,7 @@ const PollCard = ({ poll, tripId }: { poll: any; tripId: number }) => {
                         disabled={voteMutation.isPending}
                         className="text-primary-500 hover:text-primary-700 hover:bg-primary-50 py-0 h-6"
                       >
-                        Vote
+                        Vote {poll.multipleChoice && userVoteIndices.length > 0 ? "(Multiple allowed)" : ""}
                       </Button>
                     )
                   )}
