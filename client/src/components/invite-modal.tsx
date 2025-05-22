@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Copy, Link, Share2, X, Users, Clock, Plus } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Copy, Link, Share2, X, Users, Clock, Plus, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
 
 interface InviteModalProps {
   tripId: number;
@@ -33,37 +34,78 @@ interface InvitationLink {
   inviteUrl: string;
 }
 
-interface PastCompanion {
-  userId: number;
-  user: {
-    id: number;
-    name?: string;
-    username: string;
-    email?: string;
-    avatar?: string | null;
-  };
-  tripCount: number;
-  lastTripName: string;
-  lastTripDate: string;
+interface SuggestedCompanion {
+  id: number;
+  name?: string;
+  username: string;
+  avatar?: string | null;
 }
 
 export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProps) {
   const [username, setUsername] = useState("");
   const [inviteLinks, setInviteLinks] = useState<InvitationLink[]>([]);
-  const [pastCompanions, setPastCompanions] = useState<PastCompanion[]>([]);
-  const [isLoadingCompanions, setIsLoadingCompanions] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [activeTab, setActiveTab] = useState("username");
   const { toast } = useToast();
 
-  // Fetch data when the modal opens
+  // Fetch existing invitation links when the modal opens
   useEffect(() => {
     if (isOpen && tripId) {
       fetchInvitationLinks();
-      fetchPastCompanions();
     }
   }, [isOpen, tripId]);
+
+  // Query for fetching trip members to suggest past travel companions
+  const { data: members = [], isLoading: isLoadingMembers } = useQuery({
+    queryKey: [`/api/trips/${tripId}/members`],
+    enabled: isOpen && tripId > 0,
+  });
+  
+  // Query for fetching all trips to find common travelers
+  const { data: allTrips = [], isLoading: isLoadingTrips } = useQuery({
+    queryKey: ["/api/trips"],
+    enabled: isOpen,
+  });
+  
+  // Generate suggested travel companions
+  const suggestedCompanions = useMemo(() => {
+    if (!members.length || !allTrips.length) return [];
+    
+    // Get current trip members ids to avoid suggesting existing members
+    const currentMemberIds = members.map((member: any) => member.userId);
+    
+    // Find other trips that current members have been part of
+    const otherTripIds = allTrips
+      .filter((trip: any) => trip.id !== tripId)
+      .map((trip: any) => trip.id);
+    
+    // Create a list of suggested companions (users who've traveled with this group before)
+    const suggestedUsers: Record<string, SuggestedCompanion> = {};
+    
+    // Find users from other trips that aren't already in this trip
+    allTrips.forEach((trip: any) => {
+      if (trip.id !== tripId && trip.memberCount > 0) {
+        // Suggest users who aren't already in this trip
+        trip.confirmedMembers?.forEach((memberId: number) => {
+          if (!currentMemberIds.includes(memberId) && !suggestedUsers[memberId]) {
+            // Find the user details from members
+            const user = members.find((m: any) => m.userId === memberId)?.user;
+            if (user) {
+              suggestedUsers[memberId] = {
+                id: memberId,
+                name: user.name,
+                username: user.username,
+                avatar: user.avatar
+              };
+            }
+          }
+        });
+      }
+    });
+    
+    return Object.values(suggestedUsers);
+  }, [members, allTrips, tripId]);
 
   const fetchInvitationLinks = async () => {
     try {
@@ -176,6 +218,78 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
                     required
                   />
                 </div>
+                
+                {/* Past Travel Companions Section */}
+                {pastCompanions.length > 0 && (
+                  <div className="mt-6 space-y-3">
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                      People you've traveled with before
+                    </h3>
+                    <div className="max-h-[200px] overflow-y-auto space-y-3">
+                      {pastCompanions.map((companion) => (
+                        <Card key={companion.userId} className="border border-gray-200 overflow-hidden group hover:border-primary-300">
+                          <CardContent className="p-3 flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Avatar className="h-10 w-10 mr-3">
+                                {companion.user.avatar ? (
+                                  <AvatarImage src={companion.user.avatar} alt={companion.user.name || companion.user.username} />
+                                ) : (
+                                  <AvatarFallback className="bg-primary-100 text-primary-800">
+                                    {companion.user.name ? companion.user.name.charAt(0).toUpperCase() : 
+                                     companion.user.username.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                )}
+                              </Avatar>
+                              <div className="overflow-hidden">
+                                <div className="font-medium text-gray-900 text-sm truncate">
+                                  {companion.user.name || companion.user.username}
+                                </div>
+                                <div className="flex items-center text-xs text-gray-500 mt-0.5">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  <span>Last trip: {companion.lastTripName}</span>
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  <Badge variant="outline" className="mt-1 px-1.5 py-0 text-[10px]">
+                                    {companion.tripCount} trip{companion.tripCount !== 1 ? 's' : ''} together
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                            <Button 
+                              type="button" 
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 rounded-full"
+                              onClick={() => {
+                                setUsername(companion.user.username);
+                                toast({
+                                  title: "Username selected",
+                                  description: `Added ${companion.user.username} to invitation field`,
+                                });
+                              }}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Loading State */}
+                {isLoadingCompanions && (
+                  <div className="py-3 text-center text-sm text-gray-500">
+                    Loading past travel companions...
+                  </div>
+                )}
+                
+                {/* Empty State */}
+                {!isLoadingCompanions && pastCompanions.length === 0 && (
+                  <div className="py-3 text-center text-sm text-gray-500">
+                    No past travel companions found
+                  </div>
+                )}
               </div>
               <DialogFooter className="mt-4 sm:justify-between">
                 <Button type="button" variant="outline" onClick={onClose}>
