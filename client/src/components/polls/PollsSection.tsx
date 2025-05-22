@@ -237,6 +237,9 @@ const PollsSection: React.FC<PollsSectionProps> = ({ tripId }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-900">Polls</h2>
+      </div>
+      
+      <div className="mb-4">
         <CreatePollDialog tripId={tripId} />
       </div>
       
@@ -250,7 +253,6 @@ const PollsSection: React.FC<PollsSectionProps> = ({ tripId }) => {
             <Info className="h-10 w-10 text-gray-400 mx-auto mb-2" />
             <h3 className="text-lg font-medium text-gray-900">No polls yet</h3>
             <p className="text-gray-500 mb-4">Create a poll to gather opinions from your trip members</p>
-            <CreatePollDialog tripId={tripId} />
           </div>
         )}
       </div>
