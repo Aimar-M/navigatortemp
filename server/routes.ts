@@ -288,8 +288,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) return; // Response already sent by ensureUser
       
       const trips = await storage.getTripsByUser(user.id);
-      res.json(trips);
+      
+      // Fetch member counts for each trip
+      const tripsWithMemberCounts = await Promise.all(trips.map(async (trip) => {
+        const members = await storage.getTripMembers(trip.id);
+        // Count only confirmed members
+        const confirmedMembers = members.filter(member => member.status === 'confirmed');
+        return {
+          ...trip,
+          memberCount: confirmedMembers.length,
+          totalMembers: members.length,
+          confirmedMembers: confirmedMembers.map(m => m.userId)
+        };
+      }));
+      
+      res.json(tripsWithMemberCounts);
     } catch (error) {
+      console.error("Error fetching trips with member counts:", error);
       res.status(500).json({ message: 'Server error' });
     }
   });
