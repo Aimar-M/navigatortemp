@@ -312,15 +312,23 @@ export default function Chat() {
                   </div>
                 </div>
               ))}
-              {/* Display polls in chat when in chat view */}
-              {isFromChatsPage && Array.isArray(polls) && polls.length > 0 && (
-                <div className="my-4">
-                  <div className="text-center text-xs uppercase tracking-wide text-gray-500 my-3">Polls</div>
-                  {polls.map((poll: any) => (
-                    <ChatPoll key={poll.id} poll={poll} tripId={tripId} />
-                  ))}
+              {/* Display polls integrated with messages */}
+              {isFromChatsPage && Array.isArray(polls) && polls.length > 0 && polls.map((poll: any) => (
+                <div key={`poll-${poll.id}`} className="flex items-start mb-3">
+                  <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mr-2 text-sm font-medium">
+                    {poll.creator?.name ? poll.creator.name.charAt(0).toUpperCase() : "?"}
+                  </div>
+                  <div className="max-w-[85%]">
+                    <p className="text-xs font-medium text-gray-900 mb-1">{poll.creator?.name || "Anonymous"}</p>
+                    <div className="w-full">
+                      <ChatPoll poll={poll} tripId={tripId} />
+                    </div>
+                    <span className="text-[10px] md:text-xs mt-1 block text-gray-500">
+                      {new Date(poll.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
                 </div>
-              )}
+              ))}
               
               <div ref={messagesEndRef} />
             </div>
@@ -341,15 +349,23 @@ export default function Chat() {
               <h3 className="text-lg font-medium text-gray-700">No messages yet</h3>
               <p className="text-gray-500 mt-1 mb-4">Be the first to start the conversation!</p>
               
-              {/* Show polls even when there are no messages */}
-              {isFromChatsPage && Array.isArray(polls) && polls.length > 0 && (
-                <div className="my-4 w-full max-w-md">
-                  <div className="text-center text-xs uppercase tracking-wide text-gray-500 my-3">Polls</div>
-                  {polls.map((poll: any) => (
-                    <ChatPoll key={poll.id} poll={poll} tripId={tripId} />
-                  ))}
+              {/* Show polls integrated with chat flow even when there are no messages */}
+              {isFromChatsPage && Array.isArray(polls) && polls.length > 0 && polls.map((poll: any) => (
+                <div key={`poll-${poll.id}`} className="flex items-start mb-3 w-full max-w-md mx-auto">
+                  <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center mr-2 text-sm font-medium">
+                    {poll.creator?.name ? poll.creator.name.charAt(0).toUpperCase() : "?"}
+                  </div>
+                  <div className="max-w-[85%]">
+                    <p className="text-xs font-medium text-gray-900 mb-1">{poll.creator?.name || "Anonymous"}</p>
+                    <div className="w-full">
+                      <ChatPoll poll={poll} tripId={tripId} />
+                    </div>
+                    <span className="text-[10px] md:text-xs mt-1 block text-gray-500">
+                      {new Date(poll.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
           )}
         </div>
