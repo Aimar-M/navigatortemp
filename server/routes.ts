@@ -405,7 +405,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Trip not found' });
       }
       
-      // Only organizer can update trip
+      // Check if this is a pin/archive action
+      if (req.body.isPinned !== undefined || req.body.isArchived !== undefined) {
+        // Any member can pin or archive a trip for their own view
+        const memberships = await storage.getTripMembershipsByUser(user.id);
+        const isMember = memberships.some(m => m.tripId === tripId);
+        
+        if (!isMember && trip.organizer !== user.id) {
+          return res.status(403).json({ message: 'You must be a member of this trip to pin or archive it' });
+        }
+        
+        // Allow the pinning/archiving operations
+        const tripData = insertTripSchema.partial().parse(req.body);
+        const updatedTrip = await storage.updateTrip(tripId, tripData);
+        
+        res.json(updatedTrip);
+        return;
+      }
+      
+      // For regular trip updates, only the organizer can make changes
       if (trip.organizer !== user.id) {
         return res.status(403).json({ message: 'Only the trip organizer can update trip details' });
       }
