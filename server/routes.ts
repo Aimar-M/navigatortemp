@@ -500,21 +500,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all trips this user has been a part of
       const userTrips = await storage.getTripsByUser(user.id);
       
-      // Filter to only include past trips (end date before current date)
-      const now = new Date();
-      const pastTrips = userTrips.filter(trip => {
-        const endDate = new Date(trip.endDate);
-        return endDate < now && trip.id !== tripId;
-      });
+      // Include all trips that the user is part of except the current one
+      // We want to show all travel connections, not just past trips
+      const relevantTrips = userTrips.filter(trip => trip.id !== tripId);
       
-      // Get all members from those past trips
+      // Get all members from those relevant trips
       const companionsMap = new Map();
       
-      await Promise.all(pastTrips.map(async (trip) => {
+      await Promise.all(relevantTrips.map(async (trip) => {
         const tripMembers = await storage.getTripMembers(trip.id);
         
-        // Only include confirmed members who aren't the current user
-        for (const member of tripMembers.filter(m => m.status === 'confirmed' && m.userId !== user.id)) {
+        // Include all members who aren't the current user (not just confirmed members)
+        for (const member of tripMembers.filter(m => m.userId !== user.id)) {
           // Get the user details for this member
           const memberUser = await storage.getUser(member.userId);
           if (memberUser) {
