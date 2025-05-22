@@ -590,34 +590,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Not a confirmed member of this trip' });
       }
       
-      // Convert date string to Date object before validation
-      const data = {
-        ...req.body,
-        tripId,
-        date: req.body.date ? new Date(req.body.date) : undefined
-      };
-      
-      console.log('Activity data before validation:', data);
-      
       try {
+        // Convert date string to Date object before validation
+        const data = {
+          ...req.body,
+          tripId,
+          date: req.body.date ? new Date(req.body.date) : undefined
+        };
+        
+        console.log('Activity data before validation:', data);
+        
+        // Validate the activity data
         const activityData = insertActivitySchema.parse(data);
         console.log('Validated activity data:', activityData);
         
-        const activity = await storage.createActivity(activityData);
-        console.log('Activity created:', activity);
-      } catch (validationError) {
-        console.error('Validation error:', validationError);
-        return res.status(400).json({ message: 'Invalid activity data', error: validationError });
+        // Create the activity
+        const createdActivity = await storage.createActivity(activityData);
+        console.log('Activity created:', createdActivity);
+        
+        // Auto-RSVP the creator as "going"
+        await storage.createActivityRSVP({
+          activityId: createdActivity.id,
+          userId: authUser.id,
+          status: 'going'
+        });
+        
+        res.status(201).json(createdActivity);
+      } catch (error) {
+        console.error('Error creating activity:', error);
+        if (error instanceof z.ZodError) {
+          return res.status(400).json({ 
+            message: 'Invalid activity data', 
+            errors: error.errors 
+          });
+        }
+        throw error; // Pass to outer catch block
       }
-      
-      // Auto-RSVP the creator as "going"
-      await storage.createActivityRSVP({
-        activityId: activity.id,
-        userId: authUser.id,
-        status: 'going'
-      });
-      
-      res.status(201).json(activity);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Invalid activity data', errors: error.errors });
