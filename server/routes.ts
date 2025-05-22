@@ -514,13 +514,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const tripMembers = await storage.getTripMembers(trip.id);
         
         // Only include confirmed members who aren't the current user
-        tripMembers
-          .filter(member => member.status === 'confirmed' && member.userId !== user.id)
-          .forEach(member => {
+        for (const member of tripMembers.filter(m => m.status === 'confirmed' && m.userId !== user.id)) {
+          // Get the user details for this member
+          const memberUser = await storage.getUser(member.userId);
+          if (memberUser) {
             if (!companionsMap.has(member.userId)) {
               companionsMap.set(member.userId, {
                 userId: member.userId,
-                user: member.user,
+                user: memberUser,
                 tripCount: 1,
                 lastTripName: trip.name,
                 lastTripDate: trip.endDate
@@ -537,7 +538,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 companion.lastTripDate = trip.endDate;
               }
             }
-          });
+          }
+        }
       }));
       
       // Convert map to array and sort by trip count (most frequent companions first)
