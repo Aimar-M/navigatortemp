@@ -90,6 +90,21 @@ export default function Chats() {
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   
+  // Function to sort trips by most recent message
+  const sortTripsByLatestMessage = (trips: any[], messages: any[]) => {
+    return [...trips].sort((a, b) => {
+      // Find the most recent message for each trip
+      const aMessages = messages.filter(msg => msg.tripId === a.id);
+      const bMessages = messages.filter(msg => msg.tripId === b.id);
+      
+      const aLatest = aMessages.length > 0 ? new Date(aMessages[0].timestamp).getTime() : 0;
+      const bLatest = bMessages.length > 0 ? new Date(bMessages[0].timestamp).getTime() : 0;
+      
+      // Sort by latest message timestamp (newest first)
+      return bLatest - aLatest;
+    });
+  };
+  
   // Update last visit timestamp when opening the chats page
   useEffect(() => {
     if (user) {
@@ -224,7 +239,7 @@ export default function Chats() {
             </div>
           ) : sortedTrips.length > 0 ? (
             <div className="space-y-2 p-4">
-              {sortedTrips.map((trip: any) => (
+              {sortTripsByLatestMessage(sortedTrips, lastMessages || []).map((trip: any) => (
                 <ChatItem 
                   key={trip.id} 
                   trip={trip} 
