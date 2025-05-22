@@ -23,51 +23,60 @@ const PollCard = ({ poll, tripId }: { poll: any; tripId: number }) => {
   const token = localStorage.getItem('auth_token');
   
   const voteMutation = useMutation({
-    mutationFn: (optionIndex: number) => {
-      return fetch(`/api/polls/${poll.id}/vote`, {
+    mutationFn: async (optionIndex: number) => {
+      const res = await fetch(`/api/polls/${poll.id}/vote`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ optionIndex })
-      }).then(res => {
-        if (!res.ok) {
-          return res.json().then(err => {
-            throw new Error(err.message || 'Failed to vote');
-          });
-        }
-        return res.json();
       });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to vote');
+      }
+      
+      return res.json();
     },
-    onSuccess: () => {
-      // Immediately invalidate polls query to refresh the data
+    onSuccess: (data) => {
+      // Immediately refresh both polls and messages
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/polls`] });
-      // Force a refresh
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/messages`] });
+      
+      // Ensure UI updates with toast feedback
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/polls`] });
-      }, 500);
+      }, 200);
     },
   });
   
   const removeVoteMutation = useMutation({
-    mutationFn: (voteId: number) => {
-      return fetch(`/api/polls/${poll.id}/votes/${voteId}`, {
+    mutationFn: async (voteId: number) => {
+      const res = await fetch(`/api/polls/${poll.id}/votes/${voteId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
         }
-      }).then(res => {
-        if (!res.ok) {
-          return res.json().then(err => {
-            throw new Error(err.message || 'Failed to remove vote');
-          });
-        }
-        return res.json();
       });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to remove vote');
+      }
+      
+      return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Refresh both polls and messages data
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/polls`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/messages`] });
+      
+      // Force a refresh to update UI
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/polls`] });
+      }, 200);
     },
   });
   
