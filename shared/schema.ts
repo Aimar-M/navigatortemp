@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, foreignKey, uuid, decimal, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, foreignKey, uuid, decimal, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
@@ -41,8 +41,6 @@ export const trips = pgTable("trips", {
   status: text("status").notNull().default("planning"), // planning, active, completed
   cover: text("cover"),
   organizer: integer("organizer").notNull().references(() => users.id),
-  isPinned: boolean("is_pinned").notNull().default(false),
-  isArchived: boolean("is_archived").notNull().default(false),
 });
 
 export const tripsRelations = relations(trips, ({ one, many }) => ({
@@ -67,6 +65,35 @@ export const insertTripSchema = createInsertSchema(trips).pick({
   status: true,
   cover: true,
   organizer: true,
+});
+
+// Add new table for user-specific trip settings
+export const userTripSettings = pgTable("user_trip_settings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  tripId: integer("trip_id").notNull().references(() => trips.id),
+  isPinned: boolean("is_pinned").notNull().default(false),
+  isArchived: boolean("is_archived").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  uniqueUserTrip: uniqueIndex("user_trip_settings_user_trip_idx").on(t.userId, t.tripId),
+}));
+
+export const userTripSettingsRelations = relations(userTripSettings, ({ one }) => ({
+  user: one(users, {
+    fields: [userTripSettings.userId],
+    references: [users.id]
+  }),
+  trip: one(trips, {
+    fields: [userTripSettings.tripId],
+    references: [trips.id]
+  }),
+}));
+
+export const insertUserTripSettingsSchema = createInsertSchema(userTripSettings).pick({
+  userId: true,
+  tripId: true,
   isPinned: true,
   isArchived: true,
 });
@@ -457,3 +484,7 @@ export type InsertPoll = z.infer<typeof insertPollSchema>;
 
 export type PollVote = typeof pollVotes.$inferSelect;
 export type InsertPollVote = z.infer<typeof insertPollVoteSchema>;
+
+// Add types for user trip settings
+export type UserTripSetting = typeof userTripSettings.$inferSelect;
+export type InsertUserTripSetting = z.infer<typeof insertUserTripSettingsSchema>;
