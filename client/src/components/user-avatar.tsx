@@ -13,6 +13,7 @@ interface UserAvatarProps {
   className?: string;
   fallback?: string;
   fallbackClassName?: string;
+  size?: "xs" | "sm" | "md" | "lg";
 }
 
 export default function UserAvatar({
@@ -20,17 +21,26 @@ export default function UserAvatar({
   className,
   fallback,
   fallbackClassName,
+  size = "md",
 }: UserAvatarProps) {
   // Get display name, prioritize name, then username, then use id as fallback
   const displayName = user?.name || user?.username || `User ${user?.id}`;
   const initials = displayName ? getInitials(displayName) : fallback || "?";
+  
+  // Size classes
+  const sizeClasses = {
+    xs: "h-6 w-6 text-xs",
+    sm: "h-8 w-8 text-xs",
+    md: "h-10 w-10 text-sm",
+    lg: "h-12 w-12 text-base"
+  };
 
   return (
-    <Avatar className={cn("h-10 w-10", className)}>
+    <Avatar className={cn(sizeClasses[size], className)}>
       {user?.avatar ? (
         <AvatarImage src={user.avatar} alt={displayName} />
       ) : null}
-      <AvatarFallback className={cn("text-sm", fallbackClassName)}>
+      <AvatarFallback className={cn(fallbackClassName)}>
         {initials}
       </AvatarFallback>
     </Avatar>
