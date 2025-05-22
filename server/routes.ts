@@ -415,12 +415,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).json({ message: 'You must be a member of this trip to pin or archive it' });
         }
         
-        // Allow the pinning/archiving operations
-        const tripData = insertTripSchema.partial().parse(req.body);
-        const updatedTrip = await storage.updateTrip(tripId, tripData);
-        
-        res.json(updatedTrip);
-        return;
+        // Create or update user-specific trip settings instead of updating the trip itself
+        try {
+          // Get existing settings or create default values
+          const settings = await storage.getUserTripSettings(user.id, tripId) || { 
+            userId: user.id, 
+            tripId: tripId,
+            isPinned: false,
+            isArchived: false
+          };
+          
+          // Update with new values
+          const updatedSettings = {
+            ...settings,
+            isPinned: req.body.isPinned !== undefined ? req.body.isPinned : settings.isPinned,
+            isArchived: req.body.isArchived !== undefined ? req.body.isArchived : settings.isArchived
+          };
+          
+          // Save user trip settings
+          await storage.createOrUpdateUserTripSettings(updatedSettings);
+          
+          // Return the trip with the user settings applied
+          const updatedTrip = {
+            ...trip,
+            isPinned: updatedSettings.isPinned,
+            isArchived: updatedSettings.isArchived
+          };
+          
+          res.json(updatedTrip);
+          return;
+        } catch (error) {
+          console.error("Error updating user trip settings:", error);
+          return res.status(500).json({ message: 'Failed to update trip settings' });
+        }
       }
       
       // For regular trip updates, only the organizer can make changes
