@@ -2079,14 +2079,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Poll not found' });
       }
       
-      // Check if user is a member of the associated trip
+      // Check if user is a member of the associated trip (allow any member to vote)
       const members = await storage.getTripMembers(poll.tripId);
       const isMember = members.some(member => 
-        member.userId === user.id && member.status === 'confirmed'
+        member.userId === user.id
       );
       
       if (!isMember) {
-        return res.status(403).json({ message: 'Must be a confirmed member to vote' });
+        return res.status(403).json({ message: 'Must be a member of this trip to vote' });
       }
       
       // Check if poll is still active

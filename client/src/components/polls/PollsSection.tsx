@@ -194,7 +194,7 @@ const PollsSection: React.FC<PollsSectionProps> = ({ tripId }) => {
   const { data: polls = [], isLoading, error, refetch } = useQuery<any[]>({
     queryKey: [`/api/trips/${tripId}/polls`],
     enabled: !!tripId,
-    refetchInterval: 5000, // Refetch every 5 seconds to get updated votes
+    refetchInterval: 2000, // Refetch more frequently to get updated votes
     queryFn: async () => {
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`/api/trips/${tripId}/polls`, {
