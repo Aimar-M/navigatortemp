@@ -43,6 +43,7 @@ interface SuggestedCompanion {
 
 export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProps) {
   const [username, setUsername] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [inviteLinks, setInviteLinks] = useState<InvitationLink[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
@@ -100,8 +101,62 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
     }
   };
 
+  // Toggle a user selection for batch invites
+  const toggleUserSelection = (username: string) => {
+    setSelectedUsers(prev => {
+      if (prev.includes(username)) {
+        return prev.filter(u => u !== username);
+      } else {
+        return [...prev, username];
+      }
+    });
+  };
+
+  // Send invitations to all selected users
+  const sendMultipleInvitations = async () => {
+    if (selectedUsers.length === 0) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Send invitations in parallel
+      const results = await Promise.allSettled(
+        selectedUsers.map(username => 
+          apiRequest("POST", `/api/trips/${tripId}/members`, { username })
+        )
+      );
+      
+      // Count successful invitations
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      
+      toast({
+        title: "Invitations sent",
+        description: `Successfully sent ${successful} of ${selectedUsers.length} invitations`,
+      });
+      
+      // Clear selected users
+      setSelectedUsers([]);
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
+    } catch (error) {
+      toast({
+        title: "Error sending invitations",
+        description: error instanceof Error ? error.message : "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If we have selected users, send batch invitations
+    if (selectedUsers.length > 0) {
+      await sendMultipleInvitations();
+      return;
+    }
+    
+    // Otherwise, send single invitation based on the username input
     if (!username.trim()) return;
     
     setIsSubmitting(true);
@@ -212,14 +267,21 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
                     </h3>
                     <div className="max-h-[200px] overflow-y-auto space-y-3">
                       {suggestedCompanions.map((companion) => (
-                        <Card key={companion.id} className="border border-gray-200 overflow-hidden group hover:border-primary-300 hover:shadow-sm transition-all duration-300">
+                        <Card 
+                          key={companion.id} 
+                          className={`border overflow-hidden group transition-all duration-300 cursor-pointer
+                            ${selectedUsers.includes(companion.username) 
+                              ? 'border-primary-500 bg-primary-50 shadow-sm' 
+                              : 'border-gray-200 hover:border-primary-300 hover:shadow-sm'}`}
+                          onClick={() => toggleUserSelection(companion.username)}
+                        >
                           <CardContent className="p-3 flex items-center justify-between">
                             <div className="flex items-center">
-                              <Avatar className="h-10 w-10 mr-3">
+                              <Avatar className={`h-10 w-10 mr-3 ${selectedUsers.includes(companion.username) ? 'ring-2 ring-primary-500 ring-offset-2' : ''}`}>
                                 {companion.avatar ? (
                                   <AvatarImage src={companion.avatar} alt={companion.name || companion.username} />
                                 ) : (
-                                  <AvatarFallback className="bg-primary-100 text-primary-800">
+                                  <AvatarFallback className={`${selectedUsers.includes(companion.username) ? 'bg-primary-200 text-primary-900' : 'bg-primary-100 text-primary-800'}`}>
                                     {companion.name ? companion.name.charAt(0).toUpperCase() : 
                                      companion.username.charAt(0).toUpperCase()}
                                   </AvatarFallback>
@@ -237,28 +299,42 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
                                 )}
                                 {companion.tripCount > 0 && (
                                   <div className="text-xs text-gray-500">
-                                    <Badge variant="outline" className="mt-1 px-1.5 py-0 text-[10px]">
+                                    <Badge variant={selectedUsers.includes(companion.username) ? "default" : "outline"} className="mt-1 px-1.5 py-0 text-[10px]">
                                       {companion.tripCount} trip{companion.tripCount !== 1 ? 's' : ''} together
                                     </Badge>
                                   </div>
                                 )}
                               </div>
                             </div>
-                            <Button 
-                              type="button" 
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0 rounded-full opacity-70 group-hover:opacity-100 group-hover:bg-primary-50 transition-all duration-300"
-                              onClick={() => {
-                                setUsername(companion.username);
-                                toast({
-                                  title: "Username selected",
-                                  description: `Added ${companion.username} to invitation field`,
-                                });
-                              }}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center space-x-1">
+                              {selectedUsers.includes(companion.username) ? (
+                                <Button 
+                                  type="button" 
+                                  size="sm"
+                                  variant="secondary"
+                                  className="h-8 w-8 p-0 rounded-full bg-primary-100"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleUserSelection(companion.username);
+                                  }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              ) : (
+                                <Button 
+                                  type="button" 
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 rounded-full opacity-70 group-hover:opacity-100 group-hover:bg-primary-50 transition-all duration-300"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleUserSelection(companion.username);
+                                  }}
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </CardContent>
                         </Card>
                       ))}
