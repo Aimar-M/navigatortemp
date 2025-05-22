@@ -19,6 +19,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   messages: many(messages),
   activityRsvps: many(activityRsvp),
   surveyResponses: many(surveyResponses),
+  pollVotes: many(pollVotes),
 }));
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -52,6 +53,7 @@ export const tripsRelations = relations(trips, ({ one, many }) => ({
   activities: many(activities),
   messages: many(messages),
   surveyQuestions: many(surveyQuestions),
+  polls: many(polls),
 }));
 
 export const insertTripSchema = createInsertSchema(trips).pick({
@@ -381,3 +383,73 @@ export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 
 export type FlightInfo = typeof flightInfo.$inferSelect;
 export type InsertFlightInfo = z.infer<typeof insertFlightInfoSchema>;
+
+// Polls schema
+export const polls = pgTable("polls", {
+  id: serial("id").primaryKey(),
+  tripId: integer("trip_id").notNull().references(() => trips.id),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  options: text("options").array().notNull(),
+  multipleChoice: boolean("multiple_choice").notNull().default(false),
+  endDate: timestamp("end_date"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const pollsRelations = relations(polls, ({ one, many }) => ({
+  trip: one(trips, {
+    fields: [polls.tripId],
+    references: [trips.id]
+  }),
+  creator: one(users, {
+    fields: [polls.createdBy],
+    references: [users.id]
+  }),
+  votes: many(pollVotes)
+}));
+
+export const insertPollSchema = createInsertSchema(polls).pick({
+  tripId: true,
+  createdBy: true,
+  title: true,
+  description: true,
+  options: true,
+  multipleChoice: true,
+  endDate: true,
+});
+
+// Poll Votes schema
+export const pollVotes = pgTable("poll_votes", {
+  id: serial("id").primaryKey(),
+  pollId: integer("poll_id").notNull().references(() => polls.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  optionIndex: integer("option_index").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const pollVotesRelations = relations(pollVotes, ({ one }) => ({
+  poll: one(polls, {
+    fields: [pollVotes.pollId],
+    references: [polls.id]
+  }),
+  user: one(users, {
+    fields: [pollVotes.userId],
+    references: [users.id]
+  })
+}));
+
+export const insertPollVoteSchema = createInsertSchema(pollVotes).pick({
+  pollId: true,
+  userId: true,
+  optionIndex: true,
+});
+
+// Define new types for polls
+export type Poll = typeof polls.$inferSelect;
+export type InsertPoll = z.infer<typeof insertPollSchema>;
+
+export type PollVote = typeof pollVotes.$inferSelect;
+export type InsertPollVote = z.infer<typeof insertPollVoteSchema>;
