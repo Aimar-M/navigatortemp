@@ -277,9 +277,7 @@ const PollCard = ({ poll, tripId }: { poll: any; tripId: number }) => {
   
   const removeVoteMutation = useMutation({
     mutationFn: (voteId: number) => {
-      return apiRequest(`/api/polls/${poll.id}/votes/${voteId}`, {
-        method: "DELETE",
-      });
+      return apiRequest("DELETE", `/api/polls/${poll.id}/votes/${voteId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/polls`] });
@@ -403,7 +401,7 @@ const PollCard = ({ poll, tripId }: { poll: any; tripId: number }) => {
 const PollsSection: React.FC<PollsSectionProps> = ({ tripId }) => {
   const { user } = useAuth();
   
-  const { data: polls, isLoading, error } = useQuery({
+  const { data: polls = [], isLoading, error } = useQuery({
     queryKey: [`/api/trips/${tripId}/polls`],
     enabled: !!tripId,
   });
@@ -449,7 +447,7 @@ const PollsSection: React.FC<PollsSectionProps> = ({ tripId }) => {
       </div>
       
       <div className="space-y-4">
-        {polls && polls.length > 0 ? (
+        {polls.length > 0 ? (
           polls.map((poll: any) => (
             <PollCard key={poll.id} poll={poll} tripId={tripId} />
           ))

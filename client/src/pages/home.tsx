@@ -119,17 +119,9 @@ export default function Home() {
       <main className="flex-1 flex flex-col md:flex-row overflow-hidden pb-16 md:pb-0">
         {/* Navigation Panel */}
         <div className="w-full md:w-80 md:min-w-[320px] bg-white border-r border-gray-200 md:h-full overflow-y-auto">
-          {/* Tabs for mobile navigation */}
-          <div className="md:hidden flex border-b border-gray-200">
-            <button className="flex-1 py-3 text-center text-sm font-medium tab-active">
-              Trips
-            </button>
-            <button className="flex-1 py-3 text-center text-sm font-medium text-gray-500">
-              Messages
-            </button>
-            <button className="flex-1 py-3 text-center text-sm font-medium text-gray-500">
-              Profile
-            </button>
+          {/* Page Title - Replacing the tabs as requested */}
+          <div className="md:hidden px-4 py-3 border-b border-gray-200">
+            <h1 className="text-lg font-semibold">My Trips</h1>
           </div>
 
           {/* Search Bar */}
