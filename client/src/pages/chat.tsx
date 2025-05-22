@@ -26,17 +26,22 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isFromChatsPage, setIsFromChatsPage] = useState(false);
   
-  // Check if we navigated from the chats page
+  // Check if we navigated from the chats page and update last visit timestamp
   useEffect(() => {
     // Get referrer from sessionStorage
     const referrer = sessionStorage.getItem('chatReferrer');
     setIsFromChatsPage(referrer === 'chats');
     
+    // Update last visit timestamp to mark messages as read
+    if (tripId) {
+      localStorage.setItem(`lastChatVisit_${tripId}`, new Date().toISOString());
+    }
+    
     // Clean up
     return () => {
       sessionStorage.removeItem('chatReferrer');
     };
-  }, []);
+  }, [tripId]);
 
   // Fetch trip details
   const { data: trip, isLoading: isTripLoading } = useQuery({

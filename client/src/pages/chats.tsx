@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
@@ -16,14 +16,14 @@ import UserAvatar from "@/components/user-avatar";
 const ChatItem = ({ trip, lastMessages, currentUser }: { trip: any, lastMessages: any[], currentUser: any }) => {
   const [, navigate] = useLocation();
   
-  // Find all messages for this trip
+  // Find all messages for this trip (messages are already sorted by timestamp desc)
   const tripMessages = lastMessages?.filter(msg => msg.tripId === trip.id) || [];
   
   // Get the last message for display
   const lastMessage = tripMessages.length > 0 ? tripMessages[0] : { 
     content: "No messages yet", 
     timestamp: trip.startDate,
-    user: { name: "" } 
+    user: { name: "", id: 0 } 
   };
   
   // Get last visit time from localStorage, or default to beginning of time
@@ -34,7 +34,8 @@ const ChatItem = ({ trip, lastMessages, currentUser }: { trip: any, lastMessages
   // Count unread messages (only from other users, newer than last visit)
   const unreadCount = tripMessages.filter(msg => 
     new Date(msg.timestamp) > lastChatVisit && 
-    msg.userId !== currentUser?.id // Only count messages from other users
+    msg.userId !== currentUser?.id && // Only count messages from other users
+    msg.userId !== undefined // Make sure userId exists
   ).length;
 
   const goToChat = () => {
@@ -175,22 +176,28 @@ export default function Chats() {
   ) || [];
   
   // Sort trips by most recent message
-  const sortedTrips = [...filteredTrips].sort((a, b) => {
-    // Find last message for each trip
-    const aMessages = lastMessages?.filter(msg => msg.tripId === a.id) || [];
-    const bMessages = lastMessages?.filter(msg => msg.tripId === b.id) || [];
+  const sortedTrips = React.useMemo(() => {
+    // Make a copy of filteredTrips
+    const trips = [...filteredTrips];
     
-    const aLatestTimestamp = aMessages.length > 0 
-      ? new Date(aMessages[0].timestamp).getTime() 
-      : new Date(a.updatedAt || a.startDate).getTime();
+    return trips.sort((a, b) => {
+      // Find the latest message for each trip
+      const aMessages = lastMessages?.filter(msg => msg.tripId === a.id) || [];
+      const bMessages = lastMessages?.filter(msg => msg.tripId === b.id) || [];
       
-    const bLatestTimestamp = bMessages.length > 0 
-      ? new Date(bMessages[0].timestamp).getTime() 
-      : new Date(b.updatedAt || b.startDate).getTime();
-    
-    // Sort in descending order (most recent first)
-    return bLatestTimestamp - aLatestTimestamp;
-  });
+      // Get message timestamps or fall back to trip dates
+      const aLatestTimestamp = aMessages.length > 0 
+        ? new Date(aMessages[0].timestamp).getTime() 
+        : new Date(a.updatedAt || a.startDate).getTime();
+        
+      const bLatestTimestamp = bMessages.length > 0 
+        ? new Date(bMessages[0].timestamp).getTime() 
+        : new Date(b.updatedAt || b.startDate).getTime();
+      
+      // Sort in descending order (newest messages first)
+      return bLatestTimestamp - aLatestTimestamp;
+    });
+  }, [filteredTrips, lastMessages]);
 
   const isLoading = authLoading || tripsLoading || messagesLoading;
   
@@ -251,7 +258,8 @@ export default function Chats() {
             </div>
           ) : sortedTrips.length > 0 ? (
             <div className="space-y-2 p-4">
-              {sortTripsByLatestMessage(sortedTrips, lastMessages || []).map((trip: any) => (
+              {/* We're now using the pre-sorted list from the sortTripsByLatestMessage function */}
+              {sortedTrips.map((trip: any) => (
                 <ChatItem 
                   key={trip.id} 
                   trip={trip} 
