@@ -82,6 +82,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
   
+  // Username validation endpoint
+  router.get('/users/validate', async (req: Request, res: Response) => {
+    const { username } = req.query;
+    
+    if (!username || typeof username !== 'string') {
+      return res.status(400).json({ message: 'Username parameter is required' });
+    }
+    
+    try {
+      const user = await storage.getUserByUsername(username);
+      if (user) {
+        return res.status(200).json({ valid: true });
+      } else {
+        return res.status(404).json({ valid: false, message: 'Username not found' });
+      }
+    } catch (error) {
+      console.error('Error validating username:', error);
+      return res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
   // Auth Routes
   router.post('/auth/register', async (req: Request, res: Response) => {
     try {
