@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Copy, Link, Share2, X, Users } from "lucide-react";
+import { Copy, Link, Share2, X, Users, Clock, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
@@ -15,6 +15,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
 interface InviteModalProps {
   tripId: number;
@@ -30,18 +33,35 @@ interface InvitationLink {
   inviteUrl: string;
 }
 
+interface PastCompanion {
+  userId: number;
+  user: {
+    id: number;
+    name?: string;
+    username: string;
+    email?: string;
+    avatar?: string | null;
+  };
+  tripCount: number;
+  lastTripName: string;
+  lastTripDate: string;
+}
+
 export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProps) {
   const [username, setUsername] = useState("");
   const [inviteLinks, setInviteLinks] = useState<InvitationLink[]>([]);
+  const [pastCompanions, setPastCompanions] = useState<PastCompanion[]>([]);
+  const [isLoadingCompanions, setIsLoadingCompanions] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [activeTab, setActiveTab] = useState("username");
   const { toast } = useToast();
 
-  // Fetch existing invitation links when the modal opens
+  // Fetch data when the modal opens
   useEffect(() => {
     if (isOpen && tripId) {
       fetchInvitationLinks();
+      fetchPastCompanions();
     }
   }, [isOpen, tripId]);
 
