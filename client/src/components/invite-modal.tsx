@@ -41,10 +41,13 @@ interface SuggestedCompanion {
   avatar?: string | null;
 }
 
+// Type for validation status of each username
+type ValidationStatus = boolean | "already-invited";
+
 export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProps) {
   const [username, setUsername] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [validationState, setValidationState] = useState<Record<string, boolean>>({});
+  const [validationState, setValidationState] = useState<Record<string, ValidationStatus>>({});
   const [inviteLinks, setInviteLinks] = useState<InvitationLink[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
@@ -113,13 +116,25 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
       const response = await fetch(`/api/users/validate?username=${encodeURIComponent(usernameToCheck)}`);
       const isValid = response.ok;
       
-      // Update validation state
+      // Check if user is already a trip member - separate API call
+      let alreadyInvited = false;
+      if (isValid) {
+        try {
+          const tripResponse = await fetch(`/api/trips/${tripId}/check-member?username=${encodeURIComponent(usernameToCheck)}`);
+          const data = await tripResponse.json();
+          alreadyInvited = data.isMember;
+        } catch (err) {
+          console.error("Error checking if user is already a member:", err);
+        }
+      }
+      
+      // Update validation state with status and reason code
       setValidationState(prev => ({
         ...prev,
-        [usernameToCheck]: isValid
+        [usernameToCheck]: isValid ? (alreadyInvited ? "already-invited" : true) : false
       }));
       
-      return isValid;
+      return isValid && !alreadyInvited;
     } catch (error) {
       console.error("Error validating username:", error);
       return false;
@@ -401,17 +416,21 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
                       {selectedUsers.map(user => {
                         // Get validation status
                         const isValidated = validationState[user] !== undefined;
-                        const isValid = validationState[user] === true;
+                        const status = validationState[user];
+                        const isValid = status === true;
+                        const isAlreadyInvited = status === "already-invited";
                         
                         return (
                           <Badge 
                             key={user} 
                             className={`px-2 py-1 flex items-center gap-1 
-                              ${isValidated && !isValid 
+                              ${isValidated && !isValid && !isAlreadyInvited
                                 ? "bg-red-100 text-red-800 hover:bg-red-200 border border-red-300" 
-                                : isValidated && isValid
-                                  ? "bg-green-100 text-green-800 hover:bg-green-200" 
-                                  : "bg-primary-100 text-primary-800 hover:bg-primary-200"
+                                : isValidated && isAlreadyInvited
+                                  ? "bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300"
+                                  : isValidated && isValid
+                                    ? "bg-green-100 text-green-800 hover:bg-green-200" 
+                                    : "bg-primary-100 text-primary-800 hover:bg-primary-200"
                               }`}
                             onClick={() => {
                               // Remove this user from selection
@@ -421,8 +440,11 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
                             }}
                           >
                             {user}
-                            {isValidated && !isValid && (
-                              <span className="text-red-600 text-xs ml-1">(invalid)</span>
+                            {isValidated && !isValid && !isAlreadyInvited && (
+                              <span className="text-red-600 text-xs ml-1">(not found)</span>
+                            )}
+                            {isValidated && isAlreadyInvited && (
+                              <span className="text-amber-600 text-xs ml-1">(already invited)</span>
                             )}
                             <X className="h-3 w-3 cursor-pointer ml-1" />
                           </Badge>

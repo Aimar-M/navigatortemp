@@ -93,12 +93,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = await storage.getUserByUsername(username);
       if (user) {
-        return res.status(200).json({ valid: true });
+        return res.status(200).json({ valid: true, userId: user.id });
       } else {
         return res.status(404).json({ valid: false, message: 'Username not found' });
       }
     } catch (error) {
       console.error('Error validating username:', error);
+      return res.status(500).json({ message: 'Server error' });
+    }
+  });
+  
+  // Check if user is already a member of a trip
+  router.get('/trips/:id/check-member', async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { username } = req.query;
+    
+    if (!username || typeof username !== 'string') {
+      return res.status(400).json({ message: 'Username parameter is required' });
+    }
+    
+    try {
+      // First find the user
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ isMember: false, message: 'User not found' });
+      }
+      
+      // Then check if they're a member
+      const tripId = parseInt(id);
+      const members = await storage.getTripMembers(tripId);
+      const isMember = members.some(member => member.userId === user.id);
+      
+      return res.status(200).json({ 
+        isMember,
+        message: isMember ? 'User is already a member of this trip' : 'User is not a member of this trip'
+      });
+    } catch (error) {
+      console.error('Error checking trip membership:', error);
       return res.status(500).json({ message: 'Server error' });
     }
   });
