@@ -29,11 +29,14 @@ export default function MobileNavigation() {
         if (!response.ok) return 0;
         
         const messages = await response.json();
-        // We'll count the messages from the last 24 hours as "unread"
-        // This is a simplified approach for demonstration
-        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        // Get unread message count
+        // We'll use local storage to track when the user last visited the chats page
+        const lastChatVisit = localStorage.getItem('lastChatVisit') 
+          ? new Date(localStorage.getItem('lastChatVisit')!) 
+          : new Date(0); // If never visited, all messages are unread
+        
         const unreadMessages = messages.filter((msg: any) => 
-          new Date(msg.timestamp) > oneDayAgo
+          new Date(msg.timestamp) > lastChatVisit
         );
         
         return unreadMessages.length;

@@ -95,6 +95,9 @@ export default function Chat() {
 
     // Update WebSocket trip IDs
     wsClient.updateTripIds([tripId]);
+    
+    // Mark this chat as visited when opening it
+    localStorage.setItem(`lastChatVisit_${tripId}`, new Date().toISOString());
 
     // Listen for new messages
     const handleNewMessage = (data: any) => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
@@ -23,8 +23,19 @@ const ChatItem = ({ trip, lastMessages }: { trip: any, lastMessages: any[] }) =>
     timestamp: trip.startDate,
     user: { name: "" } 
   };
+  
+  // Check if there are unread messages
+  const lastChatVisit = localStorage.getItem(`lastChatVisit_${trip.id}`) 
+    ? new Date(localStorage.getItem(`lastChatVisit_${trip.id}`)!) 
+    : new Date(0); // If never visited, all messages are unread
+    
+  const unreadCount = tripMessages.filter(msg => 
+    new Date(msg.timestamp) > lastChatVisit
+  ).length;
 
   const goToChat = () => {
+    // Update last visit timestamp when navigating to a chat
+    localStorage.setItem(`lastChatVisit_${trip.id}`, new Date().toISOString());
     navigate(`/trips/${trip.id}/chat`);
   };
 
@@ -38,7 +49,14 @@ const ChatItem = ({ trip, lastMessages }: { trip: any, lastMessages: any[] }) =>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-start">
-                <h3 className="text-sm font-semibold text-gray-900 truncate">{trip.name}</h3>
+                <div className="flex items-center">
+                  <h3 className="text-sm font-semibold text-gray-900 truncate">{trip.name}</h3>
+                  {unreadCount > 0 && (
+                    <span className="ml-2 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </div>
                 <span className="text-xs text-gray-500">{formatDateTime(lastMessage.timestamp)}</span>
               </div>
               <div className="flex items-center mt-1">
@@ -68,6 +86,13 @@ export default function Chats() {
   const { user, isLoading: authLoading } = useAuth();
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Update last visit timestamp when opening the chats page
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('lastChatVisit', new Date().toISOString());
+    }
+  }, [user]);
 
   // Fetch all trips the user is a member of
   const { data: trips, isLoading: tripsLoading } = useQuery({
