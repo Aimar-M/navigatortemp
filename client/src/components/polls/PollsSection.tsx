@@ -41,7 +41,12 @@ const PollCard = ({ poll, tripId }: { poll: any; tripId: number }) => {
       });
     },
     onSuccess: () => {
+      // Immediately invalidate polls query to refresh the data
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/polls`] });
+      // Force a refresh
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/polls`] });
+      }, 500);
     },
   });
   
@@ -183,9 +188,10 @@ const PollCard = ({ poll, tripId }: { poll: any; tripId: number }) => {
 const PollsSection: React.FC<PollsSectionProps> = ({ tripId }) => {
   const { user } = useAuth();
   
-  const { data: polls = [], isLoading, error } = useQuery<any[]>({
+  const { data: polls = [], isLoading, error, refetch } = useQuery<any[]>({
     queryKey: [`/api/trips/${tripId}/polls`],
     enabled: !!tripId,
+    refetchInterval: 5000, // Refetch every 5 seconds to get updated votes
     queryFn: async () => {
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`/api/trips/${tripId}/polls`, {
