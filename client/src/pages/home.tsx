@@ -77,6 +77,18 @@ export default function Home() {
     invitation.membership.tripId
   ) || [];
   
+  // Helper to sort trips by date (closest to today first)
+  const sortTripsByProximity = (tripA: any, tripB: any) => {
+    const dateA = new Date(tripA.startDate);
+    const dateB = new Date(tripB.startDate);
+    
+    // Calculate difference from today
+    const diffA = Math.abs(dateA.getTime() - currentDate.getTime());
+    const diffB = Math.abs(dateB.getTime() - currentDate.getTime());
+    
+    return diffA - diffB; // Closest dates first
+  };
+  
   // Past trips = trips with end date before current date (excluding pending invitations)
   const pastTrips = trips?.filter((trip: any) => {
     const endDate = new Date(trip.endDate);
@@ -85,6 +97,9 @@ export default function Home() {
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
+  }).sort((a: any, b: any) => {
+    // Most recent past trips first
+    return new Date(b.endDate).getTime() - new Date(a.endDate).getTime();
   }) || [];
   
   // Upcoming trips = trips with end date on or after current date (excluding pending invitations)
@@ -95,6 +110,9 @@ export default function Home() {
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
+  }).sort((a: any, b: any) => {
+    // Soonest upcoming trips first
+    return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
   }) || [];
   
   // Invitations are handled separately through pendingInvitations
@@ -193,7 +211,10 @@ export default function Home() {
                         (searchTerm === "" || 
                           trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
-                    }).map((trip: any) => (
+                    })
+                    // Sort by proximity to current date
+                    .sort(sortTripsByProximity)
+                    .map((trip: any) => (
                       <div key={trip.id} className="px-1">
                         <TripCard
                           id={trip.id}
@@ -202,31 +223,19 @@ export default function Home() {
                           startDate={trip.startDate}
                           endDate={trip.endDate}
                           status={trip.status}
-                          memberCount={5} // Would come from trip members count
+                          memberCount={trip.memberCount || 5} 
+                          imageUrl={trip.imageUrl}
                         />
                       </div>
                     ))}
+                    {trips?.filter((trip: any) => !pendingInvitationTripIds.includes(trip.id)).length === 0 && (
+                      <p className="text-center text-gray-500 py-4">No trips found. Create your first trip!</p>
+                    )}
                   </TabsContent>
                   
                   <TabsContent value="upcoming">
-                    {trips.filter((trip: any) => {
-                      const endDate = new Date(trip.endDate);
-                      // Show trips with end date in the future, excluding pending invitations
-                      return endDate >= currentDate && 
-                        !pendingInvitationTripIds.includes(trip.id) &&
-                        (searchTerm === "" || 
-                          trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
-                    }).length > 0 ? (
-                      trips.filter((trip: any) => {
-                        const endDate = new Date(trip.endDate);
-                        // Filter out pending invitations from upcoming trips
-                        return endDate >= currentDate && 
-                          !pendingInvitationTripIds.includes(trip.id) &&
-                          (searchTerm === "" || 
-                            trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
-                      }).map((trip: any) => (
+                    {upcomingTrips.length > 0 ? (
+                      upcomingTrips.map((trip: any) => (
                         <div key={trip.id} className="px-1">
                           <TripCard
                             id={trip.id}
@@ -235,7 +244,8 @@ export default function Home() {
                             startDate={trip.startDate}
                             endDate={trip.endDate}
                             status={trip.status}
-                            memberCount={5}
+                            memberCount={trip.memberCount || 5}
+                            imageUrl={trip.imageUrl}
                           />
                         </div>
                       ))
@@ -245,24 +255,8 @@ export default function Home() {
                   </TabsContent>
                   
                   <TabsContent value="past">
-                    {trips.filter((trip: any) => {
-                      const endDate = new Date(trip.endDate);
-                      // Show trips with end date in the past, excluding pending invitations
-                      return endDate < currentDate && 
-                        !pendingInvitationTripIds.includes(trip.id) &&
-                        (searchTerm === "" || 
-                          trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
-                    }).length > 0 ? (
-                      trips.filter((trip: any) => {
-                        const endDate = new Date(trip.endDate);
-                        // Filter out pending invitations from past trips
-                        return endDate < currentDate && 
-                          !pendingInvitationTripIds.includes(trip.id) &&
-                          (searchTerm === "" || 
-                            trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
-                      }).map((trip: any) => (
+                    {pastTrips.length > 0 ? (
+                      pastTrips.map((trip: any) => (
                         <div key={trip.id} className="px-1">
                           <TripCard
                             id={trip.id}
@@ -271,7 +265,8 @@ export default function Home() {
                             startDate={trip.startDate}
                             endDate={trip.endDate}
                             status={trip.status}
-                            memberCount={5}
+                            memberCount={trip.memberCount || 5}
+                            imageUrl={trip.imageUrl}
                           />
                         </div>
                       ))
