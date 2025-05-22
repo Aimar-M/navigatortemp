@@ -18,7 +18,7 @@ const createPollSchema = z.object({
   description: z.string().optional(),
   options: z.array(z.string()).min(2, "At least 2 options are required"),
   multipleChoice: z.boolean().default(false),
-  endDate: z.string().optional(),
+  endDate: z.string().optional().nullable(),
 });
 
 type CreatePollFormValues = z.infer<typeof createPollSchema>;
@@ -124,12 +124,11 @@ export const CreatePollDialog = ({
       return;
     }
     
-    // Fix the date format issue
+    // Remove the endDate field entirely for now until we fix the API
+    const { endDate, ...restData } = data;
     const formattedData = {
-      ...data,
-      options: filteredOptions,
-      // If endDate is provided, convert it to a Date object, otherwise omit it
-      ...(data.endDate ? { endDate: new Date(data.endDate).toISOString() } : {})
+      ...restData,
+      options: filteredOptions
     };
     
     createPollMutation.mutate(formattedData);
