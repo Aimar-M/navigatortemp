@@ -5,9 +5,10 @@ import {
   Message, InsertMessage, SurveyQuestion, InsertSurveyQuestion,
   SurveyResponse, InsertSurveyResponse, InvitationLink, InsertInvitationLink,
   Expense, InsertExpense, FlightInfo, InsertFlightInfo,
+  Poll, InsertPoll, PollVote, InsertPollVote,
   users, trips, tripMembers, activities, activityRsvp, 
   messages, surveyQuestions, surveyResponses, invitationLinks,
-  expenses, flightInfo
+  expenses, flightInfo, polls, pollVotes
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -54,6 +55,17 @@ export interface IStorage {
   createSurveyResponse(response: InsertSurveyResponse): Promise<SurveyResponse>;
   getSurveyResponses(questionId: number): Promise<SurveyResponse[]>;
   
+  // Poll methods
+  createPoll(poll: InsertPoll): Promise<Poll>;
+  getPollsByTrip(tripId: number): Promise<Poll[]>;
+  getPoll(id: number): Promise<Poll | undefined>;
+  updatePoll(id: number, poll: Partial<InsertPoll>): Promise<Poll | undefined>;
+  deletePoll(id: number): Promise<boolean>;
+  createPollVote(vote: InsertPollVote): Promise<PollVote>;
+  getPollVotes(pollId: number): Promise<PollVote[]>;
+  getUserPollVotes(pollId: number, userId: number): Promise<PollVote[]>;
+  deletePollVote(id: number): Promise<boolean>;
+  
   // Invitation methods
   createInvitationLink(invitation: InsertInvitationLink): Promise<InvitationLink>;
   getInvitationLink(token: string): Promise<InvitationLink | undefined>;
@@ -80,6 +92,82 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Poll methods
+  async createPoll(poll: InsertPoll): Promise<Poll> {
+    const [newPoll] = await db
+      .insert(polls)
+      .values(poll)
+      .returning();
+    return newPoll;
+  }
+
+  async getPollsByTrip(tripId: number): Promise<Poll[]> {
+    return await db
+      .select()
+      .from(polls)
+      .where(eq(polls.tripId, tripId))
+      .orderBy(desc(polls.createdAt));
+  }
+
+  async getPoll(id: number): Promise<Poll | undefined> {
+    const [poll] = await db
+      .select()
+      .from(polls)
+      .where(eq(polls.id, id));
+    return poll;
+  }
+
+  async updatePoll(id: number, pollUpdate: Partial<InsertPoll>): Promise<Poll | undefined> {
+    const [updatedPoll] = await db
+      .update(polls)
+      .set({
+        ...pollUpdate,
+        updatedAt: new Date()
+      })
+      .where(eq(polls.id, id))
+      .returning();
+    return updatedPoll;
+  }
+
+  async deletePoll(id: number): Promise<boolean> {
+    // First delete associated votes
+    await db.delete(pollVotes).where(eq(pollVotes.pollId, id));
+    // Then delete the poll
+    const result = await db.delete(polls).where(eq(polls.id, id));
+    return result.rowCount > 0;
+  }
+
+  async createPollVote(vote: InsertPollVote): Promise<PollVote> {
+    const [newVote] = await db
+      .insert(pollVotes)
+      .values(vote)
+      .returning();
+    return newVote;
+  }
+
+  async getPollVotes(pollId: number): Promise<PollVote[]> {
+    return await db
+      .select()
+      .from(pollVotes)
+      .where(eq(pollVotes.pollId, pollId));
+  }
+
+  async getUserPollVotes(pollId: number, userId: number): Promise<PollVote[]> {
+    return await db
+      .select()
+      .from(pollVotes)
+      .where(and(
+        eq(pollVotes.pollId, pollId),
+        eq(pollVotes.userId, userId)
+      ));
+  }
+
+  async deletePollVote(id: number): Promise<boolean> {
+    const result = await db
+      .delete(pollVotes)
+      .where(eq(pollVotes.id, id));
+    return result.rowCount > 0;
+  }
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
