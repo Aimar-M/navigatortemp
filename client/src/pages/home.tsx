@@ -223,7 +223,7 @@ export default function Home() {
                           startDate={trip.startDate}
                           endDate={trip.endDate}
                           status={trip.status}
-                          memberCount={trip.memberCount || 5} 
+                          memberCount={trip.memberCount} 
                           imageUrl={trip.imageUrl}
                         />
                       </div>
@@ -244,7 +244,7 @@ export default function Home() {
                             startDate={trip.startDate}
                             endDate={trip.endDate}
                             status={trip.status}
-                            memberCount={trip.memberCount || 5}
+                            memberCount={trip.memberCount}
                             imageUrl={trip.imageUrl}
                           />
                         </div>
@@ -265,7 +265,7 @@ export default function Home() {
                             startDate={trip.startDate}
                             endDate={trip.endDate}
                             status={trip.status}
-                            memberCount={trip.memberCount || 5}
+                            memberCount={trip.memberCount}
                             imageUrl={trip.imageUrl}
                           />
                         </div>
