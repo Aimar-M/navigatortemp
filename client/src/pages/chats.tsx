@@ -16,8 +16,11 @@ import UserAvatar from "@/components/user-avatar";
 const ChatItem = ({ trip, lastMessages, currentUser }: { trip: any, lastMessages: any[], currentUser: any }) => {
   const [, navigate] = useLocation();
   
-  // Find all messages for this trip (messages are already sorted by timestamp desc)
+  // Find all messages for this trip
   const tripMessages = lastMessages?.filter(msg => msg.tripId === trip.id) || [];
+  
+  // Debug: Print trip and message data
+  // console.log(`Trip ${trip.id}:`, trip.name, "Messages:", tripMessages.length);
   
   // Get the last message for display
   const lastMessage = tripMessages.length > 0 ? tripMessages[0] : { 
@@ -27,16 +30,29 @@ const ChatItem = ({ trip, lastMessages, currentUser }: { trip: any, lastMessages
   };
   
   // Get last visit time from localStorage, or default to beginning of time
-  const lastChatVisit = localStorage.getItem(`lastChatVisit_${trip.id}`) 
-    ? new Date(localStorage.getItem(`lastChatVisit_${trip.id}`)!) 
-    : new Date(0);
-    
+  const lastChatVisitStr = localStorage.getItem(`lastChatVisit_${trip.id}`);
+  const lastChatVisit = lastChatVisitStr ? new Date(lastChatVisitStr) : new Date(0);
+  
+  // Debug: Print last visit time
+  // console.log(`Trip ${trip.id} - Last visit:`, lastChatVisit.toISOString());
+  
   // Count unread messages (only from other users, newer than last visit)
-  const unreadCount = tripMessages.filter(msg => 
-    new Date(msg.timestamp) > lastChatVisit && 
-    msg.userId !== currentUser?.id && // Only count messages from other users
-    msg.userId !== undefined // Make sure userId exists
-  ).length;
+  const unreadMessages = tripMessages.filter(msg => {
+    const msgTime = new Date(msg.timestamp);
+    const isAfterLastVisit = msgTime > lastChatVisit;
+    const isFromOtherUser = msg.userId !== currentUser?.id;
+    
+    // Debug: Print message details
+    // if (isAfterLastVisit) {
+    //   console.log(`Msg ${msg.id} time:`, msgTime.toISOString(), 
+    //     `After last visit: ${isAfterLastVisit}`, 
+    //     `From other user: ${isFromOtherUser}`);
+    // }
+    
+    return isAfterLastVisit && isFromOtherUser;
+  });
+  
+  const unreadCount = unreadMessages.length;
 
   const goToChat = () => {
     // Update last visit timestamp when navigating to a chat
@@ -94,26 +110,8 @@ export default function Chats() {
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Function to sort trips by most recent message
-  const sortTripsByLatestMessage = (trips: any[], messages: any[]) => {
-    return [...trips].sort((a, b) => {
-      // Group messages by trip
-      const aMessages = messages.filter(msg => msg.tripId === a.id);
-      const bMessages = messages.filter(msg => msg.tripId === b.id);
-      
-      // Get the latest message timestamp or use trip date as fallback
-      const aLatest = aMessages.length > 0 
-        ? new Date(aMessages[0].timestamp).getTime() 
-        : new Date(a.updatedAt || a.startDate).getTime();
-        
-      const bLatest = bMessages.length > 0 
-        ? new Date(bMessages[0].timestamp).getTime() 
-        : new Date(b.updatedAt || b.startDate).getTime();
-      
-      // Sort by latest message timestamp (newest first)
-      return bLatest - aLatest;
-    });
-  };
+  // Function to sort trips by most recent message - not used anymore since we use
+  // the direct sortedTrips logic below with useCallback and useMemo
   
   // Update last visit timestamp when opening the chats page
   useEffect(() => {
@@ -175,29 +173,40 @@ export default function Chats() {
     trip.destination.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
   
+  // Get the latest message timestamp for each trip
+  const getLatestMessageTimestamp = React.useCallback((tripId: number) => {
+    const messages = lastMessages?.filter(msg => msg.tripId === tripId) || [];
+    if (messages.length > 0) {
+      return new Date(messages[0].timestamp).getTime();
+    }
+    return 0; // No messages found
+  }, [lastMessages]);
+  
   // Sort trips by most recent message
   const sortedTrips = React.useMemo(() => {
-    // Make a copy of filteredTrips
+    console.log("Sorting trips with messages:", lastMessages?.length || 0);
+    
+    // Create a copy of the filtered trips
     const trips = [...filteredTrips];
     
+    // Sort trips by the latest message timestamp (newest first)
     return trips.sort((a, b) => {
-      // Find the latest message for each trip
-      const aMessages = lastMessages?.filter(msg => msg.tripId === a.id) || [];
-      const bMessages = lastMessages?.filter(msg => msg.tripId === b.id) || [];
+      const aTimestamp = getLatestMessageTimestamp(a.id);
+      const bTimestamp = getLatestMessageTimestamp(b.id);
       
-      // Get message timestamps or fall back to trip dates
-      const aLatestTimestamp = aMessages.length > 0 
-        ? new Date(aMessages[0].timestamp).getTime() 
-        : new Date(a.updatedAt || a.startDate).getTime();
-        
-      const bLatestTimestamp = bMessages.length > 0 
-        ? new Date(bMessages[0].timestamp).getTime() 
-        : new Date(b.updatedAt || b.startDate).getTime();
+      // If both have messages, compare their timestamps
+      if (aTimestamp && bTimestamp) {
+        return bTimestamp - aTimestamp;
+      }
       
-      // Sort in descending order (newest messages first)
-      return bLatestTimestamp - aLatestTimestamp;
+      // If only one has messages, prioritize that one
+      if (aTimestamp) return -1;
+      if (bTimestamp) return 1;
+      
+      // If neither has messages, sort by trip start date
+      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
     });
-  }, [filteredTrips, lastMessages]);
+  }, [filteredTrips, lastMessages, getLatestMessageTimestamp]);
 
   const isLoading = authLoading || tripsLoading || messagesLoading;
   
