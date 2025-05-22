@@ -16,13 +16,10 @@ import UserAvatar from "@/components/user-avatar";
 const ChatItem = ({ trip, lastMessages, currentUser }: { trip: any, lastMessages: any[], currentUser: any }) => {
   const [, navigate] = useLocation();
   
-  // Find all messages for this trip
+  // Find all messages and polls for this trip
   const tripMessages = lastMessages?.filter(msg => msg.tripId === trip.id) || [];
   
-  // Debug: Print trip and message data
-  // console.log(`Trip ${trip.id}:`, trip.name, "Messages:", tripMessages.length);
-  
-  // Get the last message for display
+  // Get the last message or poll for display
   const lastMessage = tripMessages.length > 0 ? tripMessages[0] : { 
     content: "No messages yet", 
     timestamp: trip.startDate,

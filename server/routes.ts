@@ -1221,7 +1221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get all messages for the current user across all trips
+  // Get all messages and polls for the current user across all trips
   router.get('/messages', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const authUser = ensureUser(req, res);
@@ -1231,10 +1231,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const memberships = await storage.getTripMembershipsByUser(authUser.id);
       const tripIds = memberships.map(membership => membership.tripId);
       
-      // Get messages from all these trips
+      // Get messages and polls from all these trips
       const allMessagesWithDetails = [];
       
       for (const tripId of tripIds) {
+        // Get regular messages
         const tripMessages = await storage.getMessagesByTrip(tripId);
         
         // Get trip details
@@ -1245,6 +1246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const user = await storage.getUser(message.userId);
           return {
             ...message,
+            type: 'message',
             tripId,
             tripName: trip?.name || 'Unknown Trip',
             user: user ? {
@@ -1255,7 +1257,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         }));
         
-        allMessagesWithDetails.push(...messagesWithDetails);
+        // Get polls for this trip
+        const tripPolls = await storage.getPollsByTrip(tripId);
+        
+        // Get user details for each poll
+        const pollsWithDetails = await Promise.all(tripPolls.map(async (poll) => {
+          const user = await storage.getUser(poll.createdBy);
+          return {
+            id: `poll-${poll.id}`,
+            content: `Poll: ${poll.title}`,
+            type: 'poll',
+            timestamp: poll.createdAt,
+            tripId,
+            tripName: trip?.name || 'Unknown Trip',
+            userId: poll.createdBy, // For unread calculation
+            pollData: poll,
+            user: user ? {
+              id: user.id,
+              name: user.name,
+              avatar: user.avatar
+            } : null
+          };
+        }));
+        
+        // Add both messages and polls to the results
+        allMessagesWithDetails.push(...messagesWithDetails, ...pollsWithDetails);
       }
       
       // Sort by timestamp (newest first)
@@ -1265,7 +1291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(allMessagesWithDetails);
     } catch (error) {
-      console.error('Error getting all messages:', error);
+      console.error('Error getting all messages and polls:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
