@@ -195,13 +195,17 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
         .filter(username => username.trim().length > 0)
         .map(async username => {
           try {
+            // Get the exact format of the username from the database
+            const normalizedUsername = username.trim().toLowerCase();
+            
             // First validate if the username exists
-            const validateResponse = await fetch(`/api/users/validate?username=${encodeURIComponent(username)}`);
-            const userValid = validateResponse.ok;
+            const validateResponse = await fetch(`/api/users/validate?username=${encodeURIComponent(normalizedUsername)}`);
+            const validateData = await validateResponse.json();
+            const userValid = validateData.valid;
             
             if (userValid) {
               // Then check if they're already in the trip
-              const memberCheckResponse = await fetch(`/api/trips/${tripId}/check-member?username=${encodeURIComponent(username)}`);
+              const memberCheckResponse = await fetch(`/api/trips/${tripId}/check-member?username=${encodeURIComponent(normalizedUsername)}`);
               const memberData = await memberCheckResponse.json();
               const isMember = memberData.isMember;
               
@@ -219,6 +223,11 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
             }
           } catch (err) {
             console.error("Error validating username:", err);
+            // Handle the error in the validation state
+            setValidationState(prev => ({
+              ...prev,
+              [username]: "other-error"
+            }));
           }
         })
     );
@@ -259,7 +268,9 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
       const results = await Promise.allSettled(
         usernamesToSend.map(async username => {
           try {
-            const response = await apiRequest("POST", `/api/trips/${tripId}/members`, { username });
+            // Always send normalized lowercase username to the server
+            const normalizedUsername = username.trim().toLowerCase();
+            const response = await apiRequest("POST", `/api/trips/${tripId}/members`, { username: normalizedUsername });
             return { username, success: true, response };
           } catch (error: any) {
             const errorMessage = error.message || "Unknown error";
