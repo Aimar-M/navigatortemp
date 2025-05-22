@@ -160,13 +160,15 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
 
   // Send invitations to all selected users
   const sendMultipleInvitations = async () => {
-    if (selectedUsers.length === 0) return;
+    const usernamesToSend = selectedUsers.filter(username => username.trim().length > 0);
+    
+    if (usernamesToSend.length === 0) return;
     
     setIsSubmitting(true);
     try {
       // Send invitations in parallel
       const results = await Promise.allSettled(
-        selectedUsers.map(username => 
+        usernamesToSend.map(username => 
           apiRequest("POST", `/api/trips/${tripId}/members`, { username })
         )
       );
@@ -176,11 +178,12 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
       
       toast({
         title: "Invitations sent",
-        description: `Successfully sent ${successful} of ${selectedUsers.length} invitations`,
+        description: `Successfully sent ${successful} of ${usernamesToSend.length} invitations`,
       });
       
-      // Clear selected users
+      // Clear selected users and input field
       setSelectedUsers([]);
+      setUsername("");
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
     } catch (error) {
       toast({
@@ -213,25 +216,34 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
     // If no usernames entered, don't do anything
     if (usernamesToInvite.length === 0) return;
     
-    // For multiple users, use batch invitation
-    if (usernamesToInvite.length > 1) {
-      setSelectedUsers(usernamesToInvite);
-      await sendMultipleInvitations();
-      return;
-    }
-    
-    // For single username, proceed with single invitation
-    const singleUsername = usernamesToInvite[0];
+    // For any number of users, send invitations
     setIsSubmitting(true);
     
     try {
-      await apiRequest("POST", `/api/trips/${tripId}/members`, { username: singleUsername });
-      toast({
-        title: "Invitation sent",
-        description: `Invitation sent to ${singleUsername}`,
-      });
+      // Send invitations in parallel
+      const results = await Promise.allSettled(
+        usernamesToInvite.map(username => 
+          apiRequest("POST", `/api/trips/${tripId}/members`, { username })
+        )
+      );
       
-      // Clear the input and selected users after successful invitation
+      // Count successful invitations
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      
+      // Show appropriate message based on number of users
+      if (usernamesToInvite.length === 1) {
+        toast({
+          title: "Invitation sent",
+          description: `Invitation sent to ${usernamesToInvite[0]}`,
+        });
+      } else {
+        toast({
+          title: "Invitations sent",
+          description: `Successfully sent ${successful} of ${usernamesToInvite.length} invitations`,
+        });
+      }
+      
+      // Clear the form
       setUsername("");
       setSelectedUsers([]);
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
