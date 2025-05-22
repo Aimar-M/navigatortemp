@@ -192,6 +192,7 @@ export default function Home() {
     const endDate = new Date(trip.endDate);
     return endDate < currentDate && 
       !pendingInvitationTripIds.includes(trip.id) &&
+      trip.memberStatus !== 'pending' && // Ensure pending invitations don't show here
       (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -203,6 +204,7 @@ export default function Home() {
     const endDate = new Date(trip.endDate);
     return endDate >= currentDate && 
       !pendingInvitationTripIds.includes(trip.id) &&
+      trip.memberStatus !== 'pending' && // Ensure pending invitations don't show here
       (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -212,6 +214,7 @@ export default function Home() {
   // All trips (filtered for search and archive status)
   const filteredTrips = trips?.filter((trip: any) => {
     return !pendingInvitationTripIds.includes(trip.id) &&
+      trip.memberStatus !== 'pending' && // Ensure pending invitations don't show here
       (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
