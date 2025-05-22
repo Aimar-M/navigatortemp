@@ -60,52 +60,36 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
   const { data: members = [], isLoading: isLoadingMembers } = useQuery({
     queryKey: [`/api/trips/${tripId}/members`],
     enabled: isOpen && tripId > 0,
+    staleTime: 60000, // Cache for 1 minute
   });
   
   // Query for fetching all trips to find common travelers
   const { data: allTrips = [], isLoading: isLoadingTrips } = useQuery({
     queryKey: ["/api/trips"],
     enabled: isOpen,
+    staleTime: 60000, // Cache for 1 minute
   });
   
-  // Generate suggested travel companions
+  // Fetch past companions (users who have been on trips with the current user)
+  const { data: pastCompanions = [], isLoading: isLoadingCompanions } = useQuery({
+    queryKey: [`/api/trips/${tripId}/past-companions`],
+    enabled: isOpen && tripId > 0,
+    staleTime: 60000, // Cache for 1 minute
+  });
+  
+  // Convert past companions to the format we need for display
   const suggestedCompanions = useMemo(() => {
-    if (!members.length || !allTrips.length) return [];
+    if (!Array.isArray(pastCompanions)) return [];
     
-    // Get current trip members ids to avoid suggesting existing members
-    const currentMemberIds = members.map((member: any) => member.userId);
-    
-    // Find other trips that current members have been part of
-    const otherTripIds = allTrips
-      .filter((trip: any) => trip.id !== tripId)
-      .map((trip: any) => trip.id);
-    
-    // Create a list of suggested companions (users who've traveled with this group before)
-    const suggestedUsers: Record<string, SuggestedCompanion> = {};
-    
-    // Find users from other trips that aren't already in this trip
-    allTrips.forEach((trip: any) => {
-      if (trip.id !== tripId && trip.memberCount > 0) {
-        // Suggest users who aren't already in this trip
-        trip.confirmedMembers?.forEach((memberId: number) => {
-          if (!currentMemberIds.includes(memberId) && !suggestedUsers[memberId]) {
-            // Find the user details from members
-            const user = members.find((m: any) => m.userId === memberId)?.user;
-            if (user) {
-              suggestedUsers[memberId] = {
-                id: memberId,
-                name: user.name,
-                username: user.username,
-                avatar: user.avatar
-              };
-            }
-          }
-        });
-      }
-    });
-    
-    return Object.values(suggestedUsers);
-  }, [members, allTrips, tripId]);
+    return pastCompanions.map((companion: any) => ({
+      id: companion.userId,
+      name: companion.user?.name,
+      username: companion.user?.username || `user-${companion.userId}`,
+      avatar: companion.user?.avatar,
+      tripCount: companion.tripCount || 1,
+      lastTripName: companion.lastTripName
+    }));
+  }, [pastCompanions]);
 
   const fetchInvitationLinks = async () => {
     try {
@@ -220,51 +204,56 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
                 </div>
                 
                 {/* Past Travel Companions Section */}
-                {pastCompanions.length > 0 && (
+                {suggestedCompanions.length > 0 && (
                   <div className="mt-6 space-y-3">
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">
-                      People you've traveled with before
+                    <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                      <UserPlus className="h-4 w-4 mr-1.5 text-primary-500" />
+                      People you've traveled with
                     </h3>
                     <div className="max-h-[200px] overflow-y-auto space-y-3">
-                      {pastCompanions.map((companion) => (
-                        <Card key={companion.userId} className="border border-gray-200 overflow-hidden group hover:border-primary-300">
+                      {suggestedCompanions.map((companion) => (
+                        <Card key={companion.id} className="border border-gray-200 overflow-hidden group hover:border-primary-300 hover:shadow-sm transition-all duration-300">
                           <CardContent className="p-3 flex items-center justify-between">
                             <div className="flex items-center">
                               <Avatar className="h-10 w-10 mr-3">
-                                {companion.user.avatar ? (
-                                  <AvatarImage src={companion.user.avatar} alt={companion.user.name || companion.user.username} />
+                                {companion.avatar ? (
+                                  <AvatarImage src={companion.avatar} alt={companion.name || companion.username} />
                                 ) : (
                                   <AvatarFallback className="bg-primary-100 text-primary-800">
-                                    {companion.user.name ? companion.user.name.charAt(0).toUpperCase() : 
-                                     companion.user.username.charAt(0).toUpperCase()}
+                                    {companion.name ? companion.name.charAt(0).toUpperCase() : 
+                                     companion.username.charAt(0).toUpperCase()}
                                   </AvatarFallback>
                                 )}
                               </Avatar>
                               <div className="overflow-hidden">
                                 <div className="font-medium text-gray-900 text-sm truncate">
-                                  {companion.user.name || companion.user.username}
+                                  {companion.name || companion.username}
                                 </div>
-                                <div className="flex items-center text-xs text-gray-500 mt-0.5">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  <span>Last trip: {companion.lastTripName}</span>
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  <Badge variant="outline" className="mt-1 px-1.5 py-0 text-[10px]">
-                                    {companion.tripCount} trip{companion.tripCount !== 1 ? 's' : ''} together
-                                  </Badge>
-                                </div>
+                                {companion.lastTripName && (
+                                  <div className="flex items-center text-xs text-gray-500 mt-0.5">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    <span>Last trip: {companion.lastTripName}</span>
+                                  </div>
+                                )}
+                                {companion.tripCount > 0 && (
+                                  <div className="text-xs text-gray-500">
+                                    <Badge variant="outline" className="mt-1 px-1.5 py-0 text-[10px]">
+                                      {companion.tripCount} trip{companion.tripCount !== 1 ? 's' : ''} together
+                                    </Badge>
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <Button 
                               type="button" 
                               size="sm"
                               variant="ghost"
-                              className="h-8 w-8 p-0 rounded-full"
+                              className="h-8 w-8 p-0 rounded-full opacity-70 group-hover:opacity-100 group-hover:bg-primary-50 transition-all duration-300"
                               onClick={() => {
-                                setUsername(companion.user.username);
+                                setUsername(companion.username);
                                 toast({
                                   title: "Username selected",
-                                  description: `Added ${companion.user.username} to invitation field`,
+                                  description: `Added ${companion.username} to invitation field`,
                                 });
                               }}
                             >
@@ -280,12 +269,12 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
                 {/* Loading State */}
                 {isLoadingCompanions && (
                   <div className="py-3 text-center text-sm text-gray-500">
-                    Loading past travel companions...
+                    Looking for past travel companions...
                   </div>
                 )}
                 
                 {/* Empty State */}
-                {!isLoadingCompanions && pastCompanions.length === 0 && (
+                {!isLoadingCompanions && suggestedCompanions.length === 0 && (
                   <div className="py-3 text-center text-sm text-gray-500">
                     No past travel companions found
                   </div>
