@@ -6,9 +6,10 @@ import {
   SurveyResponse, InsertSurveyResponse, InvitationLink, InsertInvitationLink,
   Expense, InsertExpense, FlightInfo, InsertFlightInfo,
   Poll, InsertPoll, PollVote, InsertPollVote,
+  UserTripSetting, InsertUserTripSetting,
   users, trips, tripMembers, activities, activityRsvp, 
   messages, surveyQuestions, surveyResponses, invitationLinks,
-  expenses, flightInfo, polls, pollVotes
+  expenses, flightInfo, polls, pollVotes, userTripSettings
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -25,6 +26,11 @@ export interface IStorage {
   getTripsByUser(userId: number): Promise<Trip[]>;
   updateTrip(id: number, trip: Partial<InsertTrip>): Promise<Trip | undefined>;
   deleteTrip(id: number): Promise<boolean>;
+  
+  // User Trip Settings methods
+  getUserTripSettings(userId: number, tripId: number): Promise<UserTripSetting | undefined>;
+  getUserTripSettingsByUser(userId: number): Promise<UserTripSetting[]>;
+  createOrUpdateUserTripSettings(settings: InsertUserTripSetting): Promise<UserTripSetting>;
   
   // Trip member methods
   addTripMember(member: InsertTripMember): Promise<TripMember>;
@@ -92,6 +98,56 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // User Trip Settings methods
+  async getUserTripSettings(userId: number, tripId: number): Promise<UserTripSetting | undefined> {
+    const [settings] = await db
+      .select()
+      .from(userTripSettings)
+      .where(
+        and(
+          eq(userTripSettings.userId, userId),
+          eq(userTripSettings.tripId, tripId)
+        )
+      );
+    return settings || undefined;
+  }
+
+  async getUserTripSettingsByUser(userId: number): Promise<UserTripSetting[]> {
+    return await db
+      .select()
+      .from(userTripSettings)
+      .where(eq(userTripSettings.userId, userId));
+  }
+
+  async createOrUpdateUserTripSettings(settings: InsertUserTripSetting): Promise<UserTripSetting> {
+    // Check if settings already exist
+    const existingSettings = await this.getUserTripSettings(settings.userId, settings.tripId);
+    
+    if (existingSettings) {
+      // Update existing settings
+      const [updatedSettings] = await db
+        .update(userTripSettings)
+        .set({
+          ...settings,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(userTripSettings.userId, settings.userId),
+            eq(userTripSettings.tripId, settings.tripId)
+          )
+        )
+        .returning();
+      return updatedSettings;
+    } else {
+      // Create new settings
+      const [newSettings] = await db
+        .insert(userTripSettings)
+        .values(settings)
+        .returning();
+      return newSettings;
+    }
+  }
   // Poll methods
   async createPoll(poll: InsertPoll): Promise<Poll> {
     const [newPoll] = await db
