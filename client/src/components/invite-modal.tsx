@@ -232,9 +232,12 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
         })
     );
     
+    // This is the issue - we're filtering based on validation state but it might not be updated yet
+    // Let's set the flag first and then proceed without this filter
+    setIsSubmitting(true);
+    
     const usernamesToSend = selectedUsers
-      .filter(username => username.trim().length > 0)
-      .filter(username => validationState[username] === true); // Only send for valid usernames that aren't already members
+      .filter(username => username.trim().length > 0); // Send all usernames and let the server handle validation
     
     if (usernamesToSend.length === 0) {
       // All usernames were invalid or already members - show appropriate message
@@ -261,10 +264,8 @@ export default function InviteModal({ tripId, isOpen, onClose }: InviteModalProp
       return;
     }
     
-    setIsSubmitting(true);
-    
     try {
-      // Send invitations only for valid usernames that aren't already members
+      // Send invitations for all entered usernames and let the server handle validation
       const results = await Promise.allSettled(
         usernamesToSend.map(async username => {
           try {
