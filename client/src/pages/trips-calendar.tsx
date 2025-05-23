@@ -83,15 +83,23 @@ const Calendar = ({ date, events, onDateChange }: {
     days.push(i);
   }
 
-  // Check if a day has events
+  // Check if a day has events - including trips that span multiple days
   const getDayEvents = (day: number) => {
     if (!day) return [];
     const date = new Date(year, month, day);
     return events.filter(event => {
-      const eventDate = new Date(event.date || event.startDate);
-      return eventDate.getDate() === day && 
-             eventDate.getMonth() === month && 
-             eventDate.getFullYear() === year;
+      if (event.type === 'trip' && event.startDate && event.endDate) {
+        // For trips, check if the current day falls within the trip's date range
+        const tripStart = new Date(event.startDate);
+        const tripEnd = new Date(event.endDate);
+        return date >= tripStart && date <= tripEnd;
+      } else {
+        // For activities, check if it's on the specific date
+        const eventDate = new Date(event.date || event.startDate);
+        return eventDate.getDate() === day && 
+               eventDate.getMonth() === month && 
+               eventDate.getFullYear() === year;
+      }
     });
   };
 
@@ -140,22 +148,50 @@ const Calendar = ({ date, events, onDateChange }: {
                   </div>
                   
                   <div className="space-y-1">
-                    {dayEvents.slice(0, 2).map((event, idx) => (
-                      <div
-                        key={`${event.id}-${idx}`}
-                        onClick={() => window.location.href = event.type === 'trip' 
-                          ? `/trips/${event.id}` 
-                          : `/trips/${event.tripId}/activities`
+                    {dayEvents.slice(0, 2).map((event, idx) => {
+                      // Determine if this is the start, middle, or end of a trip
+                      let tripPosition = 'single';
+                      if (event.type === 'trip' && event.startDate && event.endDate) {
+                        const tripStart = new Date(event.startDate);
+                        const tripEnd = new Date(event.endDate);
+                        const currentDay = new Date(year, month, day);
+                        
+                        const isStart = currentDay.toDateString() === tripStart.toDateString();
+                        const isEnd = currentDay.toDateString() === tripEnd.toDateString();
+                        
+                        if (isStart && isEnd) {
+                          tripPosition = 'single';
+                        } else if (isStart) {
+                          tripPosition = 'start';
+                        } else if (isEnd) {
+                          tripPosition = 'end';
+                        } else {
+                          tripPosition = 'middle';
                         }
-                        className={`block text-xs p-1 rounded truncate cursor-pointer ${
-                          event.type === 'trip' 
-                            ? "bg-blue-100 text-blue-800" 
-                            : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {event.name}
-                      </div>
-                    ))}
+                      }
+                      
+                      return (
+                        <div
+                          key={`${event.id}-${idx}`}
+                          onClick={() => window.location.href = event.type === 'trip' 
+                            ? `/trips/${event.id}` 
+                            : `/trips/${event.tripId}/activities`
+                          }
+                          className={`block text-xs p-1 truncate cursor-pointer ${
+                            event.type === 'trip' 
+                              ? `bg-blue-100 text-blue-800 ${
+                                  tripPosition === 'start' ? 'rounded-l rounded-r-none' :
+                                  tripPosition === 'end' ? 'rounded-r rounded-l-none' :
+                                  tripPosition === 'middle' ? 'rounded-none' :
+                                  'rounded'
+                                }` 
+                              : "bg-green-100 text-green-800 rounded"
+                          }`}
+                        >
+                          {tripPosition === 'start' || tripPosition === 'single' ? event.name : ''}
+                        </div>
+                      );
+                    })}
                     
                     {dayEvents.length > 2 && (
                       <Popover>
