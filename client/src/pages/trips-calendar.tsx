@@ -103,6 +103,20 @@ const Calendar = ({ date, events, onDateChange }: {
     });
   };
 
+  // Generate trip color based on destination name (matching trip card logic)
+  const getTripColor = (destination: string) => {
+    const colors = [
+      { bg: "bg-blue-500", text: "text-white" },
+      { bg: "bg-green-500", text: "text-white" },
+      { bg: "bg-purple-500", text: "text-white" },
+      { bg: "bg-rose-500", text: "text-white" },
+      { bg: "bg-amber-500", text: "text-white" },
+      { bg: "bg-cyan-500", text: "text-white" }
+    ];
+    const colorIndex = (destination.charCodeAt(0) || 0) % colors.length;
+    return colors[colorIndex];
+  };
+
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="p-4 flex items-center justify-between bg-primary-50">
@@ -149,8 +163,6 @@ const Calendar = ({ date, events, onDateChange }: {
                   
                   <div className="space-y-1">
                     {dayEvents.slice(0, 2).map((event, idx) => {
-                      // Determine if this is the start, middle, or end of a trip
-                      let tripPosition = 'single';
                       if (event.type === 'trip' && event.startDate && event.endDate) {
                         const tripStart = new Date(event.startDate);
                         const tripEnd = new Date(event.endDate);
@@ -158,39 +170,44 @@ const Calendar = ({ date, events, onDateChange }: {
                         
                         const isStart = currentDay.toDateString() === tripStart.toDateString();
                         const isEnd = currentDay.toDateString() === tripEnd.toDateString();
+                        const isMiddle = !isStart && !isEnd;
                         
-                        if (isStart && isEnd) {
-                          tripPosition = 'single';
-                        } else if (isStart) {
-                          tripPosition = 'start';
-                        } else if (isEnd) {
-                          tripPosition = 'end';
-                        } else {
-                          tripPosition = 'middle';
-                        }
+                        const tripColor = getTripColor(event.destination || event.name);
+                        
+                        return (
+                          <div
+                            key={`${event.id}-${idx}`}
+                            onClick={() => window.location.href = `/trips/${event.id}`}
+                            className={`relative h-6 cursor-pointer ${tripColor.bg} ${tripColor.text} ${
+                              isStart && isEnd ? 'rounded' :
+                              isStart ? 'rounded-l' :
+                              isEnd ? 'rounded-r' :
+                              'rounded-none'
+                            }`}
+                            style={{
+                              marginLeft: isStart ? '0' : '-1px',
+                              marginRight: isEnd ? '0' : '-1px',
+                            }}
+                          >
+                            <div className="absolute inset-0 flex items-center justify-center px-1">
+                              <span className="text-xs font-medium truncate">
+                                {isStart || (isStart && isEnd) ? event.name : ''}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        // Activities display as before
+                        return (
+                          <div
+                            key={`${event.id}-${idx}`}
+                            onClick={() => window.location.href = `/trips/${event.tripId}/activities`}
+                            className="block text-xs p-1 rounded truncate cursor-pointer bg-green-100 text-green-800"
+                          >
+                            {event.name}
+                          </div>
+                        );
                       }
-                      
-                      return (
-                        <div
-                          key={`${event.id}-${idx}`}
-                          onClick={() => window.location.href = event.type === 'trip' 
-                            ? `/trips/${event.id}` 
-                            : `/trips/${event.tripId}/activities`
-                          }
-                          className={`block text-xs p-1 truncate cursor-pointer ${
-                            event.type === 'trip' 
-                              ? `bg-blue-100 text-blue-800 ${
-                                  tripPosition === 'start' ? 'rounded-l rounded-r-none' :
-                                  tripPosition === 'end' ? 'rounded-r rounded-l-none' :
-                                  tripPosition === 'middle' ? 'rounded-none' :
-                                  'rounded'
-                                }` 
-                              : "bg-green-100 text-green-800 rounded"
-                          }`}
-                        >
-                          {tripPosition === 'start' || tripPosition === 'single' ? event.name : ''}
-                        </div>
-                      );
                     })}
                     
                     {dayEvents.length > 2 && (
