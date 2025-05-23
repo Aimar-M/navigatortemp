@@ -253,11 +253,11 @@ export default function Chat() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-gray-50">
       {/* Only show header when not coming from chats page */}
       {!isFromChatsPage && <Header />}
       
-      <main className={`flex-1 flex flex-col overflow-hidden pb-0 ${isFromChatsPage ? 'max-h-[calc(100vh-60px)]' : 'max-h-[calc(100vh-120px)]'}`}>
+      <main className={`flex-1 flex flex-col overflow-hidden ${isFromChatsPage ? '' : ''}`}>
         {/* Trip Header - More compact on mobile */}
         <div className="bg-white border-b border-gray-200 p-3 md:p-4">
           <div className="flex items-center justify-between relative">
@@ -289,8 +289,8 @@ export default function Chat() {
         {/* Tab Navigation - only show when not coming from chats page */}
         {!isFromChatsPage && <TripTabs tripId={tripId} />}
 
-        {/* Chat Content - More compact for mobile with just enough padding for keyboard */}
-        <div className="flex-1 overflow-y-auto p-2 md:p-4 pb-10 bg-white">
+        {/* Chat Content - Clean design with minimal padding */}
+        <div className="flex-1 overflow-y-auto p-2 md:p-4 pb-4 bg-white">
           {isMessagesLoading ? (
             <div className="space-y-4 py-2">
               {[1, 2, 3].map((i) => (
@@ -446,8 +446,8 @@ export default function Chat() {
           )}
         </div>
 
-        {/* Message Input - Positioned at the bottom of the screen */}
-        <div className="bg-white border-t border-gray-200 p-2 md:p-3 sticky bottom-0 z-20">
+        {/* Message Input - Flush with bottom of screen */}
+        <div className="bg-white border-t border-gray-200 p-2 md:p-3 sticky bottom-0 z-20 mt-auto">
           <form onSubmit={handleSubmit} className="flex items-center space-x-2 flex-shrink-0">
             {/* Add option button - Only show when coming from chats page */}
             {isFromChatsPage && (
