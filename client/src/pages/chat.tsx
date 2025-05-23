@@ -289,8 +289,8 @@ export default function Chat() {
         {/* Tab Navigation - only show when not coming from chats page */}
         {!isFromChatsPage && <TripTabs tripId={tripId} />}
 
-        {/* Chat Content - More compact for mobile */}
-        <div className="flex-1 overflow-y-auto p-2 md:p-4 bg-white">
+        {/* Chat Content - More compact for mobile with added padding at bottom to prevent keyboard overlap */}
+        <div className="flex-1 overflow-y-auto p-2 md:p-4 pb-20 bg-white">
           {isMessagesLoading ? (
             <div className="space-y-4 py-2">
               {[1, 2, 3].map((i) => (
@@ -447,8 +447,8 @@ export default function Chat() {
         </div>
 
         {/* Message Input - More compact for mobile with improved keyboard handling */}
-        <div className="bg-white border-t border-gray-200 p-2 md:p-3 sticky bottom-0 pb-4 md:pb-3">
-          <form onSubmit={handleSubmit} className="flex items-center space-x-2">
+        <div className="bg-white border-t border-gray-200 p-2 md:p-3 sticky bottom-0 pb-8 md:pb-3 z-20">
+          <form onSubmit={handleSubmit} className="flex items-center space-x-2 flex-shrink-0">
             {/* Add option button - Only show when coming from chats page */}
             {isFromChatsPage && (
               <Popover>
