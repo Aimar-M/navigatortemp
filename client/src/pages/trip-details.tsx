@@ -1,5 +1,5 @@
 import { useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { MapPin, Calendar, Users, Info, UserPlus } from "lucide-react";
 import TripDetailLayout from "@/components/trip-detail-layout";
@@ -10,10 +10,12 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import InviteModal from "@/components/invite-modal";
 import { useAuth } from "@/hooks/use-auth";
+import { toast } from "@/hooks/use-toast";
 
 export default function TripDetails() {
   const { id } = useParams<{ id: string }>();
   const tripId = parseInt(id);
+  const queryClient = useQueryClient();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const { user } = useAuth();
   
@@ -144,17 +146,116 @@ export default function TripDetails() {
             ) : (
               <div className="space-y-3">
                 {members.map((member) => (
-                  <div key={member.userId} className="flex items-center space-x-2">
-                    <UserAvatar 
-                      user={member.user}
-                      className="h-8 w-8"
-                    />
-                    <span className="text-sm">
-                      {member.user?.name || member.user?.username || 'Anonymous'}
-                      {member.isOrganizer && (
-                        <span className="text-xs text-blue-600 ml-1">(Organizer)</span>
-                      )}
-                    </span>
+                  <div key={member.userId} className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <UserAvatar 
+                        user={member.user}
+                        className="h-8 w-8"
+                      />
+                      <div>
+                        <div className="text-sm font-medium">
+                          {member.user?.name || member.user?.username || 'Anonymous'}
+                          {trip.organizer === member.userId && (
+                            <span className="text-xs text-blue-600 ml-1">(Organizer)</span>
+                          )}
+                        </div>
+                        <div className={`text-xs ${
+                          member.status === 'confirmed' ? 'text-green-600' :
+                          member.status === 'declined' ? 'text-red-600' :
+                          'text-orange-500'
+                        }`}>
+                          {member.status === 'confirmed' ? '✓ Attending' :
+                           member.status === 'declined' ? '✕ Not attending' :
+                           '? Awaiting confirmation'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Show attend/decline buttons if this is the current user and status is pending */}
+                    {user?.id === member.userId && member.status === 'pending' && (
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                          onClick={() => {
+                            const token = localStorage.getItem('auth_token');
+                            toast({
+                              title: "Confirming attendance...",
+                              description: "Processing your confirmation"
+                            });
+                            
+                            fetch(`/api/trips/${tripId}/members/${user.id}`, {
+                              method: 'PUT',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                              },
+                              body: JSON.stringify({ status: 'confirmed' })
+                            })
+                            .then(response => {
+                              if (response.ok) {
+                                toast({
+                                  title: "Attendance confirmed!",
+                                  description: "You're now confirmed for this trip"
+                                });
+                                // Refresh members data
+                                window.location.reload();
+                              }
+                            })
+                            .catch(error => {
+                              toast({
+                                title: "Error",
+                                description: "Failed to confirm attendance",
+                                variant: "destructive"
+                              });
+                            });
+                          }}
+                        >
+                          I'll Attend
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                          onClick={() => {
+                            const token = localStorage.getItem('auth_token');
+                            toast({
+                              title: "Processing response...",
+                              description: "Recording your decision"
+                            });
+                            
+                            fetch(`/api/trips/${tripId}/members/${user.id}`, {
+                              method: 'PUT',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                              },
+                              body: JSON.stringify({ status: 'declined' })
+                            })
+                            .then(response => {
+                              if (response.ok) {
+                                toast({
+                                  title: "Response recorded",
+                                  description: "You've declined this trip invitation"
+                                });
+                                // Refresh members data
+                                window.location.reload();
+                              }
+                            })
+                            .catch(error => {
+                              toast({
+                                title: "Error",
+                                description: "Failed to update your response",
+                                variant: "destructive"
+                              });
+                            });
+                          }}
+                        >
+                          Can't Attend
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
