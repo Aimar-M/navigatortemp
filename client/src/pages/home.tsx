@@ -347,51 +347,89 @@ export default function Home() {
                                     </p>
                                   </div>
                                 </div>
-                                <div className="flex gap-2">
-                                  <Button 
-                                    size="sm" 
-                                    variant="default"
-                                    className="w-full bg-green-600 hover:bg-green-700"
-                                    onClick={() => {
-                                      // Update status to confirmed
-                                      fetch(`/api/trips/${invitation.membership.tripId}/members/${user.id}`, {
-                                        method: 'PUT',
-                                        headers: {
-                                          'Content-Type': 'application/json',
-                                          'Authorization': `Bearer ${token}`
-                                        },
-                                        body: JSON.stringify({ status: 'confirmed' })
-                                      })
-                                      .then(() => {
-                                        // Refresh data
-                                        window.location.reload();
-                                      });
-                                    }}
-                                  >
-                                    Accept
-                                  </Button>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    className="w-full"
-                                    onClick={() => {
-                                      // Update status to declined
-                                      fetch(`/api/trips/${invitation.membership.tripId}/members/${user.id}`, {
-                                        method: 'PUT',
-                                        headers: {
-                                          'Content-Type': 'application/json',
-                                          'Authorization': `Bearer ${token}`
-                                        },
-                                        body: JSON.stringify({ status: 'declined' })
-                                      })
-                                      .then(() => {
-                                        // Refresh data
-                                        window.location.reload();
-                                      });
-                                    }}
-                                  >
-                                    Decline
-                                  </Button>
+                                <div className="space-y-2 mt-2">
+                                  <p className="text-sm font-medium text-gray-700">Will you be attending this trip?</p>
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      size="sm" 
+                                      variant="default"
+                                      className="w-full bg-green-600 hover:bg-green-700"
+                                      onClick={() => {
+                                        // Update status to confirmed
+                                        fetch(`/api/trips/${invitation.membership.tripId}/members/${user.id}`, {
+                                          method: 'PUT',
+                                          headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': `Bearer ${token}`
+                                          },
+                                          body: JSON.stringify({ status: 'confirmed' })
+                                        })
+                                        .then(response => {
+                                          if (response.ok) {
+                                            toast({
+                                              title: "Attendance confirmed!",
+                                              description: "You're now confirmed for this trip"
+                                            });
+                                            // Refresh data
+                                            queryClient.invalidateQueries({ queryKey: ['/api/trips'] });
+                                            queryClient.invalidateQueries({ queryKey: ['/api/trips/memberships/pending'] });
+                                          } else {
+                                            throw new Error("Failed to confirm attendance");
+                                          }
+                                        })
+                                        .catch(error => {
+                                          toast({
+                                            title: "Error",
+                                            description: "Failed to confirm your attendance",
+                                            variant: "destructive"
+                                          });
+                                        });
+                                      }}
+                                    >
+                                      I'll be there!
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                                      onClick={() => {
+                                        // Update status to declined
+                                        fetch(`/api/trips/${invitation.membership.tripId}/members/${user.id}`, {
+                                          method: 'PUT',
+                                          headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': `Bearer ${token}`
+                                          },
+                                          body: JSON.stringify({ status: 'declined' })
+                                        })
+                                        .then(response => {
+                                          if (response.ok) {
+                                            toast({
+                                              title: "Invitation declined",
+                                              description: "You've declined this trip invitation"
+                                            });
+                                            // Refresh data
+                                            queryClient.invalidateQueries({ queryKey: ['/api/trips'] });
+                                            queryClient.invalidateQueries({ queryKey: ['/api/trips/memberships/pending'] });
+                                          } else {
+                                            throw new Error("Failed to decline invitation");
+                                          }
+                                        })
+                                        .catch(error => {
+                                          toast({
+                                            title: "Error",
+                                            description: "Failed to decline the invitation",
+                                            variant: "destructive"
+                                          });
+                                        });
+                                      }}
+                                    >
+                                      I can't attend
+                                    </Button>
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    Your response helps the organizer plan appropriately
+                                  </div>
                                 </div>
                               </div>
                             </CardContent>
