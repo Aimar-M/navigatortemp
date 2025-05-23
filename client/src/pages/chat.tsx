@@ -257,7 +257,7 @@ export default function Chat() {
       {/* Only show header when not coming from chats page */}
       {!isFromChatsPage && <Header />}
       
-      <main className={`flex-1 flex flex-col overflow-hidden pb-0 ${isFromChatsPage ? 'max-h-screen' : 'max-h-[calc(100vh-60px)]'}`}>
+      <main className={`flex-1 flex flex-col overflow-hidden pb-0 ${isFromChatsPage ? 'max-h-[calc(100vh-60px)]' : 'max-h-[calc(100vh-120px)]'}`}>
         {/* Trip Header - More compact on mobile */}
         <div className="bg-white border-b border-gray-200 p-3 md:p-4">
           <div className="flex items-center justify-between relative">
@@ -446,8 +446,8 @@ export default function Chat() {
           )}
         </div>
 
-        {/* Message Input - More compact for mobile */}
-        <div className="bg-white border-t border-gray-200 p-2 md:p-3">
+        {/* Message Input - More compact for mobile with improved keyboard handling */}
+        <div className="bg-white border-t border-gray-200 p-2 md:p-3 sticky bottom-0 pb-4 md:pb-3">
           <form onSubmit={handleSubmit} className="flex items-center space-x-2">
             {/* Add option button - Only show when coming from chats page */}
             {isFromChatsPage && (
