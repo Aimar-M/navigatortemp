@@ -482,11 +482,6 @@ export default function Home() {
         
         {/* Welcome Content Panel if no trip is selected */}
         <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 text-center">
-          <img
-            src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&h=400"
-            alt="Group of friends on vacation"
-            className="rounded-lg mb-6 w-full max-w-xl object-cover shadow-md"
-          />
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Navigator!</h1>
           <p className="text-gray-600 max-w-md mb-6">
             Plan trips with friends, create itineraries, chat with your travel group,
