@@ -64,6 +64,7 @@ export default function TripBudget() {
         startDate={trip.startDate}
         endDate={trip.endDate}
         memberCount={memberCount}
+        activities={activities || []}
       />
     </TripDetailLayout>
   );
