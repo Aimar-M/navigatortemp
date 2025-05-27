@@ -10,7 +10,13 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  bio: text("bio"),
+  location: text("location"),
   avatar: text("avatar"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -41,6 +47,8 @@ export const trips = pgTable("trips", {
   status: text("status").notNull().default("planning"), // planning, active, completed
   cover: text("cover"),
   organizer: integer("organizer").notNull().references(() => users.id),
+  isPinned: boolean("is_pinned").default(false),
+  isArchived: boolean("is_archived").default(false),
 });
 
 export const tripsRelations = relations(trips, ({ one, many }) => ({
