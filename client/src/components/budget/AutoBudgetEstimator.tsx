@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,12 @@ interface AutoBudgetEstimatorProps {
   startDate: string;
   endDate: string;
   memberCount: number;
+  activities?: Array<{
+    id: number;
+    name: string;
+    cost: string;
+    date: string;
+  }>;
 }
 
 interface CountryData {
@@ -36,15 +42,31 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
   destination,
   startDate,
   endDate,
-  memberCount
+  memberCount,
+  activities = []
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [estimate, setEstimate] = useState<BudgetEstimate | null>(null);
   const [countryData, setCountryData] = useState<CountryData | null>(null);
   const { toast } = useToast();
 
-  // Calculate number of nights
-  const nights = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+  // Calculate number of nights using actual trip dates
+  const nights = useMemo(() => {
+    if (!startDate || !endDate) return 1;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const calculatedNights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(1, calculatedNights);
+  }, [startDate, endDate]);
+
+  // Calculate total activity costs from actual itinerary
+  const totalActivityCosts = useMemo(() => {
+    return activities.reduce((total, activity) => {
+      const cost = parseFloat(activity.cost) || 0;
+      return total + cost;
+    }, 0);
+  }, [activities]);
 
   // Regional cost multipliers based on economic data
   const getRegionalMultiplier = (region: string): number => {
@@ -165,7 +187,12 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
       const accommodationCost = Math.round(baseCosts.accommodation * validMultiplier * validNights);
       const foodCost = Math.round(baseCosts.food * validMultiplier * (validNights + 1)); // +1 for departure day
       const transportationCost = Math.round(baseCosts.transportation * validMultiplier * (validNights + 1));
-      const activitiesCost = Math.round(baseCosts.activities * validMultiplier * (validNights + 1));
+      
+      // Use actual activity costs if available, otherwise use estimates
+      const activitiesCost = totalActivityCosts > 0 
+        ? Math.round(totalActivityCosts)
+        : Math.round(baseCosts.activities * validMultiplier * (validNights + 1));
+        
       const incidentalsCost = Math.round(baseCosts.incidentals * validMultiplier * (validNights + 1));
 
       const totalCost = accommodationCost + foodCost + transportationCost + activitiesCost + incidentalsCost;

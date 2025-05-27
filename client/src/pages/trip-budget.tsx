@@ -22,6 +22,12 @@ export default function TripBudget() {
     enabled: !!tripId,
   });
 
+  // Fetch trip activities
+  const { data: activities } = useQuery({
+    queryKey: [`/api/trips/${tripId}/activities`],
+    enabled: !!tripId,
+  });
+
   const memberCount = members?.length || 1;
 
   if (isLoadingTrip) {
