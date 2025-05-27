@@ -313,9 +313,14 @@ export class DatabaseStorage {
     const [newExpense] = await db
       .insert(expenses)
       .values({
-        ...expense,
-        title: expense.description, // Map description to title for existing schema
-        userId: expense.paidBy, // Map paidBy to userId for existing schema
+        tripId: expense.tripId,
+        userId: expense.userId,
+        title: expense.description,
+        description: expense.description,
+        amount: expense.amount,
+        category: expense.category,
+        paidBy: expense.paidBy,
+        date: expense.date || new Date(),
       })
       .returning();
     
@@ -342,6 +347,60 @@ export class DatabaseStorage {
       .leftJoin(users, eq(expenses.paidBy, users.id))
       .where(eq(expenses.tripId, tripId))
       .orderBy(desc(expenses.date));
+  }
+
+  async calculateExpenseBalances(tripId: number): Promise<any[]> {
+    // Get all trip members
+    const tripMembers = await this.getTripMembers(tripId);
+    const memberIds = tripMembers.map(m => m.userId);
+    
+    // Get all expenses for this trip
+    const tripExpenses = await this.getExpensesByTrip(tripId);
+    
+    // Calculate balances
+    const balances = new Map();
+    
+    // Initialize balances for all members
+    for (const member of tripMembers) {
+      const memberUser = await this.getUser(member.userId);
+      balances.set(member.userId, {
+        userId: member.userId,
+        username: memberUser?.username || 'Unknown',
+        name: memberUser?.name || memberUser?.username || 'Unknown',
+        owes: 0,
+        owed: 0,
+        net: 0,
+      });
+    }
+    
+    // Calculate what each person owes/is owed
+    for (const expense of tripExpenses) {
+      const amount = parseFloat(expense.amount);
+      const splitAmount = amount / memberIds.length; // Equal split for now
+      
+      // The payer is owed money
+      const payerBalance = balances.get(expense.paidBy);
+      if (payerBalance) {
+        payerBalance.owed += amount - splitAmount; // They get back the amount minus their share
+      }
+      
+      // Everyone else owes their share
+      for (const memberId of memberIds) {
+        if (memberId !== expense.paidBy) {
+          const memberBalance = balances.get(memberId);
+          if (memberBalance) {
+            memberBalance.owes += splitAmount;
+          }
+        }
+      }
+    }
+    
+    // Calculate net amounts
+    for (const [userId, balance] of balances) {
+      balance.net = balance.owed - balance.owes;
+    }
+    
+    return Array.from(balances.values());
   }
 
   async calculateExpenseBalances(tripId: number): Promise<any[]> {
