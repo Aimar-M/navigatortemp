@@ -12,7 +12,7 @@ export default function TripBudget() {
 
   // Fetch trip details
   const { data: trip, isLoading: isLoadingTrip } = useQuery({
-    queryKey: ['/api/trips', tripId],
+    queryKey: [`/api/trips/${tripId}`],
     enabled: !!tripId,
   });
 
