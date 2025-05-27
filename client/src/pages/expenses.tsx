@@ -89,18 +89,25 @@ export default function ExpensesPage() {
         return;
       }
 
+      // Use the same authentication approach as other parts of the app
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('session='))
+        ?.split('=')[1];
+
       const response = await fetch(`/api/trips/${tripId}/expenses`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` })
         },
-        credentials: 'include',
+        credentials: 'same-origin',
         body: JSON.stringify({
           description: newExpense.description,
           amount: parseFloat(newExpense.amount),
           category: newExpense.category,
           paidBy: newExpense.paidBy,
-          splitWith: (members as any[]).map(m => m.userId)
+          splitWith: newExpense.splitWith.length > 0 ? newExpense.splitWith : (members as any[]).map(m => m.userId)
         }),
       });
 
@@ -137,10 +144,10 @@ export default function ExpensesPage() {
   };
 
   const categoryIcons = {
-    food: "🍽️",
-    transport: "🚗",
-    accommodation: "🏨",
-    activities: "🎯"
+    food: "Food",
+    transport: "Transport", 
+    accommodation: "Hotel",
+    activities: "Activity"
   };
 
   const getCategoryColor = (category: string) => {
@@ -262,20 +269,20 @@ export default function ExpensesPage() {
               
               <div className="space-y-2">
                 <Label htmlFor="paidBy" className="text-lg font-bold text-blue-600">
-                  💰 Who Paid for This?
+                  Who Paid for This?
                 </Label>
                 <Select
                   value={newExpense.paidBy > 0 ? newExpense.paidBy.toString() : ""}
                   onValueChange={(value) => setNewExpense({...newExpense, paidBy: parseInt(value)})}
                 >
                   <SelectTrigger className="mt-2 h-12 text-base border-2 border-blue-300 focus:border-blue-500">
-                    <SelectValue placeholder="👆 Click here to select who paid" />
+                    <SelectValue placeholder="Click here to select who paid" />
                   </SelectTrigger>
                   <SelectContent>
                     {Array.isArray(members) && members.length > 0 ? (
                       (members as any[]).map((member: any) => (
                         <SelectItem key={member.userId} value={member.userId.toString()}>
-                          👤 {member.name || member.username}
+                          {member.name || member.username}
                         </SelectItem>
                       ))
                     ) : (
@@ -293,7 +300,7 @@ export default function ExpensesPage() {
               {/* Split With Section */}
               <div className="space-y-2">
                 <Label className="text-lg font-bold text-green-600">
-                  🎯 Who Should Split This Expense?
+                  Who Should Split This Expense?
                 </Label>
                 <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto border rounded-lg p-3">
                   {Array.isArray(members) && members.length > 0 ? (
@@ -317,7 +324,7 @@ export default function ExpensesPage() {
                           }}
                           className="rounded border-gray-300 text-green-600 focus:ring-green-500"
                         />
-                        <span className="font-medium">👤 {member.name || member.username}</span>
+                        <span className="font-medium">{member.name || member.username}</span>
                       </label>
                     ))
                   ) : (
@@ -355,7 +362,7 @@ export default function ExpensesPage() {
                 className="w-full h-12 text-lg"
                 disabled={!newExpense.description || !newExpense.amount || !newExpense.paidBy || newExpense.splitWith.length === 0}
               >
-                💾 Add Expense
+                Add Expense
               </Button>
             </div>
           </DialogContent>
