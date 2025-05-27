@@ -2,6 +2,7 @@ import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import AutoBudgetEstimator from "@/components/budget/AutoBudgetEstimator";
+import BudgetChart from "@/components/budget/BudgetChart";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -62,20 +63,44 @@ export default function TripBudget() {
     activities
   });
 
+  // Prepare budget data for the interactive chart
+  const budgetData = {
+    categories: {
+      accommodation: 800,
+      flights: 600,
+      food: 400,
+      activities: 300,
+      transport: 200
+    },
+    totalBudget: 2300,
+    actualSpent: 450,
+    dailyBreakdown: [
+      { day: "Day 1", budget: 150, spent: 120 },
+      { day: "Day 2", budget: 200, spent: 180 },
+      { day: "Day 3", budget: 180, spent: 150 },
+      { day: "Day 4", budget: 160, spent: 0 },
+      { day: "Day 5", budget: 140, spent: 0 }
+    ]
+  };
+
   return (
     <TripDetailLayout 
       tripId={tripId}
       title="Smart Budget Planner"
       description={`AI-powered budget estimates for your trip to ${trip?.destination || 'your destination'}.`}
     >
-      <AutoBudgetEstimator 
-        tripId={tripId} 
-        destination={trip?.destination || ''}
-        startDate={trip?.startDate || ''}
-        endDate={trip?.endDate || ''}
-        memberCount={memberCount}
-        activities={Array.isArray(activities) ? activities : []}
-      />
+      <div className="space-y-8">
+        <AutoBudgetEstimator 
+          tripId={tripId} 
+          destination={trip?.destination || ''}
+          startDate={trip?.startDate || ''}
+          endDate={trip?.endDate || ''}
+          memberCount={memberCount}
+          activities={Array.isArray(activities) ? activities : []}
+        />
+        
+        <BudgetChart budgetData={budgetData} />
+      </div>
     </TripDetailLayout>
   );
 }
