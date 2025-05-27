@@ -138,13 +138,17 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
     setIsLoading(true);
     
     try {
+      // Always ensure we have valid basic values first
+      const validNights = Math.max(1, isNaN(nights) ? 1 : nights);
+      const validMemberCount = Math.max(1, isNaN(memberCount) ? 1 : memberCount);
+      
       const country = await fetchCountryData(destination);
       setCountryData(country);
 
       let regionalMultiplier = 1.0;
       let currency = 'USD';
 
-      if (country) {
+      if (country && country.region) {
         regionalMultiplier = getRegionalMultiplier(country.region);
         
         // Get primary currency
@@ -154,10 +158,8 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
         }
       }
 
-      // Ensure we have valid numbers
-      const validNights = Math.max(1, nights || 1);
-      const validMemberCount = Math.max(1, memberCount || 1);
-      const validMultiplier = regionalMultiplier || 1.0;
+      // Ensure we have valid numbers with additional safety checks
+      const validMultiplier = isNaN(regionalMultiplier) ? 1.0 : regionalMultiplier;
 
       // Calculate estimates based on regional costs
       const accommodationCost = Math.round(baseCosts.accommodation * validMultiplier * validNights);
@@ -256,7 +258,7 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                     {formatCurrency(estimate.accommodation, estimate.currency)}
                   </p>
                   <p className="text-sm text-blue-600">
-                    {nights} {nights === 1 ? 'night' : 'nights'} • ${Math.round(estimate.accommodation / Math.max(1, nights))}/night
+                    {Math.max(1, nights || 1)} {(nights || 1) === 1 ? 'night' : 'nights'} • ${Math.round(estimate.accommodation / Math.max(1, nights || 1))}/night
                   </p>
                 </div>
 
@@ -266,7 +268,7 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                     {formatCurrency(estimate.food, estimate.currency)}
                   </p>
                   <p className="text-sm text-green-600">
-                    {nights + 1} {nights + 1 === 1 ? 'day' : 'days'} • ${Math.round(estimate.food / Math.max(1, nights + 1))}/day
+                    {Math.max(1, (nights || 1) + 1)} {((nights || 1) + 1) === 1 ? 'day' : 'days'} • ${Math.round(estimate.food / Math.max(1, (nights || 1) + 1))}/day
                   </p>
                 </div>
 
@@ -276,7 +278,7 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                     {formatCurrency(estimate.transportation, estimate.currency)}
                   </p>
                   <p className="text-sm text-purple-600">
-                    {nights + 1} {nights + 1 === 1 ? 'day' : 'days'} • ${Math.round(estimate.transportation / Math.max(1, nights + 1))}/day
+                    {Math.max(1, (nights || 1) + 1)} {((nights || 1) + 1) === 1 ? 'day' : 'days'} • ${Math.round(estimate.transportation / Math.max(1, (nights || 1) + 1))}/day
                   </p>
                 </div>
 
@@ -286,7 +288,7 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                     {formatCurrency(estimate.activities, estimate.currency)}
                   </p>
                   <p className="text-sm text-orange-600">
-                    {nights + 1} {nights + 1 === 1 ? 'day' : 'days'} • ${Math.round(estimate.activities / Math.max(1, nights + 1))}/day
+                    {Math.max(1, (nights || 1) + 1)} {((nights || 1) + 1) === 1 ? 'day' : 'days'} • ${Math.round(estimate.activities / Math.max(1, (nights || 1) + 1))}/day
                   </p>
                 </div>
 
@@ -296,7 +298,7 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                     {formatCurrency(estimate.incidentals, estimate.currency)}
                   </p>
                   <p className="text-sm text-gray-600">
-                    {nights + 1} {nights + 1 === 1 ? 'day' : 'days'} • ${Math.round(estimate.incidentals / Math.max(1, nights + 1))}/day
+                    {Math.max(1, (nights || 1) + 1)} {((nights || 1) + 1) === 1 ? 'day' : 'days'} • ${Math.round(estimate.incidentals / Math.max(1, (nights || 1) + 1))}/day
                   </p>
                 </div>
 
