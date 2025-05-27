@@ -162,6 +162,18 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
     setIsLoading(true);
     
     try {
+      // Check if destination is recognizable
+      if (!destination || destination.length < 2) {
+        toast({
+          title: "Destination not recognized",
+          description: "Please ask the trip organizer to update the destination with a recognizable country or city name for accurate budget estimates.",
+          variant: "destructive",
+        });
+        setEstimate(null);
+        setIsLoading(false);
+        return;
+      }
+
       // Always ensure we have valid basic values first
       const validNights = Math.max(1, isNaN(nights) ? 1 : nights);
       const validMemberCount = Math.max(1, isNaN(memberCount) ? 1 : memberCount);
@@ -175,11 +187,24 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
       if (country && country.region) {
         regionalMultiplier = getRegionalMultiplier(country.region);
         
-        // Get primary currency
-        if (country.currencies) {
+        // Get primary currency with better validation
+        if (country.currencies && Object.keys(country.currencies).length > 0) {
           const currencyCode = Object.keys(country.currencies)[0];
-          currency = currencyCode || 'USD';
+          // Validate currency code format (3 letters)
+          if (currencyCode && currencyCode.length === 3) {
+            currency = currencyCode;
+          }
         }
+      } else {
+        // If we can't fetch country data, show helpful message
+        toast({
+          title: "Destination not recognized",
+          description: `We couldn't find economic data for "${destination}". Please ask the trip organizer to enter a more specific destination (e.g., "Paris, France" or "Tokyo, Japan").`,
+          variant: "destructive",
+        });
+        setEstimate(null);
+        setIsLoading(false);
+        return;
       }
 
       // Ensure we have valid numbers with additional safety checks
@@ -237,12 +262,24 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
   }, [destination, startDate, endDate, memberCount]);
 
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency === 'USD' ? 'USD' : currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+    try {
+      // Validate currency code and format
+      const validCurrency = currency && currency.length === 3 ? currency : 'USD';
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: validCurrency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(amount);
+    } catch (error) {
+      // Fallback to USD if currency is invalid
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(amount);
+    }
   };
 
   return (
