@@ -182,19 +182,13 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
       setCountryData(country);
 
       let regionalMultiplier = 1.0;
-      let currency = 'USD';
+      let currency = 'USD'; // Always use USD for consistency
 
       if (country && country.region) {
         regionalMultiplier = getRegionalMultiplier(country.region);
         
-        // Get primary currency with better validation
-        if (country.currencies && Object.keys(country.currencies).length > 0) {
-          const currencyCode = Object.keys(country.currencies)[0];
-          // Validate currency code format (3 letters)
-          if (currencyCode && currencyCode.length === 3) {
-            currency = currencyCode;
-          }
-        }
+        // Keep currency as USD for standardized comparison
+        // Note: All estimates are shown in USD regardless of destination currency
       } else {
         // If we can't fetch country data, show helpful message
         toast({
