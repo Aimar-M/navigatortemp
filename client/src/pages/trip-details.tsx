@@ -1,4 +1,4 @@
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { MapPin, Calendar, Users, Info, UserPlus } from "lucide-react";
@@ -153,12 +153,15 @@ export default function TripDetails() {
                         className="h-8 w-8"
                       />
                       <div>
-                        <div className="text-sm font-medium">
+                        <button 
+                          onClick={() => setLocation(`/user/${member.userId}`)}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
+                        >
                           {member.user?.name || member.user?.username || 'Anonymous'}
-                          {trip.organizer === member.userId && (
-                            <span className="text-xs text-blue-600 ml-1">(Organizer)</span>
-                          )}
-                        </div>
+                        </button>
+                        {trip.organizer === member.userId && (
+                          <span className="text-xs text-blue-600 ml-1">(Organizer)</span>
+                        )}
                         <div className={`text-xs ${
                           member.status === 'confirmed' ? 'text-green-600' :
                           member.status === 'declined' ? 'text-red-600' :
