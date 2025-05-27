@@ -160,7 +160,7 @@ export default function TripImageUpload({
           )}
         </div>
 
-        {currentImage ? (
+        {currentImage && currentImage.trim() !== '' ? (
           <div className="relative">
             <img 
               src={currentImage} 
