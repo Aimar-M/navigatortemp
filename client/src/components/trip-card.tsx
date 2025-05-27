@@ -62,10 +62,7 @@ export default function TripCard({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl group overflow-hidden">
-                <div className="transition-all duration-300 group-hover:scale-125 group-hover:rotate-3 relative">
-                  {destination.slice(0, 2).toUpperCase()}
-                  <div className="absolute bottom-0 left-0 h-1 w-full bg-white/40 transform translate-y-6 transition-all duration-500 group-hover:translate-y-0"></div>
-                </div>
+                {/* Empty colorful background without text */}
               </div>
             )}
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-transparent via-white/0 to-white/20 opacity-0 transition-all duration-700 group-hover:opacity-100 group-hover:rotate-12 pointer-events-none"></div>
