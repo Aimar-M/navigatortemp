@@ -306,6 +306,76 @@ export class DatabaseStorage {
       .from(surveyResponses)
       .where(eq(surveyResponses.questionId, questionId));
   }
+
+  // Expense tracking methods
+  async createExpense(expense: any): Promise<any> {
+    const [newExpense] = await db
+      .insert(expenses)
+      .values({
+        ...expense,
+        title: expense.description, // Map description to title for existing schema
+        userId: expense.paidBy, // Map paidBy to userId for existing schema
+      })
+      .returning();
+    
+    return newExpense;
+  }
+
+  async getExpensesByTrip(tripId: number): Promise<any[]> {
+    return db
+      .select({
+        id: expenses.id,
+        tripId: expenses.tripId,
+        paidBy: expenses.paidBy,
+        amount: expenses.amount,
+        description: expenses.title,
+        category: expenses.category,
+        date: expenses.date,
+        payer: {
+          id: users.id,
+          username: users.username,
+          name: users.name,
+        }
+      })
+      .from(expenses)
+      .leftJoin(users, eq(expenses.paidBy, users.id))
+      .where(eq(expenses.tripId, tripId))
+      .orderBy(desc(expenses.date));
+  }
+
+  async calculateExpenseBalances(tripId: number): Promise<any[]> {
+    // Get all trip members
+    const tripMembers = await this.getTripMembers(tripId);
+    const memberIds = tripMembers.map(m => m.userId);
+
+    // Get all expenses for the trip
+    const tripExpenses = await this.getExpensesByTrip(tripId);
+    
+    // Calculate balances
+    const balances = memberIds.map(userId => {
+      const member = tripMembers.find(m => m.userId === userId);
+      
+      // Amount they paid
+      const paid = tripExpenses
+        .filter(e => e.paidBy === userId)
+        .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+      
+      // Their share (split equally among all members)
+      const totalExpenses = tripExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+      const share = totalExpenses / memberIds.length;
+      
+      return {
+        userId,
+        username: member?.user?.username || '',
+        name: member?.user?.name || '',
+        owed: paid, // How much they paid out
+        owes: share, // How much they should pay
+        net: paid - share // Positive = they get money back, Negative = they owe money
+      };
+    });
+
+    return balances;
+  }
 }
 
 export const storage = new DatabaseStorage();
