@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import TripDetailLayout from "@/components/trip-detail-layout";
 
 const expenseSchema = z.object({
   description: z.string().min(1, "Description is required"),
@@ -158,15 +159,16 @@ export default function TripExpenses() {
   const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Trip Expenses</h1>
-          <p className="text-muted-foreground">
-            Track shared expenses and see who owes what
-          </p>
-        </div>
+    <TripDetailLayout tripId={tripId} title="Expense Tracker" description="Track shared expenses and see who owes what">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Expense Tracker</h1>
+            <p className="text-muted-foreground">
+              Track shared expenses and see who owes what
+            </p>
+          </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center space-x-2">
             <List className="h-4 w-4" />
@@ -439,6 +441,7 @@ export default function TripExpenses() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </TripDetailLayout>
   );
 }
