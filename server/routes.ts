@@ -2318,6 +2318,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get other user's public profile
+  router.get('/users/:userId', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Return public profile data (exclude sensitive info)
+      const publicProfile = {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        bio: user.bio,
+        location: user.location,
+        avatar: user.avatar,
+        createdAt: user.createdAt,
+      };
+
+      res.json(publicProfile);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Get user's public stats  
+  router.get('/users/:userId/stats', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      const memberships = await storage.getTripMembershipsByUser(userId);
+      const trips = await Promise.all(
+        memberships.map(async (m: any) => {
+          const trip = await storage.getTrip(m.tripId);
+          return trip;
+        })
+      );
+
+      const validTrips = trips.filter(trip => trip !== undefined);
+      const upcomingTrips = validTrips.filter(trip => {
+        const startDate = new Date(trip.startDate);
+        return startDate > new Date();
+      });
+
+      // Get unique companions (users who have been on trips with this user)
+      const companionIds = new Set<number>();
+      for (const trip of validTrips) {
+        const members = await storage.getTripMembers(trip.id);
+        members.forEach((member: any) => {
+          if (member.userId !== userId) {
+            companionIds.add(member.userId);
+          }
+        });
+      }
+
+      const stats = {
+        totalTrips: validTrips.length,
+        upcomingTrips: upcomingTrips.length,
+        companions: companionIds.size,
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   app.use('/api', router);
   
   return httpServer;
