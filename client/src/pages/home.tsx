@@ -481,7 +481,7 @@ export default function Home() {
         </div>
         
         {/* Welcome Content Panel if no trip is selected */}
-        <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 text-center">
+        <div className="flex-1 flex flex-col items-center justify-start p-4 md:p-8 text-center pt-12">
           <img
             src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&h=400"
             alt="Group of friends on vacation"
