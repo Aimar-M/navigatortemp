@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
-import { getRandomDestinationImage } from "@/lib/utils";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -67,7 +67,7 @@ export default function TripForm({ onComplete }: TripFormProps) {
       const tripData = {
         ...formData,
         organizer: user.id,
-        cover: getRandomDestinationImage(),
+
         status: "planning",
         startDate,
         endDate,
