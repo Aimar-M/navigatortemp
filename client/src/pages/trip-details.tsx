@@ -31,6 +31,7 @@ export default function TripDetails() {
     description?: string;
     organizer: number;
     status: string;
+    cover?: string;
   }
 
   interface TripMember {
