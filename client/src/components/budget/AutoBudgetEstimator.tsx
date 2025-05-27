@@ -71,15 +71,43 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
 
   const fetchCountryData = async (destination: string) => {
     try {
-      // Try to extract country from destination
-      const searchTerms = [destination];
+      // Clean and parse destination
+      const cleanDestination = destination.toLowerCase().trim();
+      const searchTerms = [];
       
-      // Add common country variations
-      if (destination.toLowerCase().includes('usa') || destination.toLowerCase().includes('america')) {
-        searchTerms.push('united states');
+      // Extract country name from common formats
+      if (cleanDestination.includes(',')) {
+        // Format: "Paris, France" -> extract "France"
+        const parts = cleanDestination.split(',');
+        const country = parts[parts.length - 1].trim();
+        searchTerms.push(country);
       }
-      if (destination.toLowerCase().includes('uk') || destination.toLowerCase().includes('britain')) {
-        searchTerms.push('united kingdom');
+      
+      // Add the full destination as fallback
+      searchTerms.push(cleanDestination);
+      
+      // Add common country mappings
+      const countryMappings: Record<string, string> = {
+        'usa': 'united states',
+        'america': 'united states',
+        'us': 'united states',
+        'uk': 'united kingdom',
+        'britain': 'united kingdom',
+        'england': 'united kingdom',
+        'dubai': 'united arab emirates',
+        'uae': 'united arab emirates',
+        'hong kong': 'china',
+        'macau': 'china',
+        'puerto rico': 'united states',
+        'hawaii': 'united states',
+        'alaska': 'united states'
+      };
+      
+      // Add mapped countries
+      for (const [key, value] of Object.entries(countryMappings)) {
+        if (cleanDestination.includes(key)) {
+          searchTerms.unshift(value); // Add to beginning for priority
+        }
       }
 
       let countryInfo = null;
@@ -126,15 +154,20 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
         }
       }
 
+      // Ensure we have valid numbers
+      const validNights = Math.max(1, nights || 1);
+      const validMemberCount = Math.max(1, memberCount || 1);
+      const validMultiplier = regionalMultiplier || 1.0;
+
       // Calculate estimates based on regional costs
-      const accommodationCost = Math.round(baseCosts.accommodation * regionalMultiplier * nights);
-      const foodCost = Math.round(baseCosts.food * regionalMultiplier * (nights + 1)); // +1 for departure day
-      const transportationCost = Math.round(baseCosts.transportation * regionalMultiplier * (nights + 1));
-      const activitiesCost = Math.round(baseCosts.activities * regionalMultiplier * (nights + 1));
-      const incidentalsCost = Math.round(baseCosts.incidentals * regionalMultiplier * (nights + 1));
+      const accommodationCost = Math.round(baseCosts.accommodation * validMultiplier * validNights);
+      const foodCost = Math.round(baseCosts.food * validMultiplier * (validNights + 1)); // +1 for departure day
+      const transportationCost = Math.round(baseCosts.transportation * validMultiplier * (validNights + 1));
+      const activitiesCost = Math.round(baseCosts.activities * validMultiplier * (validNights + 1));
+      const incidentalsCost = Math.round(baseCosts.incidentals * validMultiplier * (validNights + 1));
 
       const totalCost = accommodationCost + foodCost + transportationCost + activitiesCost + incidentalsCost;
-      const perPersonCost = Math.round(totalCost / memberCount);
+      const perPersonCost = Math.round(totalCost / validMemberCount);
 
       const budgetEstimate: BudgetEstimate = {
         accommodation: accommodationCost,
