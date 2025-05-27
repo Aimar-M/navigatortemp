@@ -59,7 +59,8 @@ export default function ExpensesPage() {
     description: "",
     amount: "",
     category: "food",
-    paidBy: 0
+    paidBy: 0,
+    splitWith: [] as number[]
   });
 
   // Use React Query for data fetching like other pages
@@ -114,7 +115,8 @@ export default function ExpensesPage() {
           description: "",
           amount: "",
           category: "food",
-          paidBy: 0
+          paidBy: 0,
+          splitWith: []
         });
         
         setIsAddDialogOpen(false);
@@ -287,9 +289,73 @@ export default function ExpensesPage() {
                   Select the person who actually paid for this expense
                 </p>
               </div>
+
+              {/* Split With Section */}
+              <div className="space-y-2">
+                <Label className="text-lg font-bold text-green-600">
+                  🎯 Who Should Split This Expense?
+                </Label>
+                <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto border rounded-lg p-3">
+                  {Array.isArray(members) && members.length > 0 ? (
+                    (members as any[]).map((member: any) => (
+                      <label key={member.userId} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+                        <input
+                          type="checkbox"
+                          checked={newExpense.splitWith.includes(member.userId)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewExpense({
+                                ...newExpense,
+                                splitWith: [...newExpense.splitWith, member.userId]
+                              });
+                            } else {
+                              setNewExpense({
+                                ...newExpense,
+                                splitWith: newExpense.splitWith.filter(id => id !== member.userId)
+                              });
+                            }
+                          }}
+                          className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        />
+                        <span className="font-medium">👤 {member.name || member.username}</span>
+                      </label>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">Loading members...</p>
+                  )}
+                </div>
+                <div className="flex justify-between">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const allMemberIds = Array.isArray(members) ? (members as any[]).map(m => m.userId) : [];
+                      setNewExpense({...newExpense, splitWith: allMemberIds});
+                    }}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setNewExpense({...newExpense, splitWith: []})}
+                  >
+                    Clear All
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-500">
+                  Choose who should share the cost of this expense
+                </p>
+              </div>
               
-              <Button onClick={addExpense} className="w-full">
-                Add Expense
+              <Button 
+                onClick={addExpense} 
+                className="w-full h-12 text-lg"
+                disabled={!newExpense.description || !newExpense.amount || !newExpense.paidBy || newExpense.splitWith.length === 0}
+              >
+                💾 Add Expense
               </Button>
             </div>
           </DialogContent>
