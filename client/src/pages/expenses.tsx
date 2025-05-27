@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "wouter";
 import { Button } from "@/components/ui/button";
+import TripDetailLayout from "@/components/trip-detail-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,21 +75,27 @@ export default function ExpensesPage() {
       setLoading(true);
       
       // Load expenses
-      const expensesRes = await fetch(`/api/trips/${tripId}/expenses`);
+      const expensesRes = await fetch(`/api/trips/${tripId}/expenses`, {
+        credentials: 'include'
+      });
       if (expensesRes.ok) {
         const expensesData = await expensesRes.json();
         setExpenses(expensesData);
       }
       
       // Load members
-      const membersRes = await fetch(`/api/trips/${tripId}/members`);
+      const membersRes = await fetch(`/api/trips/${tripId}/members`, {
+        credentials: 'include'
+      });
       if (membersRes.ok) {
         const membersData = await membersRes.json();
         setMembers(membersData);
       }
       
       // Load balances
-      const balancesRes = await fetch(`/api/trips/${tripId}/expenses/balances`);
+      const balancesRes = await fetch(`/api/trips/${tripId}/expenses/balances`, {
+        credentials: 'include'
+      });
       if (balancesRes.ok) {
         const balancesData = await balancesRes.json();
         setBalances(balancesData);
@@ -117,6 +124,7 @@ export default function ExpensesPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: 'include',
         body: JSON.stringify({
           description: newExpense.description,
           amount: parseFloat(newExpense.amount),
@@ -189,7 +197,8 @@ export default function ExpensesPage() {
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   return (
-    <div className="p-4 space-y-6">
+    <TripDetailLayout tripId={parseInt(tripId!)}>
+      <div className="p-4 space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -281,18 +290,18 @@ export default function ExpensesPage() {
               </div>
               
               <div>
-                <Label htmlFor="paidBy">Paid By</Label>
+                <Label htmlFor="paidBy" className="text-sm font-semibold">Who Paid for This?</Label>
                 <Select
-                  value={newExpense.paidBy.toString()}
+                  value={newExpense.paidBy > 0 ? newExpense.paidBy.toString() : ""}
                   onValueChange={(value) => setNewExpense({...newExpense, paidBy: parseInt(value)})}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Who paid for this?" />
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select who paid..." />
                   </SelectTrigger>
                   <SelectContent>
                     {members.map((member) => (
                       <SelectItem key={member.userId} value={member.userId.toString()}>
-                        {member.name || member.username}
+                        👤 {member.name || member.username}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -389,6 +398,7 @@ export default function ExpensesPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </TripDetailLayout>
   );
 }
