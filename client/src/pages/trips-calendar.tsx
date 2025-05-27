@@ -171,7 +171,12 @@ const Calendar = ({ date, events, onDateChange }: {
                         
                         const isStart = currentDay.toDateString() === tripStart.toDateString();
                         const isEnd = currentDay.toDateString() === tripEnd.toDateString();
-                        const isMiddle = !isStart && !isEnd;
+                        
+                        // Calculate if this is the center day to show the name
+                        const tripDuration = Math.ceil((tripEnd.getTime() - tripStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                        const daysSinceStart = Math.ceil((currentDay.getTime() - tripStart.getTime()) / (1000 * 60 * 60 * 24));
+                        const centerDay = Math.floor(tripDuration / 2);
+                        const showName = daysSinceStart === centerDay || (tripDuration === 1 && isStart);
                         
                         const tripColor = getTripColor(event.destination || event.name);
                         
@@ -197,7 +202,7 @@ const Calendar = ({ date, events, onDateChange }: {
                           >
                             <div className="absolute inset-0 flex items-center justify-center px-2">
                               <span className="text-xs font-medium truncate">
-                                {isStart || (isStart && isEnd) ? event.name : ''}
+                                {showName ? event.name : ''}
                               </span>
                             </div>
                           </div>
