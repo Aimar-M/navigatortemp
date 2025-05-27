@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,6 +52,7 @@ interface Balance {
 export default function ExpensesPage() {
   const { id: tripId } = useParams();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
@@ -78,62 +80,38 @@ export default function ExpensesPage() {
 
   const loading = expensesLoading || membersLoading || balancesLoading;
 
-  const addExpense = async () => {
-    try {
-      if (!newExpense.description || !newExpense.amount || !newExpense.paidBy) {
-        toast({
-          title: "Missing Information",
-          description: "Please fill in all fields",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Use the same authentication approach as other parts of the app
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('session='))
-        ?.split('=')[1];
-
-      const response = await fetch(`/api/trips/${tripId}/expenses`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { "Authorization": `Bearer ${token}` })
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          description: newExpense.description,
-          amount: parseFloat(newExpense.amount),
-          category: newExpense.category,
-          paidBy: newExpense.paidBy,
-          splitWith: newExpense.splitWith.length > 0 ? newExpense.splitWith : (members as any[]).map(m => m.userId)
-        }),
+  const addExpenseMutation = useMutation({
+    mutationFn: async (data: typeof newExpense) => {
+      return apiRequest("POST", `/api/trips/${tripId}/expenses`, {
+        description: data.description,
+        amount: parseFloat(data.amount),
+        category: data.category,
+        paidBy: data.paidBy,
+        splitWith: data.splitWith.length > 0 ? data.splitWith : (members as any[]).map(m => m.userId)
       });
-
-      if (response.ok) {
-        toast({
-          title: "Success!",
-          description: "Expense added successfully"
-        });
-        
-        // Reset form
-        setNewExpense({
-          description: "",
-          amount: "",
-          category: "food",
-          paidBy: 0,
-          splitWith: []
-        });
-        
-        setIsAddDialogOpen(false);
-        
-        // Refresh data
-        window.location.reload();
-      } else {
-        throw new Error("Failed to add expense");
-      }
-    } catch (error) {
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success!",
+        description: "Expense added successfully"
+      });
+      
+      // Reset form
+      setNewExpense({
+        description: "",
+        amount: "",
+        category: "food",
+        paidBy: 0,
+        splitWith: []
+      });
+      
+      setIsAddDialogOpen(false);
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses/balances`] });
+    },
+    onError: (error) => {
       console.error("Error adding expense:", error);
       toast({
         title: "Error",
@@ -141,6 +119,18 @@ export default function ExpensesPage() {
         variant: "destructive"
       });
     }
+  });
+
+  const addExpense = () => {
+    if (!newExpense.description || !newExpense.amount || !newExpense.paidBy) {
+      toast({
+        title: "Missing Information", 
+        description: "Please fill in all fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    addExpenseMutation.mutate(newExpense);
   };
 
   const categoryIcons = {
