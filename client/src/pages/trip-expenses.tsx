@@ -100,23 +100,13 @@ export default function TripExpenses() {
 
   const addExpenseMutation = useMutation({
     mutationFn: async (data: ExpenseFormData) => {
-      const response = await fetch(`/api/trips/${tripId}/expenses`, {
+      return apiRequest(`/api/trips/${tripId}/expenses`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
+        body: {
           ...data,
           amount: parseFloat(data.amount),
-        }),
+        },
       });
-      
-      if (!response.ok) {
-        throw new Error("Failed to add expense");
-      }
-      
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses`] });
