@@ -16,6 +16,7 @@ export default function TripDetails() {
   const { id } = useParams<{ id: string }>();
   const tripId = parseInt(id);
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const { user } = useAuth();
   
