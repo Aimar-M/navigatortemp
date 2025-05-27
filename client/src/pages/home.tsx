@@ -316,7 +316,7 @@ export default function Home() {
                             endDate={trip.endDate}
                             status={trip.status}
                             memberCount={trip.memberCount}
-                            imageUrl={trip.imageUrl}
+                            imageUrl={trip.cover}
                             isPinned={!!trip.isPinned}
                             isArchived={!!trip.isArchived}
                             onPin={handlePinTrip}
@@ -454,7 +454,7 @@ export default function Home() {
                             endDate={trip.endDate}
                             status={trip.status}
                             memberCount={trip.memberCount}
-                            imageUrl={trip.imageUrl}
+                            imageUrl={trip.cover}
                             isPinned={!!trip.isPinned}
                             isArchived={!!trip.isArchived}
                             onPin={handlePinTrip}
