@@ -14,6 +14,7 @@ import Itinerary from "@/pages/itinerary";
 import TripBudget from "@/pages/trip-budget";
 import Polls from "@/pages/polls";
 import InvitationPage from "@/pages/invite";
+import Profile from "@/pages/profile";
 
 function Router() {
   return (
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/trips" component={TripsCalendar} />
       <Route path="/chat/:id" component={Chat} />
       <Route path="/invite/:token" component={InvitationPage} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );
