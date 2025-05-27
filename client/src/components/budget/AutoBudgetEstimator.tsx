@@ -255,7 +255,9 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                   <p className="text-2xl font-bold text-blue-700">
                     {formatCurrency(estimate.accommodation, estimate.currency)}
                   </p>
-                  <p className="text-sm text-blue-600">{nights} nights</p>
+                  <p className="text-sm text-blue-600">
+                    {nights} {nights === 1 ? 'night' : 'nights'} • ${Math.round(estimate.accommodation / Math.max(1, nights))}/night
+                  </p>
                 </div>
 
                 <div className="bg-green-50 p-4 rounded-lg">
@@ -263,7 +265,9 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                   <p className="text-2xl font-bold text-green-700">
                     {formatCurrency(estimate.food, estimate.currency)}
                   </p>
-                  <p className="text-sm text-green-600">{nights + 1} days</p>
+                  <p className="text-sm text-green-600">
+                    {nights + 1} {nights + 1 === 1 ? 'day' : 'days'} • ${Math.round(estimate.food / Math.max(1, nights + 1))}/day
+                  </p>
                 </div>
 
                 <div className="bg-purple-50 p-4 rounded-lg">
@@ -271,7 +275,9 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                   <p className="text-2xl font-bold text-purple-700">
                     {formatCurrency(estimate.transportation, estimate.currency)}
                   </p>
-                  <p className="text-sm text-purple-600">Local transport</p>
+                  <p className="text-sm text-purple-600">
+                    {nights + 1} {nights + 1 === 1 ? 'day' : 'days'} • ${Math.round(estimate.transportation / Math.max(1, nights + 1))}/day
+                  </p>
                 </div>
 
                 <div className="bg-orange-50 p-4 rounded-lg">
@@ -279,7 +285,9 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                   <p className="text-2xl font-bold text-orange-700">
                     {formatCurrency(estimate.activities, estimate.currency)}
                   </p>
-                  <p className="text-sm text-orange-600">Tours & attractions</p>
+                  <p className="text-sm text-orange-600">
+                    {nights + 1} {nights + 1 === 1 ? 'day' : 'days'} • ${Math.round(estimate.activities / Math.max(1, nights + 1))}/day
+                  </p>
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-lg">
@@ -287,7 +295,9 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                   <p className="text-2xl font-bold text-gray-700">
                     {formatCurrency(estimate.incidentals, estimate.currency)}
                   </p>
-                  <p className="text-sm text-gray-600">Misc expenses</p>
+                  <p className="text-sm text-gray-600">
+                    {nights + 1} {nights + 1 === 1 ? 'day' : 'days'} • ${Math.round(estimate.incidentals / Math.max(1, nights + 1))}/day
+                  </p>
                 </div>
 
                 <div className="bg-indigo-50 p-4 rounded-lg border-2 border-indigo-200">
