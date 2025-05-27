@@ -3,9 +3,10 @@ import {
   User, InsertUser, Trip, InsertTrip, TripMember, InsertTripMember,
   Activity, InsertActivity, ActivityRSVP, InsertActivityRSVP,
   Message, InsertMessage, SurveyQuestion, InsertSurveyQuestion,
-  SurveyResponse, InsertSurveyResponse,
+  SurveyResponse, InsertSurveyResponse, Expense, InsertExpense,
+  ExpenseSplit, InsertExpenseSplit,
   users, trips, tripMembers, activities, activityRsvp, 
-  messages, surveyQuestions, surveyResponses 
+  messages, surveyQuestions, surveyResponses, expenses, expenseSplits
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 export class DatabaseStorage {
