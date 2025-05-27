@@ -2397,6 +2397,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Trip image upload endpoints
+  router.put('/trips/:id/image', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: "Invalid trip ID" });
+      }
+
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: "Trip not found" });
+      }
+
+      // Only trip organizer can upload images
+      if (trip.organizer !== user.id) {
+        return res.status(403).json({ message: "Only the trip organizer can upload images" });
+      }
+
+      const { image } = req.body;
+      if (!image) {
+        return res.status(400).json({ message: "No image provided" });
+      }
+
+      const updatedTrip = await storage.updateTrip(tripId, { cover: image });
+      
+      if (!updatedTrip) {
+        return res.status(404).json({ message: "Trip not found" });
+      }
+
+      res.json(updatedTrip);
+    } catch (error) {
+      console.error("Error uploading trip image:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  router.delete('/trips/:id/image', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: "Invalid trip ID" });
+      }
+
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: "Trip not found" });
+      }
+
+      // Only trip organizer can remove images
+      if (trip.organizer !== user.id) {
+        return res.status(403).json({ message: "Only the trip organizer can remove images" });
+      }
+
+      const updatedTrip = await storage.updateTrip(tripId, { cover: null });
+      
+      if (!updatedTrip) {
+        return res.status(404).json({ message: "Trip not found" });
+      }
+
+      res.json(updatedTrip);
+    } catch (error) {
+      console.error("Error removing trip image:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   app.use('/api', router);
   
   return httpServer;
