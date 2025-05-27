@@ -16,6 +16,14 @@ export default function TripBudget() {
     enabled: !!tripId,
   });
 
+  // Get trip member count
+  const { data: members } = useQuery({
+    queryKey: [`/api/trips/${tripId}/members`],
+    enabled: !!tripId,
+  });
+
+  const memberCount = members?.length || 1;
+
   if (isLoadingTrip) {
     return (
       <TripDetailLayout tripId={tripId}>
@@ -37,14 +45,6 @@ export default function TripBudget() {
       </TripDetailLayout>
     );
   }
-
-  // Get trip member count
-  const { data: members } = useQuery({
-    queryKey: [`/api/trips/${tripId}/members`],
-    enabled: !!tripId,
-  });
-
-  const memberCount = members?.length || 1;
 
   return (
     <TripDetailLayout 
