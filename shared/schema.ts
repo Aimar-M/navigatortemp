@@ -418,9 +418,36 @@ export const insertFlightInfoSchema = createInsertSchema(flightInfo).pick({
   flightDetails: true,
 });
 
-// Define new types
+// Define expense types using existing schema
 export type Expense = typeof expenses.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+
+export const expenseSplits = pgTable("expense_splits", {
+  id: serial("id").primaryKey(),
+  expenseId: integer("expense_id").notNull().references(() => expenses.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  amount: text("amount").notNull(),
+  settled: boolean("settled").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const expenseSplitsRelations = relations(expenseSplits, ({ one }) => ({
+  expense: one(expenses, {
+    fields: [expenseSplits.expenseId],
+    references: [expenses.id]
+  }),
+  user: one(users, {
+    fields: [expenseSplits.userId],
+    references: [users.id]
+  }),
+}));
+
+export const insertExpenseSplitSchema = createInsertSchema(expenseSplits).pick({
+  expenseId: true,
+  userId: true,
+  amount: true,
+  settled: true,
+});
 
 export type ExpenseSplit = typeof expenseSplits.$inferSelect;
 export type InsertExpenseSplit = z.infer<typeof insertExpenseSplitSchema>;
