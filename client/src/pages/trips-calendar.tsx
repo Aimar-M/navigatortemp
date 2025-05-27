@@ -145,13 +145,14 @@ const Calendar = ({ date, events, onDateChange }: {
           return (
             <div 
               key={i} 
-              className={`p-1 min-h-[80px] border border-gray-100 ${
+              className={`relative overflow-visible min-h-[80px] border border-gray-100 ${
                 day === null ? "bg-gray-50" : "hover:bg-gray-50"
               }`}
+              style={{ padding: '4px 1px' }}
             >
               {day !== null && (
                 <>
-                  <div className="text-right mb-1">
+                  <div className="text-right mb-1 px-1">
                     <span className={`inline-block rounded-full w-6 h-6 text-center ${
                       hasEvents 
                         ? "bg-primary-100 text-primary-800" 
@@ -161,7 +162,7 @@ const Calendar = ({ date, events, onDateChange }: {
                     </span>
                   </div>
                   
-                  <div className="space-y-1">
+                  <div className="space-y-1 relative">
                     {dayEvents.slice(0, 2).map((event, idx) => {
                       if (event.type === 'trip' && event.startDate && event.endDate) {
                         const tripStart = new Date(event.startDate);
@@ -185,11 +186,16 @@ const Calendar = ({ date, events, onDateChange }: {
                               'rounded-none'
                             }`}
                             style={{
-                              marginLeft: isStart ? '0' : '-1px',
-                              marginRight: isEnd ? '0' : '-1px',
+                              marginLeft: isStart ? '0' : '-4px',
+                              marginRight: isEnd ? '0' : '-4px',
+                              width: isStart && isEnd ? '100%' : 
+                                     isStart ? 'calc(100% + 4px)' :
+                                     isEnd ? 'calc(100% + 4px)' :
+                                     'calc(100% + 8px)',
+                              zIndex: 10
                             }}
                           >
-                            <div className="absolute inset-0 flex items-center justify-center px-1">
+                            <div className="absolute inset-0 flex items-center justify-center px-2">
                               <span className="text-xs font-medium truncate">
                                 {isStart || (isStart && isEnd) ? event.name : ''}
                               </span>
@@ -202,7 +208,7 @@ const Calendar = ({ date, events, onDateChange }: {
                           <div
                             key={`${event.id}-${idx}`}
                             onClick={() => window.location.href = `/trips/${event.tripId}/activities`}
-                            className="block text-xs p-1 rounded truncate cursor-pointer bg-green-100 text-green-800"
+                            className="block text-xs p-1 rounded truncate cursor-pointer bg-green-100 text-green-800 mx-1"
                           >
                             {event.name}
                           </div>
