@@ -412,27 +412,29 @@ export class DatabaseStorage {
     const tripExpenses = await this.getExpensesByTrip(tripId);
     
     // Calculate balances
-    const balances = memberIds.map(userId => {
-      const member = tripMembers.find(m => m.userId === userId);
+    const balances = [];
+    
+    for (const memberId of memberIds) {
+      const memberUser = await this.getUser(memberId);
       
       // Amount they paid
       const paid = tripExpenses
-        .filter(e => e.paidBy === userId)
+        .filter(e => e.paidBy === memberId)
         .reduce((sum, e) => sum + parseFloat(e.amount), 0);
       
       // Their share (split equally among all members)
       const totalExpenses = tripExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
       const share = totalExpenses / memberIds.length;
       
-      return {
-        userId,
-        username: member?.user?.username || '',
-        name: member?.user?.name || '',
-        owed: paid, // How much they paid out
+      balances.push({
+        userId: memberId,
+        username: memberUser?.username || 'Unknown',
+        name: memberUser?.name || memberUser?.username || 'Unknown',
         owes: share, // How much they should pay
+        owed: paid, // How much they paid out
         net: paid - share // Positive = they get money back, Negative = they owe money
-      };
-    });
+      });
+    }
 
     return balances;
   }
