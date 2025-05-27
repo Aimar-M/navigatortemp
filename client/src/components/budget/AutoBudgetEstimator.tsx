@@ -55,8 +55,10 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
     if (!startDate || !endDate) return 1;
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const calculatedNights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Calculate the difference in days (nights = end date - start date)
+    const diffTime = end.getTime() - start.getTime();
+    const calculatedNights = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    console.log('Date calculation:', { startDate, endDate, diffTime, calculatedNights });
     return Math.max(1, calculatedNights);
   }, [startDate, endDate]);
 
