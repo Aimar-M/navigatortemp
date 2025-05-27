@@ -12,6 +12,7 @@ import Chats from "@/pages/chats";
 import TripsCalendar from "@/pages/trips-calendar";
 import Itinerary from "@/pages/itinerary";
 import TripBudget from "@/pages/trip-budget";
+import TripExpenses from "@/pages/trip-expenses";
 import Polls from "@/pages/polls";
 import InvitationPage from "@/pages/invite";
 import Profile from "@/pages/profile";
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/trips/:id/chat" component={Chat} />
       <Route path="/trips/:id/itinerary" component={Itinerary} />
       <Route path="/trips/:id/budget" component={TripBudget} />
+      <Route path="/trips/:id/expenses" component={TripExpenses} />
       <Route path="/trips/:id/polls" component={Polls} />
       <Route path="/chats" component={Chats} />
       <Route path="/trips" component={TripsCalendar} />
