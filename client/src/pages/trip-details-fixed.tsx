@@ -140,7 +140,7 @@ export default function TripDetailFixed() {
             {/* Trip Cover Photo Card */}
             <div className="md:col-span-2 bg-white rounded-xl shadow-sm overflow-hidden">
               <img 
-                src={trip.cover}
+                src={trip.cover || "https://images.unsplash.com/photo-1583422409516-2895a77efded?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1200&h=600"}
                 alt={`${trip.destination} view`} 
                 className="w-full h-48 md:h-64 object-cover" 
               />
