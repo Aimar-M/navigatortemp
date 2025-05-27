@@ -2469,6 +2469,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Expense tracking routes
+  router.post('/trips/:id/expenses', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tripId = parseInt(req.params.id);
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const { description, amount, category, paidBy } = req.body;
+      
+      const expense = await storage.createExpense({
+        tripId,
+        userId: user.id,
+        title: description,
+        amount: amount.toString(),
+        category: category || 'general',
+        paidBy,
+        date: new Date(),
+      });
+
+      res.json(expense);
+    } catch (error) {
+      console.error("Error creating expense:", error);
+      res.status(500).json({ message: "Failed to create expense" });
+    }
+  });
+
+  router.get('/trips/:id/expenses', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tripId = parseInt(req.params.id);
+      const expenses = await storage.getExpensesByTrip(tripId);
+      res.json(expenses);
+    } catch (error) {
+      console.error("Error fetching expenses:", error);
+      res.status(500).json({ message: "Failed to fetch expenses" });
+    }
+  });
+
+  router.get('/trips/:id/expenses/balances', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tripId = parseInt(req.params.id);
+      const balances = await storage.calculateExpenseBalances(tripId);
+      res.json(balances);
+    } catch (error) {
+      console.error("Error calculating balances:", error);
+      res.status(500).json({ message: "Failed to calculate balances" });
+    }
+  });
+
   app.use('/api', router);
   
   return httpServer;
