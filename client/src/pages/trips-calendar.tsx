@@ -197,7 +197,7 @@ const Calendar = ({ date, events, onDateChange }: {
                           >
                             <div className="absolute inset-0 flex items-center justify-center px-2">
                               <span className="text-xs font-medium truncate">
-                                {event.name}
+                                {isStart || (isStart && isEnd) ? event.name : ''}
                               </span>
                             </div>
                           </div>
