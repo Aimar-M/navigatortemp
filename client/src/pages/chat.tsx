@@ -345,7 +345,12 @@ export default function Chat() {
                         )}
                         <div className="max-w-[85%]">
                           {item.user?.id !== user?.id && (
-                            <p className="text-xs font-medium text-gray-900 mb-1">{item.user?.name || item.user?.username || 'Anonymous'}</p>
+                            <button 
+                              onClick={() => navigate(`/user/${item.user?.id}`)}
+                              className="text-xs font-medium text-blue-600 hover:text-blue-800 mb-1 cursor-pointer hover:underline"
+                            >
+                              {item.user?.name || item.user?.username || 'Anonymous'}
+                            </button>
                           )}
                           <div
                             className={`rounded-lg py-1.5 px-2.5 md:py-2 md:px-3 ${
