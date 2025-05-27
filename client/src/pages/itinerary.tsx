@@ -48,15 +48,19 @@ export default function Itinerary() {
     // Clone the start date to avoid modifying the original date
     const currentDate = new Date(startDate);
     
-    // Set hours to 0 to compare dates only
-    currentDate.setHours(0, 0, 0, 0);
+    // Set hours to 0 to compare dates only - fix timezone issues
+    currentDate.setUTCHours(0, 0, 0, 0);
     const lastDate = new Date(endDate);
-    lastDate.setHours(0, 0, 0, 0);
+    lastDate.setUTCHours(0, 0, 0, 0);
     
     // Add each date until we reach the end date
     while (currentDate <= lastDate) {
-      dates.push(new Date(currentDate).toISOString().split('T')[0]);
-      currentDate.setDate(currentDate.getDate() + 1);
+      // Use UTC to avoid timezone issues
+      const year = currentDate.getUTCFullYear();
+      const month = String(currentDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(currentDate.getUTCDate()).padStart(2, '0');
+      dates.push(`${year}-${month}-${day}`);
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
     
     return dates;
