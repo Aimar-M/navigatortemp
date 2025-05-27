@@ -52,17 +52,27 @@ export default function TripBudget() {
     );
   }
 
+  // Debug trip data
+  console.log('Trip data for budget:', {
+    trip,
+    startDate: trip?.startDate,
+    endDate: trip?.endDate,
+    destination: trip?.destination,
+    memberCount,
+    activities
+  });
+
   return (
     <TripDetailLayout 
       tripId={tripId}
       title="Smart Budget Planner"
-      description={`AI-powered budget estimates for your trip to ${trip.destination}.`}
+      description={`AI-powered budget estimates for your trip to ${trip?.destination || 'your destination'}.`}
     >
       <AutoBudgetEstimator 
         tripId={tripId} 
-        destination={trip.destination}
-        startDate={trip.startDate}
-        endDate={trip.endDate}
+        destination={trip?.destination || ''}
+        startDate={trip?.startDate || ''}
+        endDate={trip?.endDate || ''}
         memberCount={memberCount}
         activities={Array.isArray(activities) ? activities : []}
       />
