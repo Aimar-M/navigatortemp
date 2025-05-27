@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,11 +52,7 @@ export default function ExpensesPage() {
   const { id: tripId } = useParams();
   const { toast } = useToast();
   
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [balances, setBalances] = useState<Balance[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   
   // Form state
   const [newExpense, setNewExpense] = useState({
@@ -65,48 +62,20 @@ export default function ExpensesPage() {
     paidBy: 0
   });
 
-  // Load data
-  useEffect(() => {
-    loadData();
-  }, [tripId]);
+  // Use React Query for data fetching like other pages
+  const { data: expenses = [], isLoading: expensesLoading } = useQuery({
+    queryKey: [`/api/trips/${tripId}/expenses`],
+  });
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      
-      // Load expenses
-      const expensesRes = await fetch(`/api/trips/${tripId}/expenses`, {
-        credentials: 'include'
-      });
-      if (expensesRes.ok) {
-        const expensesData = await expensesRes.json();
-        setExpenses(expensesData);
-      }
-      
-      // Load members
-      const membersRes = await fetch(`/api/trips/${tripId}/members`, {
-        credentials: 'include'
-      });
-      if (membersRes.ok) {
-        const membersData = await membersRes.json();
-        setMembers(membersData);
-      }
-      
-      // Load balances
-      const balancesRes = await fetch(`/api/trips/${tripId}/expenses/balances`, {
-        credentials: 'include'
-      });
-      if (balancesRes.ok) {
-        const balancesData = await balancesRes.json();
-        setBalances(balancesData);
-      }
-      
-    } catch (error) {
-      console.error("Error loading data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: members = [], isLoading: membersLoading } = useQuery({
+    queryKey: [`/api/trips/${tripId}/members`],
+  });
+
+  const { data: balances = [], isLoading: balancesLoading } = useQuery({
+    queryKey: [`/api/trips/${tripId}/expenses/balances`],
+  });
+
+  const loading = expensesLoading || membersLoading || balancesLoading;
 
   const addExpense = async () => {
     try {
@@ -130,7 +99,7 @@ export default function ExpensesPage() {
           amount: parseFloat(newExpense.amount),
           category: newExpense.category,
           paidBy: newExpense.paidBy,
-          splitWith: members.map(m => m.userId)
+          splitWith: (members as any[]).map(m => m.userId)
         }),
       });
 
@@ -150,8 +119,8 @@ export default function ExpensesPage() {
         
         setIsAddDialogOpen(false);
         
-        // Reload data
-        loadData();
+        // Refresh data
+        window.location.reload();
       } else {
         throw new Error("Failed to add expense");
       }
@@ -289,23 +258,34 @@ export default function ExpensesPage() {
                 </Select>
               </div>
               
-              <div>
-                <Label htmlFor="paidBy" className="text-sm font-semibold">Who Paid for This?</Label>
+              <div className="space-y-2">
+                <Label htmlFor="paidBy" className="text-lg font-bold text-blue-600">
+                  💰 Who Paid for This?
+                </Label>
                 <Select
                   value={newExpense.paidBy > 0 ? newExpense.paidBy.toString() : ""}
                   onValueChange={(value) => setNewExpense({...newExpense, paidBy: parseInt(value)})}
                 >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select who paid..." />
+                  <SelectTrigger className="mt-2 h-12 text-base border-2 border-blue-300 focus:border-blue-500">
+                    <SelectValue placeholder="👆 Click here to select who paid" />
                   </SelectTrigger>
                   <SelectContent>
-                    {members.map((member) => (
-                      <SelectItem key={member.userId} value={member.userId.toString()}>
-                        👤 {member.name || member.username}
+                    {Array.isArray(members) && members.length > 0 ? (
+                      (members as any[]).map((member: any) => (
+                        <SelectItem key={member.userId} value={member.userId.toString()}>
+                          👤 {member.name || member.username}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="demo" disabled>
+                        Loading members...
                       </SelectItem>
-                    ))}
+                    )}
                   </SelectContent>
                 </Select>
+                <p className="text-sm text-gray-500">
+                  Select the person who actually paid for this expense
+                </p>
               </div>
               
               <Button onClick={addExpense} className="w-full">
