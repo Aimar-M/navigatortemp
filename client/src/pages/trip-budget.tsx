@@ -1,7 +1,7 @@
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import ComprehensiveBudgetView from "@/components/budget/ComprehensiveBudgetView";
+import AutoBudgetEstimator from "@/components/budget/AutoBudgetEstimator";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -28,18 +28,36 @@ export default function TripBudget() {
     );
   }
 
-  // Get trip destination or use a fallback
-  const destination = trip?.destination || "your destination";
+  if (!trip) {
+    return (
+      <TripDetailLayout tripId={tripId}>
+        <div className="text-center py-8">
+          <p className="text-gray-500">Trip not found</p>
+        </div>
+      </TripDetailLayout>
+    );
+  }
+
+  // Get trip member count
+  const { data: members } = useQuery({
+    queryKey: [`/api/trips/${tripId}/members`],
+    enabled: !!tripId,
+  });
+
+  const memberCount = members?.length || 1;
 
   return (
     <TripDetailLayout 
       tripId={tripId}
-      title="Trip Budget"
-      description={`Plan and track all expenses for your trip to ${destination}.`}
+      title="Smart Budget Planner"
+      description={`AI-powered budget estimates for your trip to ${trip.destination}.`}
     >
-      <ComprehensiveBudgetView 
+      <AutoBudgetEstimator 
         tripId={tripId} 
-        destination={destination}
+        destination={trip.destination}
+        startDate={trip.startDate}
+        endDate={trip.endDate}
+        memberCount={memberCount}
       />
     </TripDetailLayout>
   );
