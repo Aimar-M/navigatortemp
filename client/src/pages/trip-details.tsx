@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import InviteModal from "@/components/invite-modal";
+import TripImageUpload from "@/components/trip-image-upload";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
 
@@ -76,6 +77,20 @@ export default function TripDetails() {
       title={trip.name}
       description={`Trip to ${trip.destination}`}
     >
+      {/* Trip Image Upload */}
+      <TripImageUpload 
+        tripId={tripId}
+        currentImage={trip.cover}
+        isOrganizer={user?.id === trip.organizer}
+        onImageUpdate={(imageUrl) => {
+          // Update the trip data locally
+          queryClient.setQueryData([`/api/trips/${tripId}`], (oldData: any) => ({
+            ...oldData,
+            cover: imageUrl
+          }));
+        }}
+      />
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Trip Details Card */}
         <Card className="col-span-1 md:col-span-2">
