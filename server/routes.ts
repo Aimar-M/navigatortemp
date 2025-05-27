@@ -2228,6 +2228,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Server error' });
     }
   });
+
+  // PROFILE MANAGEMENT ROUTES
+  
+  // Update user profile
+  router.put('/users/profile', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      const { username, email, firstName, lastName, bio, location } = req.body;
+
+      // Check if username or email already exists for other users
+      if (username && username !== user.username) {
+        const existingUser = await storage.getUserByUsername(username);
+        if (existingUser && existingUser.id !== user.id) {
+          return res.status(400).json({ message: 'Username already taken' });
+        }
+      }
+
+      if (email && email !== user.email) {
+        const existingUser = await storage.getUserByEmail(email);
+        if (existingUser && existingUser.id !== user.id) {
+          return res.status(400).json({ message: 'Email already in use' });
+        }
+      }
+
+      // Update user profile
+      const updatedUser = await storage.updateUser(user.id, {
+        username: username || user.username,
+        email: email || user.email,
+        firstName: firstName || user.firstName,
+        lastName: lastName || user.lastName,
+        bio: bio || user.bio,
+        location: location || user.location,
+      });
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Get user statistics
+  router.get('/users/stats', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      // Get user's trip memberships
+      const memberships = await storage.getTripMembershipsByUser(user.id);
+      const confirmedMemberships = memberships.filter(m => m.status === 'confirmed');
+      
+      // Get trip details for confirmed memberships
+      const tripDetails = await Promise.all(
+        confirmedMemberships.map(membership => storage.getTrip(membership.tripId))
+      );
+      
+      const validTrips = tripDetails.filter(trip => trip !== null);
+      
+      // Calculate stats
+      const totalTrips = validTrips.length;
+      const now = new Date();
+      const upcomingTrips = validTrips.filter(trip => 
+        trip && new Date(trip.startDate) > now
+      ).length;
+      
+      // Get unique travel companions
+      const allTripMembers = await Promise.all(
+        confirmedMemberships.map(membership => storage.getTripMembers(membership.tripId))
+      );
+      
+      const companionIds = new Set();
+      allTripMembers.flat().forEach(member => {
+        if (member.userId !== user.id && member.status === 'confirmed') {
+          companionIds.add(member.userId);
+        }
+      });
+
+      res.json({
+        totalTrips,
+        upcomingTrips,
+        companionsCount: companionIds.size,
+      });
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
   
   app.use('/api', router);
   
