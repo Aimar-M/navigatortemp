@@ -12,7 +12,7 @@ import Chats from "@/pages/chats";
 import TripsCalendar from "@/pages/trips-calendar";
 import Itinerary from "@/pages/itinerary";
 import TripBudget from "@/pages/trip-budget";
-import TripExpenses from "@/pages/trip-expenses";
+import TripExpenses from "@/pages/expenses";
 import Polls from "@/pages/polls";
 import InvitationPage from "@/pages/invite";
 import Profile from "@/pages/profile";
