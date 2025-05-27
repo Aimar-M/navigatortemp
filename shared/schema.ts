@@ -280,6 +280,8 @@ export type InsertSurveyQuestion = z.infer<typeof insertSurveyQuestionSchema>;
 export type SurveyResponse = typeof surveyResponses.$inferSelect;
 export type InsertSurveyResponse = z.infer<typeof insertSurveyResponseSchema>;
 
+
+
 // Invitation links schema
 export const invitationLinks = pgTable("invitation_links", {
   id: serial("id").primaryKey(),
@@ -419,6 +421,9 @@ export const insertFlightInfoSchema = createInsertSchema(flightInfo).pick({
 // Define new types
 export type Expense = typeof expenses.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+
+export type ExpenseSplit = typeof expenseSplits.$inferSelect;
+export type InsertExpenseSplit = z.infer<typeof insertExpenseSplitSchema>;
 
 export type FlightInfo = typeof flightInfo.$inferSelect;
 export type InsertFlightInfo = z.infer<typeof insertFlightInfoSchema>;
