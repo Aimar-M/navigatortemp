@@ -694,12 +694,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Can only confirm or decline your own invitation' });
       }
       
-      const updatedMember = await storage.updateTripMemberStatus(tripId, userId, status);
-      if (!updatedMember) {
-        return res.status(404).json({ message: 'Member not found' });
+      // Handle "cannot attend" responses - remove member and archive trip for them
+      if (status === 'declined') {
+        // Remove the user from the trip
+        const removed = await storage.removeTripMember(tripId, userId);
+        if (!removed) {
+          return res.status(404).json({ message: 'Member not found' });
+        }
+        
+        res.json({ message: 'You have been removed from the trip', status: 'declined' });
+      } else {
+        const updatedMember = await storage.updateTripMemberStatus(tripId, userId, status);
+        if (!updatedMember) {
+          return res.status(404).json({ message: 'Member not found' });
+        }
+        
+        res.json(updatedMember);
       }
-      
-      res.json(updatedMember);
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
     }
