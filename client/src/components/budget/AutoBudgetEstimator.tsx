@@ -506,11 +506,11 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                 </div>
 
                 <div className="bg-indigo-50 p-4 rounded-lg border-2 border-indigo-200">
-                  <h4 className="font-medium text-indigo-900">Per Person (Total)</h4>
+                  <h4 className="font-medium text-indigo-900">Per Person (Per Day)</h4>
                   <p className="text-2xl font-bold text-indigo-700">
-                    {formatCurrency(currentEstimate.perPerson, currentEstimate.currency)}
+                    {formatCurrency(currentEstimate.perPerson / Math.max(1, (nights || 1) + 1), currentEstimate.currency)}
                   </p>
-                  <p className="text-sm text-indigo-600">Individual total cost</p>
+                  <p className="text-sm text-indigo-600">Individual daily cost</p>
                 </div>
               </div>
 
