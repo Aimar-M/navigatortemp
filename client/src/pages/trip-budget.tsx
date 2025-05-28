@@ -76,9 +76,6 @@ export default function TripBudget() {
         endDate={trip?.endDate || ''}
         memberCount={memberCount}
         activities={Array.isArray(activities) ? activities : []}
-        onEstimateCalculated={(estimate) => {
-          // This will be called when budget is calculated
-        }}
       />
     </TripDetailLayout>
   );
