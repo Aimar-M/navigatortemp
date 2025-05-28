@@ -427,7 +427,7 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                             cx="50%"
                             cy="50%"
                             labelLine={false}
-                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                            label={false}
                             outerRadius={120}
                             dataKey="value"
                           >
@@ -441,8 +441,14 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                               <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(value) => [`$${Math.round(Number(value))}`, 'Amount']} />
-                          <Legend />
+                          <Tooltip 
+                            formatter={(value, name) => [`$${Math.round(Number(value))}`, name]} 
+                            contentStyle={{ backgroundColor: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '6px' }}
+                          />
+                          <Legend 
+                            wrapperStyle={{ paddingTop: '20px' }}
+                            iconType="circle"
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                     </TabsContent>
@@ -451,19 +457,32 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                       <ResponsiveContainer width="100%" height={400}>
                         <BarChart 
                           data={[
-                            { category: 'Accommodation', amount: estimate.accommodation },
-                            { category: 'Food', amount: estimate.food },
-                            { category: 'Transport', amount: estimate.transportation },
-                            { category: 'Activities', amount: estimate.activities },
-                            { category: 'Incidentals', amount: estimate.incidentals }
+                            { category: 'Accommodation', amount: estimate.accommodation, fill: '#8884d8' },
+                            { category: 'Food', amount: estimate.food, fill: '#82ca9d' },
+                            { category: 'Transport', amount: estimate.transportation, fill: '#ffc658' },
+                            { category: 'Activities', amount: estimate.activities, fill: '#ff7300' },
+                            { category: 'Incidentals', amount: estimate.incidentals, fill: '#00ff88' }
                           ]} 
                           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="category" />
                           <YAxis />
-                          <Tooltip formatter={(value) => [`$${Math.round(Number(value))}`, 'Amount']} />
-                          <Bar dataKey="amount" fill="#8884d8" />
+                          <Tooltip 
+                            formatter={(value, name) => [`$${Math.round(Number(value))}`, name]} 
+                            contentStyle={{ backgroundColor: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '6px' }}
+                          />
+                          <Bar dataKey="amount">
+                            {[
+                              { category: 'Accommodation', amount: estimate.accommodation, fill: '#8884d8' },
+                              { category: 'Food', amount: estimate.food, fill: '#82ca9d' },
+                              { category: 'Transport', amount: estimate.transportation, fill: '#ffc658' },
+                              { category: 'Activities', amount: estimate.activities, fill: '#ff7300' },
+                              { category: 'Incidentals', amount: estimate.incidentals, fill: '#00ff88' }
+                            ].map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     </TabsContent>
