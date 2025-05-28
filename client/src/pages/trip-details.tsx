@@ -257,10 +257,10 @@ export default function TripDetails() {
                               if (response.ok) {
                                 toast({
                                   title: "Response recorded",
-                                  description: "You've declined this trip invitation"
+                                  description: "You've been removed from this trip and it has been archived"
                                 });
-                                // Refresh members data
-                                window.location.reload();
+                                // Navigate to home page since they're no longer a member
+                                window.location.href = '/';
                               }
                             })
                             .catch(error => {

@@ -405,10 +405,10 @@ export default function Home() {
                                         .then(response => {
                                           if (response.ok) {
                                             toast({
-                                              title: "Invitation declined",
-                                              description: "You've declined this trip invitation"
+                                              title: "Trip declined",
+                                              description: "You've been removed from this trip and it has been archived"
                                             });
-                                            // Refresh data
+                                            // Refresh data to show updated trip list and archived section
                                             queryClient.invalidateQueries({ queryKey: ['/api/trips'] });
                                             queryClient.invalidateQueries({ queryKey: ['/api/trips/memberships/pending'] });
                                           } else {
