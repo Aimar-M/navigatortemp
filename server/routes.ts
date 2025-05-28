@@ -696,6 +696,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Handle "cannot attend" responses - remove member and archive trip for them
       if (status === 'declined') {
+        // Archive the trip for this user before removing them
+        await storage.createOrUpdateUserTripSettings({
+          userId,
+          tripId,
+          isPinned: false,
+          isArchived: true
+        });
+        
         // Remove the user from the trip
         const removed = await storage.removeTripMember(tripId, userId);
         if (!removed) {
