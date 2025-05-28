@@ -259,17 +259,26 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
       // Ensure we have valid numbers with additional safety checks
       const validMultiplier = isNaN(regionalMultiplier) ? 1.0 : regionalMultiplier;
 
-      // Calculate estimates based on regional costs
-      const accommodationCost = Math.round(baseCosts.accommodation * validMultiplier * validNights);
-      const foodCost = Math.round(baseCosts.food * validMultiplier * (validNights + 1)); // +1 for departure day
-      const transportationCost = Math.round(baseCosts.transportation * validMultiplier * (validNights + 1));
+      // Calculate per-person costs first, then multiply by number of travelers
+      const perPersonAccommodation = Math.round(baseCosts.accommodation * validMultiplier * validNights);
+      const perPersonFood = Math.round(baseCosts.food * validMultiplier * (validNights + 1)); // +1 for departure day
+      const perPersonTransportation = Math.round(baseCosts.transportation * validMultiplier * (validNights + 1));
       
       // Use actual activity costs if available, otherwise use estimates
-      const activitiesCost = totalActivityCosts > 0 
-        ? Math.round(totalActivityCosts)
+      const perPersonActivities = totalActivityCosts > 0 
+        ? Math.round(totalActivityCosts / validMemberCount)
         : Math.round(baseCosts.activities * validMultiplier * (validNights + 1));
         
-      const incidentalsCost = Math.round(baseCosts.incidentals * validMultiplier * (validNights + 1));
+      const perPersonIncidentals = Math.round(baseCosts.incidentals * validMultiplier * (validNights + 1));
+
+      // Calculate total costs for the entire group
+      const accommodationCost = perPersonAccommodation * validMemberCount;
+      const foodCost = perPersonFood * validMemberCount;
+      const transportationCost = perPersonTransportation * validMemberCount;
+      const activitiesCost = totalActivityCosts > 0 
+        ? Math.round(totalActivityCosts)
+        : perPersonActivities * validMemberCount;
+      const incidentalsCost = perPersonIncidentals * validMemberCount;
 
       const totalCost = accommodationCost + foodCost + transportationCost + activitiesCost + incidentalsCost;
       const perPersonCost = Math.round(totalCost / validMemberCount);
