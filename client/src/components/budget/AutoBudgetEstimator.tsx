@@ -54,6 +54,13 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
   const [countryData, setCountryData] = useState<CountryData | null>(null);
   const [editableEstimate, setEditableEstimate] = useState<BudgetEstimate | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [inputValues, setInputValues] = useState({
+    accommodation: '',
+    food: '',
+    transportation: '',
+    activities: '',
+    incidentals: ''
+  });
   const { toast } = useToast();
 
   // Calculate number of nights using actual trip dates
@@ -70,17 +77,34 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
 
   // Sync editable estimate with original estimate
   useEffect(() => {
-    if (estimate && !isEditing) {
+    if (estimate) {
       setEditableEstimate({ ...estimate });
+      setInputValues({
+        accommodation: estimate.accommodation.toString(),
+        food: estimate.food.toString(),
+        transportation: estimate.transportation.toString(),
+        activities: estimate.activities.toString(),
+        incidentals: estimate.incidentals.toString()
+      });
     }
-  }, [estimate, isEditing]);
+  }, [estimate]);
 
   // Current estimate to use for calculations and charts
   const currentEstimate = editableEstimate || estimate;
 
   const handleEditChange = (category: string, value: string) => {
     if (!editableEstimate) return;
-    const numValue = parseFloat(value) || 0;
+    
+    // Update input values for proper display
+    setInputValues(prev => ({ ...prev, [category]: value }));
+    
+    // Convert to number for calculations
+    let numValue = 0;
+    if (value !== '') {
+      numValue = parseFloat(value);
+      if (isNaN(numValue)) numValue = 0;
+    }
+    
     const updatedEstimate = { ...editableEstimate, [category]: numValue };
     
     // Recalculate total and per person
@@ -364,7 +388,7 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                       <Input
                         id="accommodation"
                         type="number"
-                        value={currentEstimate.accommodation}
+                        value={inputValues.accommodation}
                         onChange={(e) => handleEditChange('accommodation', e.target.value)}
                         className="text-lg font-bold"
                       />
@@ -389,7 +413,7 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                       <Input
                         id="food"
                         type="number"
-                        value={currentEstimate.food}
+                        value={inputValues.food}
                         onChange={(e) => handleEditChange('food', e.target.value)}
                         className="text-lg font-bold"
                       />
@@ -439,7 +463,7 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                       <Input
                         id="activities"
                         type="number"
-                        value={currentEstimate.activities}
+                        value={inputValues.activities}
                         onChange={(e) => handleEditChange('activities', e.target.value)}
                         className="text-lg font-bold"
                       />
@@ -464,7 +488,7 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                       <Input
                         id="incidentals"
                         type="number"
-                        value={currentEstimate.incidentals}
+                        value={inputValues.incidentals}
                         onChange={(e) => handleEditChange('incidentals', e.target.value)}
                         className="text-lg font-bold"
                       />
