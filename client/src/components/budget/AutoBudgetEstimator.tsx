@@ -3,7 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, MapPin, Calendar, DollarSign, Info } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, MapPin, Calendar, DollarSign, Info, Edit3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -50,6 +52,8 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [estimate, setEstimate] = useState<BudgetEstimate | null>(null);
   const [countryData, setCountryData] = useState<CountryData | null>(null);
+  const [editableEstimate, setEditableEstimate] = useState<BudgetEstimate | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
   // Calculate number of nights using actual trip dates
@@ -63,6 +67,31 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
     console.log('Date calculation:', { startDate, endDate, diffTime, calculatedNights });
     return Math.max(1, calculatedNights);
   }, [startDate, endDate]);
+
+  // Sync editable estimate with original estimate
+  useEffect(() => {
+    if (estimate && !isEditing) {
+      setEditableEstimate({ ...estimate });
+    }
+  }, [estimate, isEditing]);
+
+  // Current estimate to use for calculations and charts
+  const currentEstimate = editableEstimate || estimate;
+
+  const handleEditChange = (category: string, value: string) => {
+    if (!editableEstimate) return;
+    const numValue = parseFloat(value) || 0;
+    const updatedEstimate = { ...editableEstimate, [category]: numValue };
+    
+    // Recalculate total and per person
+    const total = updatedEstimate.accommodation + updatedEstimate.food + 
+                 updatedEstimate.transportation + updatedEstimate.activities + 
+                 updatedEstimate.incidentals;
+    updatedEstimate.total = total;
+    updatedEstimate.perPerson = total / memberCount;
+    
+    setEditableEstimate(updatedEstimate);
+  };
 
   // Calculate total activity costs from actual itinerary
   const totalActivityCosts = useMemo(() => {
