@@ -333,7 +333,7 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
               <Loader2 className="h-6 w-6 animate-spin mr-2" />
               Calculating budget estimate...
             </div>
-          ) : estimate ? (
+          ) : currentEstimate ? (
             <div className="space-y-6">
               {countryData && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -342,70 +342,158 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                 </div>
               )}
 
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Budget Breakdown</h3>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="flex items-center gap-2"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  {isEditing ? 'Done Editing' : 'Edit Amounts'}
+                </Button>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h4 className="font-medium text-blue-900">Accommodation</h4>
-                  <p className="text-2xl font-bold text-blue-700">
-                    {formatCurrency(estimate.accommodation, estimate.currency)}
-                  </p>
-                  <p className="text-sm text-blue-600">
-                    {Math.max(1, nights || 1)} {(nights || 1) === 1 ? 'night' : 'nights'} • ${Math.round(estimate.accommodation / Math.max(1, nights || 1))}/night
-                  </p>
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="accommodation">Total Amount ($)</Label>
+                      <Input
+                        id="accommodation"
+                        type="number"
+                        value={currentEstimate.accommodation}
+                        onChange={(e) => handleEditChange('accommodation', e.target.value)}
+                        className="text-lg font-bold"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-blue-700">
+                        {formatCurrency(currentEstimate.accommodation, currentEstimate.currency)}
+                      </p>
+                      <p className="text-sm text-blue-600">
+                        {Math.max(1, nights || 1)} {(nights || 1) === 1 ? 'night' : 'nights'} • ${Math.round(currentEstimate.accommodation / Math.max(1, nights || 1))}/night
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <div className="bg-green-50 p-4 rounded-lg">
                   <h4 className="font-medium text-green-900">Food & Dining</h4>
-                  <p className="text-2xl font-bold text-green-700">
-                    {formatCurrency(estimate.food, estimate.currency)}
-                  </p>
-                  <p className="text-sm text-green-600">
-                    {Math.max(1, (nights || 1) + 1)} {((nights || 1) + 1) === 1 ? 'day' : 'days'} • ${Math.round(estimate.food / Math.max(1, (nights || 1) + 1))}/day
-                  </p>
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="food">Total Amount ($)</Label>
+                      <Input
+                        id="food"
+                        type="number"
+                        value={currentEstimate.food}
+                        onChange={(e) => handleEditChange('food', e.target.value)}
+                        className="text-lg font-bold"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-green-700">
+                        {formatCurrency(currentEstimate.food, currentEstimate.currency)}
+                      </p>
+                      <p className="text-sm text-green-600">
+                        {Math.max(1, (nights || 1) + 1)} {((nights || 1) + 1) === 1 ? 'day' : 'days'} • ${Math.round(currentEstimate.food / Math.max(1, (nights || 1) + 1))}/day
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <div className="bg-purple-50 p-4 rounded-lg">
                   <h4 className="font-medium text-purple-900">Transportation</h4>
-                  <p className="text-2xl font-bold text-purple-700">
-                    {formatCurrency(estimate.transportation, estimate.currency)}
-                  </p>
-                  <p className="text-sm text-purple-600">
-                    {Math.max(1, (nights || 1) + 1)} {((nights || 1) + 1) === 1 ? 'day' : 'days'} • ${Math.round(estimate.transportation / Math.max(1, (nights || 1) + 1))}/day
-                  </p>
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="transportation">Total Amount ($)</Label>
+                      <Input
+                        id="transportation"
+                        type="number"
+                        value={currentEstimate.transportation}
+                        onChange={(e) => handleEditChange('transportation', e.target.value)}
+                        className="text-lg font-bold"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-purple-700">
+                        {formatCurrency(currentEstimate.transportation, currentEstimate.currency)}
+                      </p>
+                      <p className="text-sm text-purple-600">
+                        {Math.max(1, (nights || 1) + 1)} {((nights || 1) + 1) === 1 ? 'day' : 'days'} • ${Math.round(currentEstimate.transportation / Math.max(1, (nights || 1) + 1))}/day
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <div className="bg-orange-50 p-4 rounded-lg">
                   <h4 className="font-medium text-orange-900">Activities</h4>
-                  <p className="text-2xl font-bold text-orange-700">
-                    {formatCurrency(estimate.activities, estimate.currency)}
-                  </p>
-                  <p className="text-sm text-orange-600">
-                    {Math.max(1, (nights || 1) + 1)} {((nights || 1) + 1) === 1 ? 'day' : 'days'} • ${Math.round(estimate.activities / Math.max(1, (nights || 1) + 1))}/day
-                  </p>
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="activities">Total Amount ($)</Label>
+                      <Input
+                        id="activities"
+                        type="number"
+                        value={currentEstimate.activities}
+                        onChange={(e) => handleEditChange('activities', e.target.value)}
+                        className="text-lg font-bold"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-orange-700">
+                        {formatCurrency(currentEstimate.activities, currentEstimate.currency)}
+                      </p>
+                      <p className="text-sm text-orange-600">
+                        {Math.max(1, (nights || 1) + 1)} {((nights || 1) + 1) === 1 ? 'day' : 'days'} • ${Math.round(currentEstimate.activities / Math.max(1, (nights || 1) + 1))}/day
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-medium text-gray-900">Incidentals</h4>
-                  <p className="text-2xl font-bold text-gray-700">
-                    {formatCurrency(estimate.incidentals, estimate.currency)}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {Math.max(1, (nights || 1) + 1)} {((nights || 1) + 1) === 1 ? 'day' : 'days'} • ${Math.round(estimate.incidentals / Math.max(1, (nights || 1) + 1))}/day
-                  </p>
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="incidentals">Total Amount ($)</Label>
+                      <Input
+                        id="incidentals"
+                        type="number"
+                        value={currentEstimate.incidentals}
+                        onChange={(e) => handleEditChange('incidentals', e.target.value)}
+                        className="text-lg font-bold"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-gray-700">
+                        {formatCurrency(currentEstimate.incidentals, currentEstimate.currency)}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {Math.max(1, (nights || 1) + 1)} {((nights || 1) + 1) === 1 ? 'day' : 'days'} • ${Math.round(currentEstimate.incidentals / Math.max(1, (nights || 1) + 1))}/day
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <div className="bg-indigo-50 p-4 rounded-lg border-2 border-indigo-200">
-                  <h4 className="font-medium text-indigo-900">Per Person</h4>
+                  <h4 className="font-medium text-indigo-900">Per Person (Total)</h4>
                   <p className="text-2xl font-bold text-indigo-700">
-                    {formatCurrency(estimate.perPerson, estimate.currency)}
+                    {formatCurrency(currentEstimate.perPerson, currentEstimate.currency)}
                   </p>
-                  <p className="text-sm text-indigo-600">Individual cost</p>
+                  <p className="text-sm text-indigo-600">Individual total cost</p>
                 </div>
               </div>
 
               <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-lg">
                 <h3 className="text-xl font-bold mb-2">Total Estimated Budget</h3>
                 <p className="text-3xl font-bold">
-                  {formatCurrency(estimate.total, estimate.currency)}
+                  {formatCurrency(currentEstimate.total, currentEstimate.currency)}
                 </p>
                 <p className="text-blue-100 mt-2">
                   For {memberCount} travelers • {nights} nights in {destination}
@@ -447,11 +535,11 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                         <PieChart>
                           <Pie
                             data={[
-                              { name: 'Accommodation', value: estimate.accommodation, fill: '#8884d8' },
-                              { name: 'Food', value: estimate.food, fill: '#82ca9d' },
-                              { name: 'Transport', value: estimate.transportation, fill: '#ffc658' },
-                              { name: 'Activities', value: estimate.activities, fill: '#ff7300' },
-                              { name: 'Incidentals', value: estimate.incidentals, fill: '#00ff88' }
+                              { name: 'Accommodation', value: currentEstimate.accommodation, fill: '#8884d8' },
+                              { name: 'Food', value: currentEstimate.food, fill: '#82ca9d' },
+                              { name: 'Transport', value: currentEstimate.transportation, fill: '#ffc658' },
+                              { name: 'Activities', value: currentEstimate.activities, fill: '#ff7300' },
+                              { name: 'Incidentals', value: currentEstimate.incidentals, fill: '#00ff88' }
                             ]}
                             cx="50%"
                             cy="50%"
@@ -486,11 +574,11 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                       <ResponsiveContainer width="100%" height={400}>
                         <BarChart 
                           data={[
-                            { category: 'Accommodation', amount: estimate.accommodation, fill: '#8884d8' },
-                            { category: 'Food', amount: estimate.food, fill: '#82ca9d' },
-                            { category: 'Transport', amount: estimate.transportation, fill: '#ffc658' },
-                            { category: 'Activities', amount: estimate.activities, fill: '#ff7300' },
-                            { category: 'Incidentals', amount: estimate.incidentals, fill: '#00ff88' }
+                            { category: 'Accommodation', amount: currentEstimate.accommodation, fill: '#8884d8' },
+                            { category: 'Food', amount: currentEstimate.food, fill: '#82ca9d' },
+                            { category: 'Transport', amount: currentEstimate.transportation, fill: '#ffc658' },
+                            { category: 'Activities', amount: currentEstimate.activities, fill: '#ff7300' },
+                            { category: 'Incidentals', amount: currentEstimate.incidentals, fill: '#00ff88' }
                           ]} 
                           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                         >
