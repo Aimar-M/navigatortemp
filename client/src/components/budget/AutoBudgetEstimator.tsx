@@ -441,7 +441,7 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                               <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
+                          <Tooltip formatter={(value) => [`$${Math.round(Number(value))}`, 'Amount']} />
                           <Legend />
                         </PieChart>
                       </ResponsiveContainer>
@@ -462,7 +462,7 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="category" />
                           <YAxis />
-                          <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
+                          <Tooltip formatter={(value) => [`$${Math.round(Number(value))}`, 'Amount']} />
                           <Bar dataKey="amount" fill="#8884d8" />
                         </BarChart>
                       </ResponsiveContainer>
