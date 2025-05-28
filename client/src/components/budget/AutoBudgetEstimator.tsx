@@ -2,8 +2,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, MapPin, Calendar, DollarSign, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface AutoBudgetEstimatorProps {
   tripId: number;
@@ -398,6 +400,76 @@ const AutoBudgetEstimator: React.FC<AutoBudgetEstimatorProps> = ({
               >
                 Recalculate Estimate
               </Button>
+
+              {/* Interactive Charts */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>Visual Budget Breakdown</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="pie" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="pie">Pie Chart</TabsTrigger>
+                      <TabsTrigger value="bar">Bar Chart</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="pie" className="space-y-4">
+                      <ResponsiveContainer width="100%" height={400}>
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Accommodation', value: estimate.accommodation, fill: '#8884d8' },
+                              { name: 'Food', value: estimate.food, fill: '#82ca9d' },
+                              { name: 'Transport', value: estimate.transportation, fill: '#ffc658' },
+                              { name: 'Activities', value: estimate.activities, fill: '#ff7300' },
+                              { name: 'Incidentals', value: estimate.incidentals, fill: '#00ff88' }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                            outerRadius={120}
+                            dataKey="value"
+                          >
+                            {[
+                              { name: 'Accommodation', value: estimate.accommodation, fill: '#8884d8' },
+                              { name: 'Food', value: estimate.food, fill: '#82ca9d' },
+                              { name: 'Transport', value: estimate.transportation, fill: '#ffc658' },
+                              { name: 'Activities', value: estimate.activities, fill: '#ff7300' },
+                              { name: 'Incidentals', value: estimate.incidentals, fill: '#00ff88' }
+                            ].map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </TabsContent>
+
+                    <TabsContent value="bar" className="space-y-4">
+                      <ResponsiveContainer width="100%" height={400}>
+                        <BarChart 
+                          data={[
+                            { category: 'Accommodation', amount: estimate.accommodation },
+                            { category: 'Food', amount: estimate.food },
+                            { category: 'Transport', amount: estimate.transportation },
+                            { category: 'Activities', amount: estimate.activities },
+                            { category: 'Incidentals', amount: estimate.incidentals }
+                          ]} 
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="category" />
+                          <YAxis />
+                          <Tooltip formatter={(value) => [`$${value}`, 'Amount']} />
+                          <Bar dataKey="amount" fill="#8884d8" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
             </div>
           ) : (
             <div className="text-center py-8">
