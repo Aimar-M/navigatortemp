@@ -1388,8 +1388,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const invitation = await storage.createInvitationLink(invitationData);
       
       // Return the invitation with full URL
+      // Use the actual domain from the request, handling both development and production
       const host = req.get('host');
-      const protocol = req.protocol;
+      const protocol = req.get('x-forwarded-proto') || req.protocol;
       const inviteUrl = `${protocol}://${host}/invite/${invitation.token}`;
       
       res.status(201).json({
@@ -1432,7 +1433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add full invite URLs
       const host = req.get('host');
-      const protocol = req.protocol;
+      const protocol = req.get('x-forwarded-proto') || req.protocol;
       const invitesWithUrls = invites.map(invite => ({
         ...invite,
         inviteUrl: `${protocol}://${host}/invite/${invite.token}`
