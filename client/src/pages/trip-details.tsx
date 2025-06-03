@@ -1,17 +1,20 @@
 import { useParams, useLocation } from "wouter";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { MapPin, Calendar, Users, Info, UserPlus } from "lucide-react";
+import { MapPin, Calendar, Users, Info, UserPlus, Edit2, Save, X } from "lucide-react";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import UserAvatar from "@/components/user-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import InviteModal from "@/components/invite-modal";
 import TripImageUpload from "@/components/trip-image-upload";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function TripDetails() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +22,14 @@ export default function TripDetails() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    destination: '',
+    description: '',
+    startDate: '',
+    endDate: ''
+  });
   const { user } = useAuth();
   
   // Define trip interface
@@ -59,6 +70,83 @@ export default function TripDetails() {
     queryKey: [`/api/trips/${tripId}/members`],
     enabled: !!tripId,
   });
+
+  // Trip update mutation
+  const updateTripMutation = useMutation({
+    mutationFn: async (updatedData: any) => {
+      return await apiRequest("PUT", `/api/trips/${tripId}`, updatedData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}`] });
+      setIsEditing(false);
+      toast({
+        title: "Trip updated",
+        description: "Trip details have been successfully updated"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update trip details",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Initialize edit form when trip data loads or editing starts
+  const initializeEditForm = () => {
+    if (trip) {
+      setEditForm({
+        name: trip.name,
+        destination: trip.destination,
+        description: trip.description || '',
+        startDate: trip.startDate.split('T')[0], // Convert to YYYY-MM-DD format
+        endDate: trip.endDate.split('T')[0]
+      });
+    }
+  };
+
+  // Handle edit mode toggle
+  const handleEditToggle = () => {
+    if (!isEditing) {
+      initializeEditForm();
+    }
+    setIsEditing(!isEditing);
+  };
+
+  // Handle form submission
+  const handleSaveChanges = () => {
+    const updatedData = {
+      name: editForm.name.trim(),
+      destination: editForm.destination.trim(),
+      description: editForm.description.trim(),
+      startDate: new Date(editForm.startDate).toISOString(),
+      endDate: new Date(editForm.endDate).toISOString()
+    };
+
+    // Basic validation
+    if (!updatedData.name || !updatedData.destination || !updatedData.startDate || !updatedData.endDate) {
+      toast({
+        title: "Validation error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (new Date(updatedData.startDate) >= new Date(updatedData.endDate)) {
+      toast({
+        title: "Validation error",
+        description: "End date must be after start date",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    updateTripMutation.mutate(updatedData);
+  };
+
+  const isOrganizer = user && trip && trip.organizer === user.id;
   
   if (isLoading || !trip) {
     return (
@@ -96,36 +184,131 @@ export default function TripDetails() {
         {/* Trip Details Card */}
         <Card className="col-span-1 md:col-span-2">
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Trip Details</h2>
-            
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <Calendar className="h-5 w-5 text-gray-500 mt-0.5" />
-                <div>
-                  <h3 className="font-medium">Dates</h3>
-                  <p className="text-gray-600">
-                    {format(new Date(trip.startDate), "MMM d, yyyy")} - {format(new Date(trip.endDate), "MMM d, yyyy")}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-3">
-                <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
-                <div>
-                  <h3 className="font-medium">Destination</h3>
-                  <p className="text-gray-600">{trip.destination}</p>
-                </div>
-              </div>
-              
-              {trip.description && (
-                <div className="flex items-start space-x-3">
-                  <Info className="h-5 w-5 text-gray-500 mt-0.5" />
-                  <div>
-                    <h3 className="font-medium">Description</h3>
-                    <p className="text-gray-600">{trip.description}</p>
-                  </div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Trip Details</h2>
+              {isOrganizer && (
+                <div className="flex items-center gap-2">
+                  {isEditing ? (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setIsEditing(false)}
+                        disabled={updateTripMutation.isPending}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Cancel
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={handleSaveChanges}
+                        disabled={updateTripMutation.isPending}
+                      >
+                        <Save className="h-4 w-4 mr-1" />
+                        {updateTripMutation.isPending ? 'Saving...' : 'Save'}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleEditToggle}
+                    >
+                      <Edit2 className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  )}
                 </div>
               )}
+            </div>
+            
+            <div className="space-y-4">
+              {/* Trip Name */}
+              <div className="flex items-start space-x-3">
+                <Info className="h-5 w-5 text-gray-500 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-medium">Trip Name</h3>
+                  {isEditing ? (
+                    <Input
+                      value={editForm.name}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter trip name"
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="text-gray-600">{trip.name}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Dates */}
+              <div className="flex items-start space-x-3">
+                <Calendar className="h-5 w-5 text-gray-500 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-medium">Dates</h3>
+                  {isEditing ? (
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <div>
+                        <label className="text-xs text-gray-500">Start Date</label>
+                        <Input
+                          type="date"
+                          value={editForm.startDate}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, startDate: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">End Date</label>
+                        <Input
+                          type="date"
+                          value={editForm.endDate}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, endDate: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-600">
+                      {format(new Date(trip.startDate), "MMM d, yyyy")} - {format(new Date(trip.endDate), "MMM d, yyyy")}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Destination */}
+              <div className="flex items-start space-x-3">
+                <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-medium">Destination</h3>
+                  {isEditing ? (
+                    <Input
+                      value={editForm.destination}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, destination: e.target.value }))}
+                      placeholder="Enter destination"
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="text-gray-600">{trip.destination}</p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Description */}
+              <div className="flex items-start space-x-3">
+                <Info className="h-5 w-5 text-gray-500 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-medium">Description</h3>
+                  {isEditing ? (
+                    <Textarea
+                      value={editForm.description}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Enter trip description (optional)"
+                      className="mt-1"
+                      rows={3}
+                    />
+                  ) : (
+                    <p className="text-gray-600">{trip.description || 'No description provided'}</p>
+                  )}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
