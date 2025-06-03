@@ -48,7 +48,6 @@ export default function Itinerary() {
   const [flightFormData, setFlightFormData] = useState({
     flightNumber: "",
     arrivalDate: "",
-    arrivalTime: "",
   });
 
   // Fetch trip details
@@ -86,7 +85,6 @@ export default function Itinerary() {
       setFlightFormData({
         flightNumber: "",
         arrivalDate: "",
-        arrivalTime: "",
       });
       setFlightBookingStatus("unknown");
       toast({
@@ -134,20 +132,22 @@ export default function Itinerary() {
 
   // Handle adding flight information
   const handleAddFlight = () => {
-    if (flightBookingStatus === "booked") {
-      addFlightMutation.mutate({
-        ...flightFormData,
-        status: "booked",
-        isBooked: true
-      });
-    } else {
-      // For not booked flights, redirect to flight search
+    if (!flightFormData.flightNumber || !flightFormData.arrivalDate) {
       toast({
-        title: "Flight search",
-        description: "Redirecting to flight booking options..."
+        title: "Missing information",
+        description: "Please enter your flight number and arrival date",
+        variant: "destructive"
       });
-      // Here we would integrate with flight booking APIs
+      return;
     }
+
+    const flightData = {
+      flightNumber: flightFormData.flightNumber.toUpperCase().trim(),
+      arrivalDate: flightFormData.arrivalDate,
+      status: "booked"
+    };
+
+    addFlightMutation.mutate(flightData);
   };
 
   if (isTripLoading || isActivitiesLoading || isFlightsLoading || !user || !trip) {
@@ -254,8 +254,8 @@ export default function Itinerary() {
                       <p className="font-medium">{userFlight.flightNumber}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Arrival</p>
-                      <p className="font-medium">{userFlight.arrivalDate} at {userFlight.arrivalTime}</p>
+                      <p className="text-sm text-muted-foreground">Arrival Date</p>
+                      <p className="font-medium">{userFlight.arrivalDate}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -431,21 +431,13 @@ export default function Itinerary() {
                 </div>
 
                 <div>
-                  <Label>Arrival Date & Time</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="date"
-                      value={flightFormData.arrivalDate}
-                      onChange={(e) => setFlightFormData(prev => ({ ...prev, arrivalDate: e.target.value }))}
-                      placeholder="Arrival date"
-                    />
-                    <Input
-                      type="time"
-                      value={flightFormData.arrivalTime}
-                      onChange={(e) => setFlightFormData(prev => ({ ...prev, arrivalTime: e.target.value }))}
-                      placeholder="Arrival time"
-                    />
-                  </div>
+                  <Label>Arrival Date</Label>
+                  <Input
+                    type="date"
+                    value={flightFormData.arrivalDate}
+                    onChange={(e) => setFlightFormData(prev => ({ ...prev, arrivalDate: e.target.value }))}
+                    placeholder="When does your flight arrive?"
+                  />
                 </div>
               </div>
             )}
