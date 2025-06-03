@@ -33,6 +33,7 @@ export default function Itinerary() {
   const { user } = useAuth();
   const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
   const [isAddFlightModalOpen, setIsAddFlightModalOpen] = useState(false);
+  const [editingFlight, setEditingFlight] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [flightBookingStatus, setFlightBookingStatus] = useState("unknown"); // "booked" | "not_booked" | "unknown"
   
@@ -148,6 +149,49 @@ export default function Itinerary() {
     };
 
     addFlightMutation.mutate(flightData);
+  };
+
+  // Flight update mutation
+  const updateFlightMutation = useMutation({
+    mutationFn: async (data: { id: number; flightNumber: string; arrivalDate: string }) => {
+      return await apiRequest("PUT", `/api/flights/${data.id}`, {
+        flightNumber: data.flightNumber,
+        arrivalDate: data.arrivalDate
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/flights`] });
+      setEditingFlight(null);
+      toast({
+        title: "Flight updated",
+        description: "Your flight information has been updated."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update flight",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Handle flight update
+  const handleUpdateFlight = () => {
+    if (!editingFlight || !editingFlight.flightNumber || !editingFlight.arrivalDate) {
+      toast({
+        title: "Missing information",
+        description: "Please enter flight number and arrival date",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    updateFlightMutation.mutate({
+      id: editingFlight.id,
+      flightNumber: editingFlight.flightNumber.toUpperCase().trim(),
+      arrivalDate: editingFlight.arrivalDate
+    });
   };
 
   if (isTripLoading || isActivitiesLoading || isFlightsLoading || !user || !trip) {
@@ -336,9 +380,20 @@ export default function Itinerary() {
                       <div key={flight.id} className="border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
                           <p className="font-medium">{flight.user?.name || flight.user?.username}</p>
-                          <Badge variant={(flight.flightDetails?.status === "booked" || flight.flightNumber) ? "default" : "secondary"}>
-                            {(flight.flightDetails?.status === "booked" || flight.flightNumber) ? "Booked" : "Searching"}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={(flight.flightDetails?.status === "booked" || flight.flightNumber) ? "default" : "secondary"}>
+                              {(flight.flightDetails?.status === "booked" || flight.flightNumber) ? "Booked" : "Searching"}
+                            </Badge>
+                            {user?.id === flight.userId && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingFlight(flight)}
+                              >
+                                Edit
+                              </Button>
+                            )}
+                          </div>
                         </div>
                         {(flight.flightDetails?.status === "booked" || flight.flightNumber) && (
                           <div className="space-y-2">
@@ -546,6 +601,59 @@ export default function Itinerary() {
               {addFlightMutation.isPending ? "Saving..." : 
                flightBookingStatus === "booked" ? "Save Flight Details" : 
                flightBookingStatus === "not_booked" ? "Search Flights" : "Continue"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Flight Dialog */}
+      <Dialog open={!!editingFlight} onOpenChange={() => setEditingFlight(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Flight Information</DialogTitle>
+            <DialogDescription>
+              Update your flight details to keep the group informed of any changes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-flight-number">Flight Number</Label>
+              <Input
+                id="edit-flight-number"
+                value={editingFlight?.flightNumber || ""}
+                onChange={(e) => setEditingFlight({
+                  ...editingFlight,
+                  flightNumber: e.target.value
+                })}
+                placeholder="e.g., AA123"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-arrival-date">Arrival Date</Label>
+              <Input
+                id="edit-arrival-date"
+                type="date"
+                value={editingFlight?.flightDetails?.userProvidedArrivalDate || ""}
+                onChange={(e) => setEditingFlight({
+                  ...editingFlight,
+                  arrivalDate: e.target.value,
+                  flightDetails: {
+                    ...editingFlight?.flightDetails,
+                    userProvidedArrivalDate: e.target.value
+                  }
+                })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingFlight(null)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleUpdateFlight}
+              disabled={updateFlightMutation.isPending}
+            >
+              {updateFlightMutation.isPending ? "Updating..." : "Update Flight"}
             </Button>
           </DialogFooter>
         </DialogContent>
