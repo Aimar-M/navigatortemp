@@ -336,29 +336,9 @@ export default function Itinerary() {
                       <div key={flight.id} className="border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
                           <p className="font-medium">{flight.user?.name || flight.user?.username}</p>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={(flight.flightDetails?.status === "booked" || flight.flightNumber) ? "default" : "secondary"}>
-                              {(flight.flightDetails?.status === "booked" || flight.flightNumber) ? "Booked" : "Searching"}
-                            </Badge>
-                            {canEdit && (
-                              <div className="flex gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleEditFlight(flight.id)}
-                                >
-                                  <Edit className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleDeleteFlight(flight.id)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
+                          <Badge variant={(flight.flightDetails?.status === "booked" || flight.flightNumber) ? "default" : "secondary"}>
+                            {(flight.flightDetails?.status === "booked" || flight.flightNumber) ? "Booked" : "Searching"}
+                          </Badge>
                         </div>
                         {(flight.flightDetails?.status === "booked" || flight.flightNumber) && (
                           <div className="space-y-2">
