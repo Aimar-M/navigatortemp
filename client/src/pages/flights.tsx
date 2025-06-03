@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import TripDetailLayout from "@/components/trip-detail-layout";
@@ -114,92 +115,51 @@ export default function Flights() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Flight Information</h2>
-          {!showBookingQuestion && (
-            <Button onClick={() => setShowBookingQuestion(true)}>
-              Add Flight
-            </Button>
-          )}
+          <Dialog open={showBookingQuestion} onOpenChange={setShowBookingQuestion}>
+            <DialogTrigger asChild>
+              <Button>Add Flight</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Flight Booking Status</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p>Have you already booked your flight for this trip?</p>
+                <div className="flex gap-3">
+                  <Button 
+                    onClick={() => setShowBookingQuestion(false)}
+                    variant="outline"
+                  >
+                    Yes, I have booked
+                  </Button>
+                  <Button 
+                    onClick={handleBookingRedirect}
+                    variant="outline"
+                  >
+                    No, help me book
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        {/* Booking Question */}
-        {showBookingQuestion && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Flight Booking Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p>Have you already booked your flight for this trip?</p>
-              <div className="flex gap-3">
-                <Button 
-                  onClick={() => setShowBookingQuestion(false)}
-                  variant="outline"
-                >
-                  Yes, I have booked
-                </Button>
-                <Button 
-                  onClick={handleBookingRedirect}
-                  variant="outline"
-                >
-                  No, help me book
-                </Button>
-              </div>
-              {!showBookingQuestion && (
-                <div className="mt-4 space-y-4 border-t pt-4">
-                  <p className="text-sm text-muted-foreground">
-                    Enter your flight details below:
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">Flight Number</label>
-                      <Input
-                        placeholder="e.g., AA123"
-                        value={flightForm.flightNumber}
-                        onChange={(e) => setFlightForm(prev => ({ ...prev, flightNumber: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Departure Date</label>
-                      <Input
-                        type="date"
-                        value={flightForm.departureDate}
-                        onChange={(e) => setFlightForm(prev => ({ ...prev, departureDate: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={handleAddFlight}
-                      disabled={addFlightMutation.isPending}
-                    >
-                      {addFlightMutation.isPending ? "Adding..." : "Add Flight"}
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => {
-                        setShowBookingQuestion(false);
-                        setFlightForm({ flightNumber: "", departureDate: "" });
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Flight Form - shown when user says they have booked */}
-        {showBookingQuestion === false && !showBookingQuestion && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Add Your Flight Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* Flight Details Dialog - shown when user says they have booked */}
+        <Dialog open={showBookingQuestion === false} onOpenChange={(open) => {
+          if (!open) {
+            setShowBookingQuestion(true);
+            setFlightForm({ flightNumber: "", departureDate: "" });
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Your Flight Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Enter your flight number and departure date. We'll automatically verify the airline information.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium">Flight Number</label>
                   <Input
@@ -221,22 +181,14 @@ export default function Flights() {
                 <Button 
                   onClick={handleAddFlight}
                   disabled={addFlightMutation.isPending}
+                  className="w-full"
                 >
                   {addFlightMutation.isPending ? "Adding..." : "Add Flight"}
                 </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setShowBookingQuestion(true);
-                    setFlightForm({ flightNumber: "", departureDate: "" });
-                  }}
-                >
-                  Cancel
-                </Button>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Flights List */}
         <div className="space-y-4">
