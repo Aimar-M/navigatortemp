@@ -349,39 +349,51 @@ async function lookupAviationStack(flightNumber: string, date: string): Promise<
   try {
     const fetch = (await import('node-fetch')).default;
     
-    // Try different AviationStack endpoints that work with free tier
-    const endpoints = [
-      // Airlines endpoint (free tier)
-      `http://api.aviationstack.com/v1/airlines?access_key=${process.env.AVIATIONSTACK_API_KEY}&airline_name=${flightNumber.match(/^[A-Z]{2,3}/)?.[0]}`,
-      // Airports endpoint (free tier) 
-      `http://api.aviationstack.com/v1/airports?access_key=${process.env.AVIATIONSTACK_API_KEY}&limit=10`,
-      // Countries endpoint (free tier)
-      `http://api.aviationstack.com/v1/countries?access_key=${process.env.AVIATIONSTACK_API_KEY}&limit=10`
-    ];
-    
-    console.log('Testing AviationStack free tier endpoints for flight:', flightNumber);
-    
-    for (const url of endpoints) {
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
+    // First, try to get airline information from the flight code
+    const airlineCode = flightNumber.match(/^([A-Z]{2,3})/)?.[1];
+    if (airlineCode) {
+      const airlineUrl = `http://api.aviationstack.com/v1/airlines?access_key=${process.env.AVIATIONSTACK_API_KEY}&iata_code=${airlineCode}`;
+      
+      console.log('Looking up airline for code:', airlineCode);
+      const airlineResponse = await fetch(airlineUrl);
+      const airlineData = await airlineResponse.json();
+      
+      console.log('Airline lookup response:', JSON.stringify(airlineData, null, 2));
+      
+      if (airlineData.data && airlineData.data.length > 0) {
+        const airline = airlineData.data[0];
+        console.log('Found airline:', airline.airline_name);
         
-        console.log('AviationStack endpoint response:', url.split('v1/')[1].split('?')[0], ':', JSON.stringify(data, null, 2));
-        
-        if (data.error) {
-          console.log('API Error:', data.error.message);
-          continue;
-        }
-        
-        // If we get successful data from any endpoint, we know the API key works
-        if (data.data) {
-          console.log('AviationStack free tier access confirmed');
-          break;
-        }
-      } catch (error) {
-        console.log('Endpoint failed:', error);
+        // Return basic airline information (this is what we can get from free tier)
+        return {
+          flightNumber: flightNumber,
+          airline: airline.airline_name || 'Unknown',
+          departureAirport: 'TBD',
+          departureCity: 'TBD', 
+          departureTime: new Date(date).toISOString(),
+          arrivalAirport: 'TBD',
+          arrivalCity: 'TBD',
+          arrivalTime: new Date(date).toISOString(),
+          status: 'Scheduled',
+          gate: undefined,
+          terminal: undefined,
+          delay: 0
+        };
       }
     }
+    
+    // Test what endpoints are available
+    console.log('Testing available AviationStack endpoints...');
+    const testUrl = `http://api.aviationstack.com/v1/countries?access_key=${process.env.AVIATIONSTACK_API_KEY}&limit=1`;
+    const testResponse = await fetch(testUrl);
+    const testData = await testResponse.json();
+    
+    if (testData.error) {
+      console.log('AviationStack API Error:', testData.error.message);
+    } else {
+      console.log('AviationStack API working, but flight data not available in free tier');
+    }
+    
   } catch (error) {
     console.error('AviationStack API error:', error);
   }
