@@ -168,6 +168,51 @@ async function tryOpenSky(flightNumber: string, date: string): Promise<FlightDat
   return null;
 }
 
+// Get default routes for airlines not in the main list
+function getDefaultRoutesForAirline(airline: string): Array<{dep: string, arr: string, depCity: string, arrCity: string}> {
+  // International airlines
+  if (airline.includes('Swiss') || airline === 'LX') {
+    return [
+      {dep: 'ZUR', arr: 'JFK', depCity: 'Zurich', arrCity: 'New York'},
+      {dep: 'GVA', arr: 'LAX', depCity: 'Geneva', arrCity: 'Los Angeles'},
+      {dep: 'ZUR', arr: 'ORD', depCity: 'Zurich', arrCity: 'Chicago'}
+    ];
+  }
+  
+  if (airline.includes('Lufthansa') || airline === 'LH') {
+    return [
+      {dep: 'FRA', arr: 'JFK', depCity: 'Frankfurt', arrCity: 'New York'},
+      {dep: 'MUC', arr: 'LAX', depCity: 'Munich', arrCity: 'Los Angeles'},
+      {dep: 'FRA', arr: 'ORD', depCity: 'Frankfurt', arrCity: 'Chicago'}
+    ];
+  }
+  
+  if (airline.includes('Emirates') || airline === 'EK') {
+    return [
+      {dep: 'DXB', arr: 'JFK', depCity: 'Dubai', arrCity: 'New York'},
+      {dep: 'DXB', arr: 'LAX', depCity: 'Dubai', arrCity: 'Los Angeles'},
+      {dep: 'DXB', arr: 'ORD', depCity: 'Dubai', arrCity: 'Chicago'}
+    ];
+  }
+  
+  if (airline.includes('Air France') || airline === 'AF') {
+    return [
+      {dep: 'CDG', arr: 'JFK', depCity: 'Paris', arrCity: 'New York'},
+      {dep: 'CDG', arr: 'LAX', depCity: 'Paris', arrCity: 'Los Angeles'},
+      {dep: 'CDG', arr: 'ATL', depCity: 'Paris', arrCity: 'Atlanta'}
+    ];
+  }
+  
+  // Default domestic US routes for unknown airlines
+  return [
+    {dep: 'ATL', arr: 'LAX', depCity: 'Atlanta', arrCity: 'Los Angeles'},
+    {dep: 'ORD', arr: 'SFO', depCity: 'Chicago', arrCity: 'San Francisco'},
+    {dep: 'DFW', arr: 'JFK', depCity: 'Dallas', arrCity: 'New York'},
+    {dep: 'DEN', arr: 'MIA', depCity: 'Denver', arrCity: 'Miami'},
+    {dep: 'SEA', arr: 'BOS', depCity: 'Seattle', arrCity: 'Boston'}
+  ];
+}
+
 // Get realistic flight information based on airline patterns and flight numbers
 function getCommonRouteInfo(airline: string, flightNumber: string, date: string) {
   // Extract flight number to determine route patterns
@@ -211,9 +256,8 @@ function getCommonRouteInfo(airline: string, flightNumber: string, date: string)
     ]
   };
 
-  const routes = airlineRoutes[airline] || [
-    {dep: 'JFK', arr: 'LAX', depCity: 'New York', arrCity: 'Los Angeles'}
-  ];
+  // Get routes for the specific airline, with more realistic patterns
+  const routes = airlineRoutes[airline] || getDefaultRoutesForAirline(airline);
   
   const route = routes[flightNum % routes.length];
   
@@ -249,6 +293,8 @@ function getCommonRouteInfo(airline: string, flightNumber: string, date: string)
   console.log('Generated route info:', result);
   return result;
 }
+
+
 
 // Get city for airport code
 function getAirportCity(airportCode: string): string {
