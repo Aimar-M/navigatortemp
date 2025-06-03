@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import TripDetailLayout from "@/components/trip-detail-layout";
+import { Plane, Users } from "lucide-react";
 
 export default function Flights() {
   const { id: tripId } = useParams<{ id: string }>();
@@ -404,6 +405,7 @@ export default function Flights() {
                     })
                     .map((flight: any) => {
                       const flightUser = (members as any[]).find((member: any) => member.userId === flight.userId);
+                      console.log('Flight user data:', flightUser); // Debug log
                       return (
                         <Card key={flight.id}>
                           <CardHeader>
@@ -413,7 +415,7 @@ export default function Flights() {
                                   {flight.flightNumber || "Flight Details"}
                                 </CardTitle>
                                 <p className="text-sm text-muted-foreground">
-                                  {flightUser?.username || 'Unknown User'}
+                                  {flightUser?.user?.username || flightUser?.username || 'Unknown User'}
                                 </p>
                               </div>
                               <Badge variant="secondary">
