@@ -139,6 +139,9 @@ export default function Flights() {
     setShowFlightForm(true);
   };
 
+  // Check if current user already has a flight
+  const userHasExistingFlight = (flights as any[]).some((flight: any) => flight.userId === user?.id);
+
   const handleBookingRedirect = () => {
     toast({
       title: "Booking platform",
@@ -163,10 +166,11 @@ export default function Flights() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Flight Information</h2>
-          <Dialog open={showBookingQuestion} onOpenChange={setShowBookingQuestion}>
-            <DialogTrigger asChild>
-              <Button>Add Flight</Button>
-            </DialogTrigger>
+          {!userHasExistingFlight && (
+            <Dialog open={showBookingQuestion} onOpenChange={setShowBookingQuestion}>
+              <DialogTrigger asChild>
+                <Button>Add Flight</Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Flight Booking Status</DialogTitle>
@@ -195,7 +199,8 @@ export default function Flights() {
                 </div>
               </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          )}
         </div>
 
         {/* Flight Details Dialog - shown when user says they have booked */}
