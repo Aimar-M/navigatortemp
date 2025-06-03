@@ -372,15 +372,14 @@ export const flightInfo = pgTable("flight_info", {
   id: serial("id").primaryKey(),
   tripId: integer("trip_id").notNull().references(() => trips.id),
   userId: integer("user_id").notNull().references(() => users.id),
-  airline: text("airline"),
+  airline: text("airline").notNull(),
   flightNumber: text("flight_number").notNull(),
-  departureAirport: text("departure_airport"),
-  departureCity: text("departure_city"),
-  departureTime: timestamp("departure_time"),
-  arrivalAirport: text("arrival_airport"),
-  arrivalCity: text("arrival_city"),
-  arrivalTime: timestamp("arrival_time"),
-  arrivalDate: text("arrival_date"), // Simple date string for coordination
+  departureAirport: text("departure_airport").notNull(),
+  departureCity: text("departure_city").notNull(),
+  departureTime: timestamp("departure_time").notNull(),
+  arrivalAirport: text("arrival_airport").notNull(),
+  arrivalCity: text("arrival_city").notNull(),
+  arrivalTime: timestamp("arrival_time").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }),
   currency: text("currency").default("USD"),
   bookingReference: text("booking_reference"),
@@ -388,7 +387,6 @@ export const flightInfo = pgTable("flight_info", {
   seatNumber: text("seat_number"),
   notes: text("notes"),
   flightDetails: jsonb("flight_details"), // For storing additional flight details
-  status: text("status").notNull().default("booked"), // booked, searching, etc.
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -415,7 +413,6 @@ export const insertFlightInfoSchema = createInsertSchema(flightInfo).pick({
   arrivalAirport: true,
   arrivalCity: true,
   arrivalTime: true,
-  arrivalDate: true,
   price: true,
   currency: true,
   bookingReference: true,
@@ -423,7 +420,6 @@ export const insertFlightInfoSchema = createInsertSchema(flightInfo).pick({
   seatNumber: true,
   notes: true,
   flightDetails: true,
-  status: true,
 });
 
 // Define expense types using existing schema

@@ -251,11 +251,11 @@ export default function Itinerary() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Flight Number</p>
-                      <p className="font-medium">{userFlight.flightNumber}</p>
+                      <p className="font-medium">{userFlight.flightDetails?.userProvidedFlightNumber || userFlight.flightNumber}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Arrival Date</p>
-                      <p className="font-medium">{userFlight.arrivalDate}</p>
+                      <p className="font-medium">{userFlight.flightDetails?.userProvidedArrivalDate || userFlight.arrivalTime?.split('T')[0]}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -294,8 +294,8 @@ export default function Itinerary() {
                         </div>
                         {flight.status === "booked" && (
                           <div className="grid md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                            <p>Flight: {flight.flightNumber}</p>
-                            <p>Arrives: {flight.arrivalDate}</p>
+                            <p>Flight: {flight.flightDetails?.userProvidedFlightNumber || flight.flightNumber}</p>
+                            <p>Arrives: {flight.flightDetails?.userProvidedArrivalDate || flight.arrivalTime?.split('T')[0]}</p>
                           </div>
                         )}
                       </div>

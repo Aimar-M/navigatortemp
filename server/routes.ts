@@ -1810,29 +1810,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Not a member of this trip' });
       }
       
+      // Convert arrival date string to timestamp for database storage
+      const arrivalDate = new Date(req.body.arrivalDate);
+      const departureDate = new Date(req.body.arrivalDate); // Default to same day for now
+      
       // Create complete flight data with defaults for required fields
       const flightData = insertFlightInfoSchema.parse({
         tripId,
         userId: user.id,
         flightNumber: req.body.flightNumber,
-        arrivalDate: req.body.arrivalDate,
-        status: req.body.status || "booked",
-        // Set defaults for required fields that will be populated later via API lookup
-        airline: req.body.airline || "",
-        departureAirport: req.body.departureAirport || "",
-        departureCity: req.body.departureCity || "",
-        departureTime: req.body.departureTime || new Date(),
-        arrivalAirport: req.body.arrivalAirport || "",
-        arrivalCity: req.body.arrivalCity || "",
-        arrivalTime: req.body.arrivalTime || new Date(),
+        // Set defaults for required fields - will be updated when flight lookup is implemented
+        airline: req.body.airline || "TBD",
+        departureAirport: req.body.departureAirport || "TBD", 
+        departureCity: req.body.departureCity || "TBD",
+        departureTime: departureDate,
+        arrivalAirport: req.body.arrivalAirport || "TBD",
+        arrivalCity: req.body.arrivalCity || "TBD", 
+        arrivalTime: arrivalDate,
         // Optional fields
         price: req.body.price,
         currency: req.body.currency || "USD",
         bookingReference: req.body.bookingReference,
         bookingStatus: req.body.bookingStatus || "confirmed",
         seatNumber: req.body.seatNumber,
-        notes: req.body.notes,
-        flightDetails: req.body.flightDetails,
+        notes: `Flight: ${req.body.flightNumber}, Arrival: ${req.body.arrivalDate}`,
+        flightDetails: {
+          userProvidedFlightNumber: req.body.flightNumber,
+          userProvidedArrivalDate: req.body.arrivalDate,
+          status: req.body.status || "booked"
+        },
       });
       
       const flight = await storage.createFlightInfo(flightData);
