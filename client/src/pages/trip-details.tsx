@@ -116,16 +116,8 @@ export default function TripDetails() {
 
   // Handle form submission
   const handleSaveChanges = () => {
-    const updatedData = {
-      name: editForm.name.trim(),
-      destination: editForm.destination.trim(),
-      description: editForm.description.trim(),
-      startDate: new Date(editForm.startDate).toISOString(),
-      endDate: new Date(editForm.endDate).toISOString()
-    };
-
     // Basic validation
-    if (!updatedData.name || !updatedData.destination || !updatedData.startDate || !updatedData.endDate) {
+    if (!editForm.name.trim() || !editForm.destination.trim() || !editForm.startDate || !editForm.endDate) {
       toast({
         title: "Validation error",
         description: "Please fill in all required fields",
@@ -134,7 +126,10 @@ export default function TripDetails() {
       return;
     }
 
-    if (new Date(updatedData.startDate) >= new Date(updatedData.endDate)) {
+    const startDate = new Date(editForm.startDate);
+    const endDate = new Date(editForm.endDate);
+
+    if (startDate >= endDate) {
       toast({
         title: "Validation error",
         description: "End date must be after start date",
@@ -142,6 +137,14 @@ export default function TripDetails() {
       });
       return;
     }
+
+    const updatedData = {
+      name: editForm.name.trim(),
+      destination: editForm.destination.trim(),
+      description: editForm.description.trim(),
+      startDate: startDate,
+      endDate: endDate
+    };
 
     updateTripMutation.mutate(updatedData);
   };
