@@ -1,30 +1,20 @@
 import { useState } from "react";
-import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, CalendarPlus, Plane, Clock, MapPin, AlertCircle, CheckCircle } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { apiRequest } from "@/lib/queryClient";
-import { queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import TripDetailLayout from "@/components/trip-detail-layout";
-import ActivityCard from "@/components/activity-card";
+import { useParams } from "wouter";
 import { Button } from "@/components/ui/button";
-import { 
-  Dialog, 
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+
+import { Plus, MapPin, Clock, DollarSign, Users, Calendar } from "lucide-react";
+import { ActivityCard } from "@/components/activity-card";
+import TripDetailLayout from "@/components/trip-detail-layout";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Itinerary() {
   const { id } = useParams<{ id: string }>();
@@ -32,10 +22,7 @@ export default function Itinerary() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
-  const [isAddFlightModalOpen, setIsAddFlightModalOpen] = useState(false);
-  const [editingFlight, setEditingFlight] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [flightBookingStatus, setFlightBookingStatus] = useState("unknown"); // "booked" | "not_booked" | "unknown"
   
   const [activityFormData, setActivityFormData] = useState({
     name: "",
@@ -44,11 +31,6 @@ export default function Itinerary() {
     location: "",
     duration: "",
     cost: "",
-  });
-
-  const [flightFormData, setFlightFormData] = useState({
-    flightNumber: "",
-    arrivalDate: "",
   });
 
   // Fetch trip details
@@ -63,50 +45,15 @@ export default function Itinerary() {
     enabled: !!tripId && !!user,
   });
 
-  // Fetch flight information
-  const { data: flights = [], isLoading: isFlightsLoading } = useQuery({
-    queryKey: [`/api/trips/${tripId}/flights`],
-    enabled: !!tripId && !!user,
-  });
-
-  // Check if current user has added flight info
-  const userFlight = flights.find((flight: any) => flight.userId === user?.id);
-
   // Check if user is organizer
-  const isOrganizer = trip && user && trip.organizer === user.id;
+  const isOrganizer = trip && user && trip.organizerId === user.id;
 
-  // Add flight mutation
-  const addFlightMutation = useMutation({
-    mutationFn: async (flightData: any) => {
-      return await apiRequest("POST", `/api/trips/${tripId}/flights`, flightData);
+  // Add activity mutation
+  const addActivityMutation = useMutation({
+    mutationFn: async (activityData: any) => {
+      return await apiRequest("POST", `/api/trips/${tripId}/activities`, activityData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/flights`] });
-      setIsAddFlightModalOpen(false);
-      setFlightFormData({
-        flightNumber: "",
-        arrivalDate: "",
-      });
-      setFlightBookingStatus("unknown");
-      toast({
-        title: "Flight information added",
-        description: "Your flight details have been saved successfully."
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add flight information",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Handle adding new activity
-  const handleAddActivity = async () => {
-    setIsSubmitting(true);
-    try {
-      await apiRequest("POST", `/api/trips/${tripId}/activities`, activityFormData);
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/activities`] });
       setIsAddActivityModalOpen(false);
       setActivityFormData({
@@ -119,115 +66,45 @@ export default function Itinerary() {
       });
       toast({
         title: "Activity added",
-        description: "The activity has been added to the itinerary."
+        description: "Your activity has been added to the itinerary."
       });
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       toast({
         title: "Error",
         description: error.message || "Failed to add activity",
         variant: "destructive"
       });
     }
-    setIsSubmitting(false);
-  };
+  });
 
-  // Handle adding flight information
-  const handleAddFlight = () => {
-    if (!flightFormData.flightNumber || !flightFormData.arrivalDate) {
+  const handleAddActivity = async () => {
+    if (!activityFormData.name || !activityFormData.date) {
       toast({
         title: "Missing information",
-        description: "Please enter your flight number and arrival date",
+        description: "Please provide at least activity name and date",
         variant: "destructive"
       });
       return;
     }
 
-    const flightData = {
-      flightNumber: flightFormData.flightNumber.toUpperCase().trim(),
-      arrivalDate: flightFormData.arrivalDate,
-      status: "booked"
-    };
+    setIsSubmitting(true);
+    
+    try {
+      const activityData = {
+        ...activityFormData,
+        cost: activityFormData.cost ? parseFloat(activityFormData.cost) : null,
+      };
 
-    addFlightMutation.mutate(flightData);
+      addActivityMutation.mutate(activityData);
+    } catch (error) {
+      console.error("Error adding activity:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Flight update mutation
-  const updateFlightMutation = useMutation({
-    mutationFn: async (data: { id: number; flightNumber: string; arrivalDate: string }) => {
-      return await apiRequest("PUT", `/api/flights/${data.id}`, {
-        flightNumber: data.flightNumber,
-        arrivalDate: data.arrivalDate
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/flights`] });
-      setEditingFlight(null);
-      toast({
-        title: "Flight updated",
-        description: "Your flight information has been updated."
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update flight",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Flight delete mutation
-  const deleteFlightMutation = useMutation({
-    mutationFn: async (flightId: number) => {
-      return await apiRequest("DELETE", `/api/flights/${flightId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/flights`] });
-      toast({
-        title: "Flight removed",
-        description: "Your flight information has been removed."
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to remove flight",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Handle flight update
-  const handleUpdateFlight = () => {
-    if (!editingFlight) {
-      return;
-    }
-
-    // Build update data with only changed fields
-    const updateData: any = { id: editingFlight.id };
-    
-    if (editingFlight.flightNumber) {
-      updateData.flightNumber = editingFlight.flightNumber.toUpperCase().trim();
-    }
-    
-    if (editingFlight.arrivalDate) {
-      updateData.arrivalDate = editingFlight.arrivalDate;
-    }
-
-    // Ensure at least one field is being updated
-    if (!updateData.flightNumber && !updateData.arrivalDate) {
-      toast({
-        title: "No changes",
-        description: "Please update at least one field",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    updateFlightMutation.mutate(updateData);
-  };
-
-  if (isTripLoading || isActivitiesLoading || isFlightsLoading || !user || !trip) {
+  if (isTripLoading || isActivitiesLoading || !user || !trip) {
     return (
       <TripDetailLayout tripId={tripId}>
         <div className="space-y-4">
@@ -243,462 +120,154 @@ export default function Itinerary() {
     <TripDetailLayout 
       tripId={tripId}
       title="Itinerary"
-      description={`Plan your activities and manage flights for ${trip.name}`}
+      description={`Plan your activities for ${trip.name}`}
     >
-      <Tabs defaultValue="activities" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="activities">Activities</TabsTrigger>
-          <TabsTrigger value="flights">Flight Information</TabsTrigger>
-        </TabsList>
-
-        {/* Activities Tab */}
-        <TabsContent value="activities">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">Trip Activities</h2>
-                <p className="text-muted-foreground">
-                  {isOrganizer ? "Manage activities for your group" : "View planned activities"}
-                </p>
-              </div>
-              {isOrganizer && (
-                <Button onClick={() => setIsAddActivityModalOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Activity
-                </Button>
-              )}
+      <div className="space-y-6">
+        {/* Activities Section */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Trip Activities</h2>
+              <p className="text-muted-foreground">Plan and organize your trip activities</p>
             </div>
+            <Button onClick={() => setIsAddActivityModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Activity
+            </Button>
+          </div>
 
-            {activities && activities.length > 0 ? (
-              <div className="space-y-4">
-                {activities.map((activity: any) => (
-                  <ActivityCard
-                    key={activity.id}
-                    activity={activity}
-                    canEdit={isOrganizer}
-                  />
-                ))}
-              </div>
-            ) : (
+          {/* Activities List */}
+          <div className="space-y-4">
+            {isActivitiesLoading ? (
               <Card>
-                <CardContent className="p-8 text-center">
-                  <CalendarPlus className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-medium mb-2">No activities planned yet</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {isOrganizer ? "Start planning your trip by adding activities" : "Activities will appear here once the organizer adds them"}
-                  </p>
-                  {isOrganizer && (
-                    <Button onClick={() => setIsAddActivityModalOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add First Activity
-                    </Button>
-                  )}
+                <CardContent className="p-6 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                  <p>Loading activities...</p>
                 </CardContent>
               </Card>
-            )}
-          </div>
-        </TabsContent>
-
-        {/* Flights Tab */}
-        <TabsContent value="flights">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">Flight Information</h2>
-                <p className="text-muted-foreground">Manage your flight details and view group flights</p>
-              </div>
-              {!userFlight && (
-                <Button onClick={() => setIsAddFlightModalOpen(true)}>
-                  <Plane className="h-4 w-4 mr-2" />
-                  Add Flight Info
-                </Button>
-              )}
-            </div>
-
-            {/* User's Flight Status */}
-            {userFlight ? (
+            ) : activities.length === 0 ? (
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    Your Flight Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Flight</p>
-                        <p className="font-medium">{userFlight.airline !== 'TBD' ? userFlight.airline : ''} {userFlight.flightNumber}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Status</p>
-                        <p className="font-medium">{userFlight.flightDetails?.flightStatus || 'Scheduled'}</p>
-                      </div>
-                    </div>
-                    
-                    {userFlight.departureAirport !== 'TBD' && userFlight.arrivalAirport !== 'TBD' && (
-                      <div className="space-y-3">
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-sm text-muted-foreground">Departure</p>
-                            <p className="font-medium">{userFlight.departureAirport} ({userFlight.departureCity})</p>
-                            <p className="text-sm text-muted-foreground">
-                              {userFlight.flightDetails?.departureTime ? 
-                                new Date(userFlight.flightDetails.departureTime).toLocaleString() : 
-                                new Date(userFlight.departureTime).toLocaleString()
-                              }
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Arrival</p>
-                            <p className="font-medium">{userFlight.arrivalAirport} ({userFlight.arrivalCity})</p>
-                            <p className="text-sm text-muted-foreground">
-                              {userFlight.flightDetails?.arrivalTime ? 
-                                new Date(userFlight.flightDetails.arrivalTime).toLocaleString() : 
-                                new Date(userFlight.arrivalTime).toLocaleString()
-                              }
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {(userFlight.flightDetails?.gate || userFlight.flightDetails?.terminal) && (
-                          <div className="grid md:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm text-muted-foreground">Gate</p>
-                              <p className="font-medium">{userFlight.flightDetails?.gate || 'TBD'}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Terminal</p>
-                              <p className="font-medium">{userFlight.flightDetails?.terminal || 'TBD'}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {userFlight.flightDetails?.hasRealTimeData && (
-                      <div className="text-xs text-green-600">
-                        ✓ Real-time flight data
-                      </div>
-                    )}
-                  </div>
+                <CardContent className="p-6 text-center">
+                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No activities planned yet.</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Start planning your trip by adding some activities!
+                  </p>
                 </CardContent>
               </Card>
             ) : (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Plane className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-medium mb-2">No flight information added</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Add your flight details to help coordinate with your group
-                  </p>
-                  <Button onClick={() => setIsAddFlightModalOpen(true)}>
-                    <Plane className="h-4 w-4 mr-2" />
-                    Add Flight Details
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Group Flight Information */}
-            {flights && flights.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Group Flight Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {flights.map((flight: any) => (
-                      <div key={flight.id} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-medium">{flight.user?.name || flight.user?.username}</p>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={(flight.flightDetails?.status === "booked" || flight.flightNumber) ? "default" : "secondary"}>
-                              {(flight.flightDetails?.status === "booked" || flight.flightNumber) ? "Booked" : "Searching"}
-                            </Badge>
-                            {user?.id === flight.userId && (
-                              <div className="flex gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setEditingFlight(flight)}
-                                >
-                                  Edit
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deleteFlightMutation.mutate(flight.id)}
-                                  disabled={deleteFlightMutation.isPending}
-                                >
-                                  🗑️
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {(flight.flightDetails?.status === "booked" || flight.flightNumber) && (
-                          <div className="space-y-2">
-                            <div className="grid md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                              <p>Flight: {flight.airline !== 'TBD' ? flight.airline : ''} {flight.flightNumber}</p>
-                              <p>Status: {flight.flightDetails?.flightStatus || 'Scheduled'}</p>
-                            </div>
-                            
-                            {flight.flightDetails?.verifiedAirline && (
-                              <div className="text-sm text-green-600">
-                                ✓ Airline verified: {flight.flightDetails.verifiedAirline}
-                              </div>
-                            )}
-                            
-                            {flight.flightDetails?.userProvidedArrivalDate && (
-                              <div className="text-sm text-muted-foreground">
-                                User provided date: {new Date(flight.flightDetails.userProvidedArrivalDate).toLocaleDateString()}
-                              </div>
-                            )}
-                            
-                            {flight.flightDetails?.delay > 0 && (
-                              <div className="text-xs text-orange-600">
-                                ⚠ Delayed by {flight.flightDetails.delay} minutes
-                              </div>
-                            )}
-                            
-                            {flight.flightDetails?.hasRealTimeData && (
-                              <div className="text-xs text-green-600">
-                                ✓ Real-time data
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              (activities as any[]).map((activity: any) => (
+                <ActivityCard 
+                  key={activity.id} 
+                  activity={activity} 
+                  canEdit={user?.id === activity.userId || isOrganizer}
+                />
+              ))
             )}
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
 
       {/* Add Activity Dialog */}
       <Dialog open={isAddActivityModalOpen} onOpenChange={setIsAddActivityModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Add New Activity</DialogTitle>
-            <DialogDescription>Add an activity to the trip itinerary</DialogDescription>
           </DialogHeader>
-          
           <div className="space-y-4">
             <div>
-              <Label>Activity Name</Label>
+              <Label htmlFor="activity-name">Activity Name *</Label>
               <Input
+                id="activity-name"
                 value={activityFormData.name}
                 onChange={(e) => setActivityFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Visit Eiffel Tower"
+                placeholder="e.g., Visit Museum, Beach Day, etc."
               />
             </div>
-            
+
             <div>
-              <Label>Description</Label>
+              <Label htmlFor="activity-description">Description</Label>
               <Textarea
+                id="activity-description"
                 value={activityFormData.description}
                 onChange={(e) => setActivityFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Describe the activity..."
+                placeholder="Describe what you'll be doing..."
                 rows={3}
               />
             </div>
-            
-            <div className="grid grid-cols-2 gap-2">
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Date</Label>
+                <Label htmlFor="activity-date">Date *</Label>
                 <Input
+                  id="activity-date"
                   type="date"
                   value={activityFormData.date}
                   onChange={(e) => setActivityFormData(prev => ({ ...prev, date: e.target.value }))}
                 />
               </div>
-              
+
               <div>
-                <Label>Duration</Label>
+                <Label htmlFor="activity-duration">Duration</Label>
                 <Input
+                  id="activity-duration"
                   value={activityFormData.duration}
                   onChange={(e) => setActivityFormData(prev => ({ ...prev, duration: e.target.value }))}
-                  placeholder="e.g., 2 hours"
+                  placeholder="e.g., 2 hours, Half day"
                 />
               </div>
             </div>
-            
-            <div>
-              <Label>Location</Label>
-              <Input
-                value={activityFormData.location}
-                onChange={(e) => setActivityFormData(prev => ({ ...prev, location: e.target.value }))}
-                placeholder="Activity location"
-              />
-            </div>
-            
-            <div>
-              <Label>Cost (optional)</Label>
-              <Input
-                value={activityFormData.cost}
-                onChange={(e) => setActivityFormData(prev => ({ ...prev, cost: e.target.value }))}
-                placeholder="e.g., $25 per person"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddActivityModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddActivity}
-              disabled={isSubmitting || !activityFormData.name || !activityFormData.date}
-            >
-              {isSubmitting ? "Adding..." : "Add Activity"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Add Flight Dialog */}
-      <Dialog open={isAddFlightModalOpen} onOpenChange={setIsAddFlightModalOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Add Flight Information</DialogTitle>
-            <DialogDescription>
-              Add your flight details to coordinate with your group
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            {/* Flight Booking Status */}
-            <div>
-              <Label className="text-base font-medium">Have you already booked your flight?</Label>
-              <RadioGroup 
-                value={flightBookingStatus} 
-                onValueChange={setFlightBookingStatus}
-                className="mt-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="booked" id="booked" />
-                  <Label htmlFor="booked">Yes, I have booked my flight</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="not_booked" id="not_booked" />
-                  <Label htmlFor="not_booked">No, I need to book a flight</Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {flightBookingStatus === "booked" && (
-              <div className="space-y-4">
-                <div>
-                  <Label>Flight Number</Label>
-                  <Input
-                    value={flightFormData.flightNumber}
-                    onChange={(e) => setFlightFormData(prev => ({ ...prev, flightNumber: e.target.value }))}
-                    placeholder="e.g., AA123, BA456, etc."
-                  />
-                </div>
-
-                <div>
-                  <Label>Arrival Date</Label>
-                  <Input
-                    type="date"
-                    value={flightFormData.arrivalDate}
-                    onChange={(e) => setFlightFormData(prev => ({ ...prev, arrivalDate: e.target.value }))}
-                    placeholder="When does your flight arrive?"
-                  />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="activity-location">Location</Label>
+                <Input
+                  id="activity-location"
+                  value={activityFormData.location}
+                  onChange={(e) => setActivityFormData(prev => ({ ...prev, location: e.target.value }))}
+                  placeholder="Where is this activity?"
+                />
               </div>
-            )}
 
-            {flightBookingStatus === "not_booked" && (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center">
-                    <Plane className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-lg font-medium mb-2">Flight Search & Booking</h3>
-                    <p className="text-muted-foreground mb-4">
-                      We'll help you find and book the best flights for your trip
-                    </p>
-                    <Badge variant="secondary">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      Flight API integration required
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddFlightModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddFlight}
-              disabled={addFlightMutation.isPending || flightBookingStatus === "unknown"}
-            >
-              {addFlightMutation.isPending ? "Saving..." : 
-               flightBookingStatus === "booked" ? "Save Flight Details" : 
-               flightBookingStatus === "not_booked" ? "Search Flights" : "Continue"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Flight Dialog */}
-      <Dialog open={!!editingFlight} onOpenChange={() => setEditingFlight(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Flight Information</DialogTitle>
-            <DialogDescription>
-              Update your flight details to keep the group informed of any changes.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-flight-number">Flight Number</Label>
-              <Input
-                id="edit-flight-number"
-                value={editingFlight?.flightNumber || ""}
-                onChange={(e) => setEditingFlight({
-                  ...editingFlight,
-                  flightNumber: e.target.value
-                })}
-                placeholder="e.g., AA123"
-              />
+              <div>
+                <Label htmlFor="activity-cost">Cost (optional)</Label>
+                <Input
+                  id="activity-cost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={activityFormData.cost}
+                  onChange={(e) => setActivityFormData(prev => ({ ...prev, cost: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="edit-arrival-date">Arrival Date</Label>
-              <Input
-                id="edit-arrival-date"
-                type="date"
-                value={editingFlight?.flightDetails?.userProvidedArrivalDate || ""}
-                onChange={(e) => setEditingFlight({
-                  ...editingFlight,
-                  arrivalDate: e.target.value,
-                  flightDetails: {
-                    ...editingFlight?.flightDetails,
-                    userProvidedArrivalDate: e.target.value
-                  }
-                })}
-              />
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsAddActivityModalOpen(false);
+                  setActivityFormData({
+                    name: "",
+                    description: "",
+                    date: "",
+                    location: "",
+                    duration: "",
+                    cost: "",
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleAddActivity}
+                disabled={isSubmitting || addActivityMutation.isPending}
+              >
+                {isSubmitting || addActivityMutation.isPending ? "Adding..." : "Add Activity"}
+              </Button>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingFlight(null)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleUpdateFlight}
-              disabled={updateFlightMutation.isPending}
-            >
-              {updateFlightMutation.isPending ? "Updating..." : "Update Flight"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </TripDetailLayout>
