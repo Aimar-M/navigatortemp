@@ -178,20 +178,32 @@ export default function Itinerary() {
 
   // Handle flight update
   const handleUpdateFlight = () => {
-    if (!editingFlight || !editingFlight.flightNumber || !editingFlight.arrivalDate) {
+    if (!editingFlight) {
+      return;
+    }
+
+    // Build update data with only changed fields
+    const updateData: any = { id: editingFlight.id };
+    
+    if (editingFlight.flightNumber) {
+      updateData.flightNumber = editingFlight.flightNumber.toUpperCase().trim();
+    }
+    
+    if (editingFlight.arrivalDate) {
+      updateData.arrivalDate = editingFlight.arrivalDate;
+    }
+
+    // Ensure at least one field is being updated
+    if (!updateData.flightNumber && !updateData.arrivalDate) {
       toast({
-        title: "Missing information",
-        description: "Please enter flight number and arrival date",
+        title: "No changes",
+        description: "Please update at least one field",
         variant: "destructive"
       });
       return;
     }
 
-    updateFlightMutation.mutate({
-      id: editingFlight.id,
-      flightNumber: editingFlight.flightNumber.toUpperCase().trim(),
-      arrivalDate: editingFlight.arrivalDate
-    });
+    updateFlightMutation.mutate(updateData);
   };
 
   if (isTripLoading || isActivitiesLoading || isFlightsLoading || !user || !trip) {
