@@ -1810,6 +1810,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Not a member of this trip' });
       }
       
+      // Check if user already has a flight for this trip
+      const existingFlights = await storage.getFlightInfoByTrip(tripId);
+      const userExistingFlight = existingFlights.find(flight => flight.userId === user.id);
+      
+      if (userExistingFlight) {
+        return res.status(400).json({ message: 'You already have a flight registered for this trip. Please edit your existing flight instead.' });
+      }
+      
       // Try to lookup authentic flight information only
       let flightInfo = null;
       try {
