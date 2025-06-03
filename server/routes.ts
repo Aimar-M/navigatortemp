@@ -466,14 +466,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Only the trip organizer can update trip details' });
       }
       
+      console.log('Received trip update data:', req.body);
       const tripData = insertTripSchema.partial().parse(req.body);
+      console.log('Parsed trip data:', tripData);
       const updatedTrip = await storage.updateTrip(tripId, tripData);
       
       res.json(updatedTrip);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error('Validation errors:', error.errors);
         return res.status(400).json({ message: 'Invalid trip data', errors: error.errors });
       }
+      console.error('Server error:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
