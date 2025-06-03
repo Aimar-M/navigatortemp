@@ -1,7 +1,7 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { MapPin, Calendar, Users, Info, UserPlus, Edit2, Save, X } from "lucide-react";
+import { MapPin, Calendar, Users, Info, UserPlus, Edit2, Save, X, Home, Plane } from "lucide-react";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import UserAvatar from "@/components/user-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,7 +28,9 @@ export default function TripDetails() {
     destination: '',
     description: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    accommodationLink: '',
+    airportGateway: ''
   });
   const { user } = useAuth();
   
@@ -43,6 +45,8 @@ export default function TripDetails() {
     organizer: number;
     status: string;
     cover?: string;
+    accommodationLink?: string;
+    airportGateway?: string;
   }
 
   interface TripMember {
@@ -101,7 +105,9 @@ export default function TripDetails() {
         destination: trip.destination,
         description: trip.description || '',
         startDate: trip.startDate.split('T')[0], // Convert to YYYY-MM-DD format
-        endDate: trip.endDate.split('T')[0]
+        endDate: trip.endDate.split('T')[0],
+        accommodationLink: trip.accommodationLink || '',
+        airportGateway: trip.airportGateway || ''
       });
     }
   };
@@ -143,7 +149,9 @@ export default function TripDetails() {
       destination: editForm.destination.trim(),
       description: editForm.description.trim(),
       startDate: startDate,
-      endDate: endDate
+      endDate: endDate,
+      accommodationLink: editForm.accommodationLink.trim() || null,
+      airportGateway: editForm.airportGateway.trim() || null
     };
 
     updateTripMutation.mutate(updatedData);
@@ -309,6 +317,58 @@ export default function TripDetails() {
                     />
                   ) : (
                     <p className="text-gray-600">{trip.description || 'No description provided'}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Accommodation Link */}
+              <div className="flex items-start space-x-3">
+                <Home className="h-5 w-5 text-gray-500 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-medium">Accommodation</h3>
+                  {isEditing ? (
+                    <Input
+                      value={editForm.accommodationLink}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, accommodationLink: e.target.value }))}
+                      placeholder="Enter accommodation booking link (optional)"
+                      className="mt-1"
+                      type="url"
+                    />
+                  ) : (
+                    <div className="text-gray-600">
+                      {trip.accommodationLink ? (
+                        <a 
+                          href={trip.accommodationLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 underline"
+                        >
+                          View Accommodation Details
+                        </a>
+                      ) : (
+                        'No accommodation link provided'
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Airport Gateway */}
+              <div className="flex items-start space-x-3">
+                <Plane className="h-5 w-5 text-gray-500 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-medium">Recommended Airport</h3>
+                  {isEditing ? (
+                    <Input
+                      value={editForm.airportGateway}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, airportGateway: e.target.value }))}
+                      placeholder="Enter recommended airport (e.g., JFK, LAX)"
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="text-gray-600">
+                      {trip.airportGateway || 'No recommended airport specified'}
+                    </p>
                   )}
                 </div>
               </div>

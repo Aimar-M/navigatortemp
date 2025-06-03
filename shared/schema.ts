@@ -47,6 +47,8 @@ export const trips = pgTable("trips", {
   status: text("status").notNull().default("planning"), // planning, active, completed
   cover: text("cover"),
   organizer: integer("organizer").notNull().references(() => users.id),
+  accommodationLink: text("accommodation_link"),
+  airportGateway: text("airport_gateway"),
   isPinned: boolean("is_pinned").default(false),
   isArchived: boolean("is_archived").default(false),
 });
@@ -73,6 +75,8 @@ export const insertTripSchema = createInsertSchema(trips).pick({
   status: true,
   cover: true,
   organizer: true,
+  accommodationLink: true,
+  airportGateway: true,
 });
 
 // Add new table for user-specific trip settings
