@@ -347,35 +347,15 @@ export default function Itinerary() {
                               <p>Status: {flight.flightDetails?.flightStatus || 'Scheduled'}</p>
                             </div>
                             
-                            {flight.departureAirport !== 'TBD' && flight.arrivalAirport !== 'TBD' && (
-                              <div className="space-y-2">
-                                <div className="grid md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                                  <div>
-                                    <p className="font-medium">Departure: {flight.departureAirport} ({flight.departureCity})</p>
-                                    <p className="text-xs">
-                                      {flight.flightDetails?.departureTime ? 
-                                        new Date(flight.flightDetails.departureTime).toLocaleString() : 
-                                        new Date(flight.departureTime).toLocaleString()
-                                      }
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">Arrival: {flight.arrivalAirport} ({flight.arrivalCity})</p>
-                                    <p className="text-xs">
-                                      {flight.flightDetails?.arrivalTime ? 
-                                        new Date(flight.flightDetails.arrivalTime).toLocaleString() : 
-                                        new Date(flight.arrivalTime).toLocaleString()
-                                      }
-                                    </p>
-                                  </div>
-                                </div>
-                                
-                                {(flight.flightDetails?.gate || flight.flightDetails?.terminal) && (
-                                  <div className="grid md:grid-cols-2 gap-2 text-xs text-muted-foreground">
-                                    <p>Gate: {flight.flightDetails?.gate || 'TBD'}</p>
-                                    <p>Terminal: {flight.flightDetails?.terminal || 'TBD'}</p>
-                                  </div>
-                                )}
+                            {flight.flightDetails?.verifiedAirline && (
+                              <div className="text-sm text-green-600">
+                                ✓ Airline verified: {flight.flightDetails.verifiedAirline}
+                              </div>
+                            )}
+                            
+                            {flight.flightDetails?.userProvidedArrivalDate && (
+                              <div className="text-sm text-muted-foreground">
+                                User provided date: {new Date(flight.flightDetails.userProvidedArrivalDate).toLocaleDateString()}
                               </div>
                             )}
                             

@@ -1820,37 +1820,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Flight lookup failed:', (error as Error).message);
       }
       
-      if (flightInfo) {
-        // Use only authentic flight data
+      if (flightInfo && flightInfo.airline) {
+        // Use only verified data - airline name from API, everything else from user input
         const flightData = insertFlightInfoSchema.parse({
           tripId,
           userId: user.id,
           flightNumber: req.body.flightNumber,
-          airline: flightInfo.airline,
-          departureAirport: flightInfo.departureAirport,
-          departureCity: flightInfo.departureCity,
-          departureTime: new Date(flightInfo.departureTime),
-          arrivalAirport: flightInfo.arrivalAirport,
-          arrivalCity: flightInfo.arrivalCity,
-          arrivalTime: new Date(flightInfo.arrivalTime),
+          airline: flightInfo.airline, // Only verified field from API
+          departureAirport: req.body.departureAirport || "Not specified",
+          departureCity: req.body.departureCity || "Not specified",
+          departureTime: new Date(req.body.arrivalDate), // Use user-provided date
+          arrivalAirport: req.body.arrivalAirport || "Not specified",
+          arrivalCity: req.body.arrivalCity || "Not specified",
+          arrivalTime: new Date(req.body.arrivalDate), // Use user-provided date
           price: req.body.price,
           currency: req.body.currency || "USD",
           bookingReference: req.body.bookingReference,
           bookingStatus: req.body.bookingStatus || "confirmed",
           seatNumber: req.body.seatNumber,
-          notes: `Verified flight data`,
+          notes: `Airline verified: ${flightInfo.airline}`,
           flightDetails: {
             userProvidedFlightNumber: req.body.flightNumber,
             userProvidedArrivalDate: req.body.arrivalDate,
-            status: flightInfo.status,
-            lookupData: flightInfo,
-            hasRealTimeData: !!flightInfo,
-            gate: flightInfo?.gate,
-            terminal: flightInfo?.terminal,
-            delay: flightInfo?.delay,
-            flightStatus: flightInfo?.status,
-            departureTime: flightInfo?.departureTime,
-            arrivalTime: flightInfo?.arrivalTime
+            status: "user-provided",
+            hasRealTimeData: false,
+            verifiedAirline: flightInfo.airline
           }
         });
         
