@@ -1822,7 +1822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let flightInfo = null;
       try {
         const { lookupFlightInfo } = await import('./flight-lookup');
-        flightInfo = await lookupFlightInfo(req.body.flightNumber, req.body.arrivalDate);
+        flightInfo = await lookupFlightInfo(req.body.flightNumber, req.body.departureDate || req.body.arrivalDate);
         console.log('Flight lookup result:', flightInfo);
       } catch (error) {
         console.log('Flight lookup failed:', (error as Error).message);
@@ -1837,10 +1837,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           airline: flightInfo.airline, // Only verified field from API
           departureAirport: req.body.departureAirport || "Not specified",
           departureCity: req.body.departureCity || "Not specified",
-          departureTime: new Date(req.body.arrivalDate), // Use user-provided date
+          departureTime: new Date(req.body.departureDate || req.body.arrivalDate), // Use user-provided departure date
           arrivalAirport: req.body.arrivalAirport || "Not specified",
           arrivalCity: req.body.arrivalCity || "Not specified",
-          arrivalTime: new Date(req.body.arrivalDate), // Use user-provided date
+          arrivalTime: new Date(req.body.departureDate || req.body.arrivalDate), // Use user-provided departure date
           price: req.body.price,
           currency: req.body.currency || "USD",
           bookingReference: req.body.bookingReference,
@@ -1849,7 +1849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           notes: `Airline verified: ${flightInfo.airline}`,
           flightDetails: {
             userProvidedFlightNumber: req.body.flightNumber,
-            userProvidedArrivalDate: req.body.arrivalDate,
+            userProvidedDepartureDate: req.body.departureDate || req.body.arrivalDate,
             status: "user-provided",
             hasRealTimeData: false,
             verifiedAirline: flightInfo.airline
@@ -1864,7 +1864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: user.id,
           name: `Flight ${req.body.flightNumber}`,
           description: `${flightInfo.airline} flight from departure to arrival`,
-          date: new Date(req.body.arrivalDate),
+          date: new Date(req.body.departureDate || req.body.arrivalDate),
           location: `${req.body.departureAirport || 'Airport'} → ${req.body.arrivalAirport || 'Airport'}`,
           duration: null,
           cost: req.body.price || null
@@ -1892,10 +1892,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           airline: "Unknown",
           departureAirport: "TBD",
           departureCity: "TBD",
-          departureTime: new Date(req.body.arrivalDate),
+          departureTime: new Date(req.body.departureDate || req.body.arrivalDate),
           arrivalAirport: "TBD",
           arrivalCity: "TBD",
-          arrivalTime: new Date(req.body.arrivalDate),
+          arrivalTime: new Date(req.body.departureDate || req.body.arrivalDate),
           price: req.body.price,
           currency: req.body.currency || "USD",
           bookingReference: req.body.bookingReference,
@@ -1904,7 +1904,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           notes: `Flight ${req.body.flightNumber} - no verified data available`,
           flightDetails: {
             userProvidedFlightNumber: req.body.flightNumber,
-            userProvidedArrivalDate: req.body.arrivalDate,
+            userProvidedDepartureDate: req.body.departureDate || req.body.arrivalDate,
             status: "user-provided",
             hasRealTimeData: false
           },
@@ -1918,7 +1918,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: user.id,
           name: `Flight ${req.body.flightNumber}`,
           description: `Flight from departure to arrival`,
-          date: new Date(req.body.arrivalDate),
+          date: new Date(req.body.departureDate || req.body.arrivalDate),
           location: `${req.body.departureAirport || 'Airport'} → ${req.body.arrivalAirport || 'Airport'}`,
           duration: null,
           cost: req.body.price || null
