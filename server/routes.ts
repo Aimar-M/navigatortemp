@@ -2020,7 +2020,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.flightNumber && req.body.flightNumber !== flight.flightNumber) {
         try {
           const { lookupFlightInfo } = await import('./flight-lookup');
-          flightInfo = await lookupFlightInfo(req.body.flightNumber, req.body.arrivalDate || flight.flightDetails?.userProvidedArrivalDate);
+          flightInfo = await lookupFlightInfo(req.body.flightNumber, req.body.departureDate || req.body.arrivalDate || flight.flightDetails?.userProvidedDepartureDate);
           console.log('Flight lookup result for update:', flightInfo);
         } catch (error) {
           console.log('Flight lookup failed during update:', (error as Error).message);
@@ -2039,13 +2039,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      if (req.body.arrivalDate) {
-        updateData.arrivalTime = new Date(req.body.arrivalDate);
-        updateData.departureTime = new Date(req.body.arrivalDate);
+      if (req.body.departureDate || req.body.arrivalDate) {
+        const dateToUse = req.body.departureDate || req.body.arrivalDate;
+        updateData.arrivalTime = new Date(dateToUse);
+        updateData.departureTime = new Date(dateToUse);
         // Update flight details with new date
         updateData.flightDetails = {
           ...flight.flightDetails,
-          userProvidedArrivalDate: req.body.arrivalDate,
+          userProvidedDepartureDate: dateToUse,
           verifiedAirline: flightInfo?.airline || flight.flightDetails?.verifiedAirline
         };
       }
