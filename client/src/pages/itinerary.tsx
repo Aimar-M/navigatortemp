@@ -314,9 +314,30 @@ export default function Itinerary() {
                           </Badge>
                         </div>
                         {(flight.flightDetails?.status === "booked" || flight.flightNumber) && (
-                          <div className="grid md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                            <p>Flight: {flight.flightDetails?.userProvidedFlightNumber || flight.flightNumber}</p>
-                            <p>Arrives: {flight.flightDetails?.userProvidedArrivalDate || flight.arrivalTime?.split('T')[0]}</p>
+                          <div className="space-y-2">
+                            <div className="grid md:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                              <p>Flight: {flight.airline !== 'TBD' ? flight.airline : ''} {flight.flightNumber}</p>
+                              <p>Status: {flight.flightDetails?.flightStatus || 'Scheduled'}</p>
+                            </div>
+                            
+                            {flight.departureAirport !== 'TBD' && flight.arrivalAirport !== 'TBD' && (
+                              <div className="grid md:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                                <p>Route: {flight.departureAirport} → {flight.arrivalAirport}</p>
+                                <p>Arrives: {new Date(flight.arrivalTime).toLocaleString()}</p>
+                              </div>
+                            )}
+                            
+                            {flight.flightDetails?.delay > 0 && (
+                              <div className="text-xs text-orange-600">
+                                ⚠ Delayed by {flight.flightDetails.delay} minutes
+                              </div>
+                            )}
+                            
+                            {flight.flightDetails?.hasRealTimeData && (
+                              <div className="text-xs text-green-600">
+                                ✓ Real-time data
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
