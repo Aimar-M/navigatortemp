@@ -176,6 +176,27 @@ export default function Itinerary() {
     }
   });
 
+  // Flight delete mutation
+  const deleteFlightMutation = useMutation({
+    mutationFn: async (flightId: number) => {
+      return await apiRequest("DELETE", `/api/flights/${flightId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/flights`] });
+      toast({
+        title: "Flight removed",
+        description: "Your flight information has been removed."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove flight",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Handle flight update
   const handleUpdateFlight = () => {
     if (!editingFlight) {
@@ -397,13 +418,23 @@ export default function Itinerary() {
                               {(flight.flightDetails?.status === "booked" || flight.flightNumber) ? "Booked" : "Searching"}
                             </Badge>
                             {user?.id === flight.userId && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setEditingFlight(flight)}
-                              >
-                                Edit
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setEditingFlight(flight)}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => deleteFlightMutation.mutate(flight.id)}
+                                  disabled={deleteFlightMutation.isPending}
+                                >
+                                  🗑️
+                                </Button>
+                              </div>
                             )}
                           </div>
                         </div>
