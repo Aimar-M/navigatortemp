@@ -11,7 +11,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import TripDetailLayout from "@/components/trip-detail-layout";
 
 export default function Flights() {
-  const { tripId } = useParams<{ tripId: string }>();
+  const { id: tripId } = useParams<{ id: string }>();
   const { toast } = useToast();
   const [showBookingQuestion, setShowBookingQuestion] = useState(false);
   const [showFlightForm, setShowFlightForm] = useState(false);
