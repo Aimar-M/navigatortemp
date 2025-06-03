@@ -252,56 +252,63 @@ export default function Flights() {
           </DialogContent>
         </Dialog>
 
-        {/* Flights List */}
+        {/* My Flight Details Section */}
         <div className="space-y-4">
-          {isFlightsLoading ? (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-                <p>Loading flights...</p>
-              </CardContent>
-            </Card>
-          ) : flights.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <p className="text-muted-foreground">No flight information added yet.</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Add your flight details to help coordinate travel with your group.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            (flights as any[])
-              .sort((a: any, b: any) => {
-                // Sort by arrival date (departure date in our case)
-                const dateA = new Date(a.arrivalDate || a.departureDate);
-                const dateB = new Date(b.arrivalDate || b.departureDate);
-                return dateA.getTime() - dateB.getTime();
-              })
-              .map((flight: any) => {
-                const flightUser = (members as any[]).find((member: any) => member.userId === flight.userId);
+          <div className="border-b pb-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">My Flight Details</h3>
+            {(() => {
+              const userFlight = (flights as any[]).find((flight: any) => flight.userId === user?.id);
+              
+              if (isFlightsLoading) {
                 return (
-                  <Card key={flight.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg">
-                        {flight.flightNumber || "Flight Details"}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        Added by {flightUser?.username || 'User'}
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                      <p>Loading your flight details...</p>
+                    </CardContent>
+                  </Card>
+                );
+              }
+              
+              if (!userFlight) {
+                return (
+                  <Card className="border-dashed border-2">
+                    <CardContent className="p-6 text-center">
+                      <Plane className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground mb-2">You haven't added your flight details yet</p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Add your flight information to help coordinate travel with your group.
                       </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="default">
-                        Verified
-                      </Badge>
-                      {user?.id === flight.userId && (
+                      <Button onClick={() => setShowBookingQuestion(true)}>
+                        <Plane className="h-4 w-4 mr-2" />
+                        Add My Flight Details
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              }
+
+              return (
+                <Card className="border-blue-200 bg-blue-50/50">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg text-blue-900">
+                          {userFlight.flightNumber || "My Flight"}
+                        </CardTitle>
+                        <p className="text-sm text-blue-700">
+                          Your flight information
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="default" className="bg-blue-600">
+                          My Flight
+                        </Badge>
                         <div className="flex gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleEditFlight(flight)}
+                            onClick={() => handleEditFlight(userFlight)}
                             disabled={editFlightMutation.isPending}
                           >
                             ✏️
@@ -309,53 +316,151 @@ export default function Flights() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => deleteFlightMutation.mutate(flight.id)}
+                            onClick={() => deleteFlightMutation.mutate(userFlight.id)}
                             disabled={deleteFlightMutation.isPending}
                           >
                             🗑️
                           </Button>
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">Airline:</span>
-                      <p>{flight.airline || "TBD"}</p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-700">Airline:</span>
+                        <p className="text-gray-900">{userFlight.airline || "TBD"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Departure Date:</span>
+                        <p className="text-gray-900">
+                          {userFlight.flightDetails?.userProvidedDepartureDate 
+                            ? new Date(userFlight.flightDetails.userProvidedDepartureDate).toLocaleDateString()
+                            : userFlight.departureTime 
+                            ? new Date(userFlight.departureTime).toLocaleDateString()
+                            : "TBD"
+                          }
+                        </p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Departure:</span>
+                        <p className="text-gray-900">{userFlight.departureAirport || "TBD"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Arrival:</span>
+                        <p className="text-gray-900">{userFlight.arrivalAirport || "TBD"}</p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-medium">Departure Date:</span>
-                      <p>
-                        {flight.flightDetails?.userProvidedDepartureDate 
-                          ? new Date(flight.flightDetails.userProvidedDepartureDate).toLocaleDateString()
-                          : flight.departureTime 
-                          ? new Date(flight.departureTime).toLocaleDateString()
-                          : "TBD"
-                        }
-                      </p>
-                    </div>
-                    <div>
-                      <span className="font-medium">Departure:</span>
-                      <p>{flight.departureAirport || "TBD"}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium">Arrival:</span>
-                      <p>{flight.arrivalAirport || "TBD"}</p>
-                    </div>
-                  </div>
-                  {flight.notes && (
-                    <div className="text-sm">
-                      <span className="font-medium">Notes:</span>
-                      <p className="text-muted-foreground">{flight.notes}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    {userFlight.notes && (
+                      <div className="text-sm">
+                        <span className="font-medium text-gray-700">Notes:</span>
+                        <p className="text-gray-600">{userFlight.notes}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
+          </div>
+
+          {/* Group Travel Information Section */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Group Travel Information</h3>
+            {(() => {
+              const otherFlights = (flights as any[]).filter((flight: any) => flight.userId !== user?.id);
+              
+              if (isFlightsLoading) {
+                return (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                      <p>Loading group flight information...</p>
+                    </CardContent>
+                  </Card>
                 );
-              })
-          )}
+              }
+
+              if (otherFlights.length === 0) {
+                return (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No other group members have added their flights yet</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Flight details from other travelers will appear here when they're added.
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              }
+
+              return (
+                <div className="space-y-4">
+                  {otherFlights
+                    .sort((a: any, b: any) => {
+                      const dateA = new Date(a.flightDetails?.userProvidedDepartureDate || a.departureTime);
+                      const dateB = new Date(b.flightDetails?.userProvidedDepartureDate || b.departureTime);
+                      return dateA.getTime() - dateB.getTime();
+                    })
+                    .map((flight: any) => {
+                      const flightUser = (members as any[]).find((member: any) => member.userId === flight.userId);
+                      return (
+                        <Card key={flight.id}>
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle className="text-lg">
+                                  {flight.flightNumber || "Flight Details"}
+                                </CardTitle>
+                                <p className="text-sm text-muted-foreground">
+                                  {flightUser?.username || 'Unknown User'}
+                                </p>
+                              </div>
+                              <Badge variant="secondary">
+                                Group Member
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-2">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="font-medium">Airline:</span>
+                                <p>{flight.airline || "TBD"}</p>
+                              </div>
+                              <div>
+                                <span className="font-medium">Departure Date:</span>
+                                <p>
+                                  {flight.flightDetails?.userProvidedDepartureDate 
+                                    ? new Date(flight.flightDetails.userProvidedDepartureDate).toLocaleDateString()
+                                    : flight.departureTime 
+                                    ? new Date(flight.departureTime).toLocaleDateString()
+                                    : "TBD"
+                                  }
+                                </p>
+                              </div>
+                              <div>
+                                <span className="font-medium">Departure:</span>
+                                <p>{flight.departureAirport || "TBD"}</p>
+                              </div>
+                              <div>
+                                <span className="font-medium">Arrival:</span>
+                                <p>{flight.arrivalAirport || "TBD"}</p>
+                              </div>
+                            </div>
+                            {flight.notes && (
+                              <div className="text-sm">
+                                <span className="font-medium">Notes:</span>
+                                <p className="text-muted-foreground">{flight.notes}</p>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                </div>
+              );
+            })()}
+          </div>
         </div>
       </div>
     </TripDetailLayout>
