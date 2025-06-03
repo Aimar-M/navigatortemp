@@ -1858,6 +1858,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const flight = await storage.createFlightInfo(flightData);
         
+        // Create a corresponding activity in the itinerary
+        const activityData = {
+          tripId,
+          userId: user.id,
+          name: `Flight ${req.body.flightNumber}`,
+          description: `${flightInfo.airline} flight from departure to arrival`,
+          date: new Date(req.body.arrivalDate),
+          location: `${req.body.departureAirport || 'Airport'} → ${req.body.arrivalAirport || 'Airport'}`,
+          duration: null,
+          cost: req.body.price || null
+        };
+        
+        try {
+          await storage.createActivity(activityData);
+        } catch (error) {
+          console.log('Failed to create activity for flight:', error);
+        }
+        
         // Notify trip members about the new flight information
         broadcastToTrip(wss, tripId, {
           type: 'NEW_FLIGHT',
@@ -1893,6 +1911,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         const flight = await storage.createFlightInfo(flightData);
+        
+        // Create a corresponding activity in the itinerary (even without verified data)
+        const activityData = {
+          tripId,
+          userId: user.id,
+          name: `Flight ${req.body.flightNumber}`,
+          description: `Flight from departure to arrival`,
+          date: new Date(req.body.arrivalDate),
+          location: `${req.body.departureAirport || 'Airport'} → ${req.body.arrivalAirport || 'Airport'}`,
+          duration: null,
+          cost: req.body.price || null
+        };
+        
+        try {
+          await storage.createActivity(activityData);
+        } catch (error) {
+          console.log('Failed to create activity for flight:', error);
+        }
         
         // Notify trip members about the new flight information
         broadcastToTrip(wss, tripId, {
