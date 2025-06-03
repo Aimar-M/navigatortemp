@@ -97,8 +97,22 @@ export async function lookupFlightInfo(flightNumber: string, date: string): Prom
   };
 }
 
-// Try multiple free flight data sources
+// Try multiple flight data sources
 async function tryMultipleFlightSources(flightNumber: string, date: string): Promise<FlightData | null> {
+  console.log('Trying multiple flight sources for:', flightNumber, date);
+  
+  // Try AviationStack API first (most reliable with API key)
+  try {
+    const aviationStackResult = await lookupAviationStack(flightNumber, date);
+    if (aviationStackResult) {
+      console.log('AviationStack found data');
+      return aviationStackResult;
+    }
+  } catch (error) {
+    console.log('AviationStack failed:', (error as Error).message);
+  }
+
+  // Try other sources as fallback
   const sources = [
     () => tryFlightRadar24(flightNumber, date),
     () => tryFlightAware(flightNumber, date),
