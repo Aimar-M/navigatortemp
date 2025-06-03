@@ -1870,10 +1870,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cost: req.body.price || null
         };
         
+        console.log('Creating flight activity:', activityData);
         try {
-          await storage.createActivity(activityData);
+          const createdActivity = await storage.createActivity(activityData);
+          console.log('Successfully created flight activity:', createdActivity);
         } catch (error) {
-          console.log('Failed to create activity for flight:', error);
+          console.error('Failed to create activity for flight:', error);
         }
         
         // Notify trip members about the new flight information
@@ -1924,10 +1926,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cost: req.body.price || null
         };
         
+        console.log('Creating flight activity (no verified data):', activityData);
         try {
-          await storage.createActivity(activityData);
+          const createdActivity = await storage.createActivity(activityData);
+          console.log('Successfully created flight activity:', createdActivity);
         } catch (error) {
-          console.log('Failed to create activity for flight:', error);
+          console.error('Failed to create activity for flight:', error);
         }
         
         // Notify trip members about the new flight information
