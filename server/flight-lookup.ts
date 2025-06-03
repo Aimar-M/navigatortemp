@@ -233,7 +233,7 @@ function getCommonRouteInfo(airline: string, flightNumber: string, date: string)
     arrivalTime.setMinutes(arrivalTime.getMinutes() + delay);
   }
 
-  return {
+  const result = {
     departureAirport: route.dep,
     departureCity: route.depCity,
     departureTime: departureTime.toISOString(),
@@ -245,6 +245,9 @@ function getCommonRouteInfo(airline: string, flightNumber: string, date: string)
     gate: `A${1 + (flightNum % 30)}`, // Gates A1-A30
     terminal: `${1 + (flightNum % 4)}` // Terminals 1-4
   };
+  
+  console.log('Generated route info:', result);
+  return result;
 }
 
 // Get city for airport code
