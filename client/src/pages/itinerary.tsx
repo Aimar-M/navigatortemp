@@ -47,16 +47,8 @@ export default function Itinerary() {
 
   const [flightFormData, setFlightFormData] = useState({
     flightNumber: "",
-    airline: "",
-    departureAirport: "",
-    arrivalAirport: "",
-    departureDate: "",
-    departureTime: "",
     arrivalDate: "",
     arrivalTime: "",
-    bookingReference: "",
-    seatNumber: "",
-    price: "",
   });
 
   // Fetch trip details
@@ -93,16 +85,8 @@ export default function Itinerary() {
       setIsAddFlightModalOpen(false);
       setFlightFormData({
         flightNumber: "",
-        airline: "",
-        departureAirport: "",
-        arrivalAirport: "",
-        departureDate: "",
-        departureTime: "",
         arrivalDate: "",
         arrivalTime: "",
-        bookingReference: "",
-        seatNumber: "",
-        price: "",
       });
       setFlightBookingStatus("unknown");
       toast({
@@ -266,16 +250,8 @@ export default function Itinerary() {
                 <CardContent>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Flight</p>
-                      <p className="font-medium">{userFlight.airline} {userFlight.flightNumber}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Route</p>
-                      <p className="font-medium">{userFlight.departureAirport} → {userFlight.arrivalAirport}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Departure</p>
-                      <p className="font-medium">{userFlight.departureDate} at {userFlight.departureTime}</p>
+                      <p className="text-sm text-muted-foreground">Flight Number</p>
+                      <p className="font-medium">{userFlight.flightNumber}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Arrival</p>
@@ -317,10 +293,9 @@ export default function Itinerary() {
                           </Badge>
                         </div>
                         {flight.status === "booked" && (
-                          <div className="grid md:grid-cols-3 gap-2 text-sm text-muted-foreground">
-                            <p>{flight.airline} {flight.flightNumber}</p>
-                            <p>{flight.departureAirport} → {flight.arrivalAirport}</p>
-                            <p>{flight.departureDate} at {flight.departureTime}</p>
+                          <div className="grid md:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                            <p>Flight: {flight.flightNumber}</p>
+                            <p>Arrives: {flight.arrivalDate} at {flight.arrivalTime}</p>
                           </div>
                         )}
                       </div>
@@ -446,92 +421,29 @@ export default function Itinerary() {
 
             {flightBookingStatus === "booked" && (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Airline</Label>
-                    <Input
-                      value={flightFormData.airline}
-                      onChange={(e) => setFlightFormData(prev => ({ ...prev, airline: e.target.value }))}
-                      placeholder="e.g., American Airlines"
-                    />
-                  </div>
-                  <div>
-                    <Label>Flight Number</Label>
-                    <Input
-                      value={flightFormData.flightNumber}
-                      onChange={(e) => setFlightFormData(prev => ({ ...prev, flightNumber: e.target.value }))}
-                      placeholder="e.g., AA123"
-                    />
-                  </div>
+                <div>
+                  <Label>Flight Number</Label>
+                  <Input
+                    value={flightFormData.flightNumber}
+                    onChange={(e) => setFlightFormData(prev => ({ ...prev, flightNumber: e.target.value }))}
+                    placeholder="e.g., AA123, BA456, etc."
+                  />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Departure Airport</Label>
+                <div>
+                  <Label>Arrival Date & Time</Label>
+                  <div className="grid grid-cols-2 gap-2">
                     <Input
-                      value={flightFormData.departureAirport}
-                      onChange={(e) => setFlightFormData(prev => ({ ...prev, departureAirport: e.target.value }))}
-                      placeholder="e.g., JFK"
+                      type="date"
+                      value={flightFormData.arrivalDate}
+                      onChange={(e) => setFlightFormData(prev => ({ ...prev, arrivalDate: e.target.value }))}
+                      placeholder="Arrival date"
                     />
-                  </div>
-                  <div>
-                    <Label>Arrival Airport</Label>
                     <Input
-                      value={flightFormData.arrivalAirport}
-                      onChange={(e) => setFlightFormData(prev => ({ ...prev, arrivalAirport: e.target.value }))}
-                      placeholder="e.g., LAX"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Departure Date & Time</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        type="date"
-                        value={flightFormData.departureDate}
-                        onChange={(e) => setFlightFormData(prev => ({ ...prev, departureDate: e.target.value }))}
-                      />
-                      <Input
-                        type="time"
-                        value={flightFormData.departureTime}
-                        onChange={(e) => setFlightFormData(prev => ({ ...prev, departureTime: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Arrival Date & Time</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        type="date"
-                        value={flightFormData.arrivalDate}
-                        onChange={(e) => setFlightFormData(prev => ({ ...prev, arrivalDate: e.target.value }))}
-                      />
-                      <Input
-                        type="time"
-                        value={flightFormData.arrivalTime}
-                        onChange={(e) => setFlightFormData(prev => ({ ...prev, arrivalTime: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Booking Reference (optional)</Label>
-                    <Input
-                      value={flightFormData.bookingReference}
-                      onChange={(e) => setFlightFormData(prev => ({ ...prev, bookingReference: e.target.value }))}
-                      placeholder="e.g., ABC123"
-                    />
-                  </div>
-                  <div>
-                    <Label>Seat Number (optional)</Label>
-                    <Input
-                      value={flightFormData.seatNumber}
-                      onChange={(e) => setFlightFormData(prev => ({ ...prev, seatNumber: e.target.value }))}
-                      placeholder="e.g., 12A"
+                      type="time"
+                      value={flightFormData.arrivalTime}
+                      onChange={(e) => setFlightFormData(prev => ({ ...prev, arrivalTime: e.target.value }))}
+                      placeholder="Arrival time"
                     />
                   </div>
                 </div>
