@@ -1810,64 +1810,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Not a member of this trip' });
       }
       
-      // Try to lookup flight information first
+      // Try to lookup authentic flight information only
       let flightInfo = null;
       try {
         const { lookupFlightInfo } = await import('./flight-lookup');
         flightInfo = await lookupFlightInfo(req.body.flightNumber, req.body.arrivalDate);
         console.log('Flight lookup result:', flightInfo);
       } catch (error) {
-        console.log('Flight lookup failed, using user-provided data:', (error as Error).message);
+        console.log('Flight lookup failed:', (error as Error).message);
       }
       
-      // Convert arrival date string to timestamp for database storage
-      const arrivalDate = flightInfo ? new Date(flightInfo.arrivalTime) : new Date(req.body.arrivalDate);
-      const departureDate = flightInfo ? new Date(flightInfo.departureTime) : new Date(req.body.arrivalDate);
-      
-      // Create complete flight data with lookup results or defaults
-      const flightData = insertFlightInfoSchema.parse({
-        tripId,
-        userId: user.id,
-        flightNumber: req.body.flightNumber,
-        // Use lookup data if available, otherwise defaults
-        airline: flightInfo?.airline || "TBD",
-        departureAirport: flightInfo?.departureAirport || "TBD", 
-        departureCity: flightInfo?.departureCity || "TBD",
-        departureTime: departureDate,
-        arrivalAirport: flightInfo?.arrivalAirport || "TBD",
-        arrivalCity: flightInfo?.arrivalCity || "TBD", 
-        arrivalTime: arrivalDate,
-        // Optional fields
-        price: req.body.price,
-        currency: req.body.currency || "USD",
-        bookingReference: req.body.bookingReference,
-        bookingStatus: req.body.bookingStatus || "confirmed",
-        seatNumber: req.body.seatNumber,
-        notes: flightInfo ? `Auto-lookup: ${flightInfo.status}` : `User input: ${req.body.flightNumber}`,
-        flightDetails: {
-          userProvidedFlightNumber: req.body.flightNumber,
-          userProvidedArrivalDate: req.body.arrivalDate,
-          status: "booked",
-          lookupData: flightInfo,
-          hasRealTimeData: !!flightInfo,
-          gate: flightInfo?.gate,
-          terminal: flightInfo?.terminal,
-          delay: flightInfo?.delay,
-          flightStatus: flightInfo?.status,
-          departureTime: flightInfo?.departureTime,
-          arrivalTime: flightInfo?.arrivalTime
-        },
-      });
-      
-      const flight = await storage.createFlightInfo(flightData);
-      
-      // Notify trip members about the new flight information
-      broadcastToTrip(wss, tripId, {
-        type: 'NEW_FLIGHT',
-        data: flight
-      });
-      
-      res.status(201).json(flight);
+      if (flightInfo) {
+        // Use only authentic flight data
+        const flightData = insertFlightInfoSchema.parse({
+          tripId,
+          userId: user.id,
+          flightNumber: req.body.flightNumber,
+          airline: flightInfo.airline,
+          departureAirport: flightInfo.departureAirport,
+          departureCity: flightInfo.departureCity,
+          departureTime: new Date(flightInfo.departureTime),
+          arrivalAirport: flightInfo.arrivalAirport,
+          arrivalCity: flightInfo.arrivalCity,
+          arrivalTime: new Date(flightInfo.arrivalTime),
+          price: req.body.price,
+          currency: req.body.currency || "USD",
+          bookingReference: req.body.bookingReference,
+          bookingStatus: req.body.bookingStatus || "confirmed",
+          seatNumber: req.body.seatNumber,
+          notes: `Verified flight data`,
+          flightDetails: {
+            userProvidedFlightNumber: req.body.flightNumber,
+            userProvidedArrivalDate: req.body.arrivalDate,
+            status: flightInfo.status,
+            lookupData: flightInfo,
+            hasRealTimeData: !!flightInfo,
+            gate: flightInfo?.gate,
+            terminal: flightInfo?.terminal,
+            delay: flightInfo?.delay,
+            flightStatus: flightInfo?.status,
+            departureTime: flightInfo?.departureTime,
+            arrivalTime: flightInfo?.arrivalTime
+          }
+        });
+        
+        const flight = await storage.createFlightInfo(flightData);
+        
+        // Notify trip members about the new flight information
+        broadcastToTrip(wss, tripId, {
+          type: 'NEW_FLIGHT',
+          data: flight
+        });
+        
+        res.status(201).json(flight);
+      } else {
+        // No authentic data available - store only user-provided information
+        const flightData = insertFlightInfoSchema.parse({
+          tripId,
+          userId: user.id,
+          flightNumber: req.body.flightNumber,
+          airline: "Unknown",
+          departureAirport: "TBD",
+          departureCity: "TBD",
+          departureTime: new Date(req.body.arrivalDate),
+          arrivalAirport: "TBD",
+          arrivalCity: "TBD",
+          arrivalTime: new Date(req.body.arrivalDate),
+          price: req.body.price,
+          currency: req.body.currency || "USD",
+          bookingReference: req.body.bookingReference,
+          bookingStatus: req.body.bookingStatus || "confirmed",
+          seatNumber: req.body.seatNumber,
+          notes: `Flight ${req.body.flightNumber} - no verified data available`,
+          flightDetails: {
+            userProvidedFlightNumber: req.body.flightNumber,
+            userProvidedArrivalDate: req.body.arrivalDate,
+            status: "user-provided",
+            hasRealTimeData: false
+          },
+        });
+        
+        const flight = await storage.createFlightInfo(flightData);
+        
+        // Notify trip members about the new flight information
+        broadcastToTrip(wss, tripId, {
+          type: 'NEW_FLIGHT',
+          data: flight
+        });
+        
+        res.status(201).json(flight);
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: 'Invalid flight data', errors: error.errors });
