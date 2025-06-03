@@ -1810,10 +1810,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Not a member of this trip' });
       }
       
+      // Create complete flight data with defaults for required fields
       const flightData = insertFlightInfoSchema.parse({
-        ...req.body,
         tripId,
-        userId: user.id
+        userId: user.id,
+        flightNumber: req.body.flightNumber,
+        arrivalDate: req.body.arrivalDate,
+        status: req.body.status || "booked",
+        // Set defaults for required fields that will be populated later via API lookup
+        airline: req.body.airline || "",
+        departureAirport: req.body.departureAirport || "",
+        departureCity: req.body.departureCity || "",
+        departureTime: req.body.departureTime || new Date(),
+        arrivalAirport: req.body.arrivalAirport || "",
+        arrivalCity: req.body.arrivalCity || "",
+        arrivalTime: req.body.arrivalTime || new Date(),
+        // Optional fields
+        price: req.body.price,
+        currency: req.body.currency || "USD",
+        bookingReference: req.body.bookingReference,
+        bookingStatus: req.body.bookingStatus || "confirmed",
+        seatNumber: req.body.seatNumber,
+        notes: req.body.notes,
+        flightDetails: req.body.flightDetails,
       });
       
       const flight = await storage.createFlightInfo(flightData);
