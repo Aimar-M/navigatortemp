@@ -288,11 +288,11 @@ export default function Itinerary() {
                       <div key={flight.id} className="border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
                           <p className="font-medium">{flight.user?.name || flight.user?.username}</p>
-                          <Badge variant={flight.status === "booked" ? "default" : "secondary"}>
-                            {flight.status === "booked" ? "Booked" : "Searching"}
+                          <Badge variant={(flight.flightDetails?.status === "booked" || flight.flightNumber) ? "default" : "secondary"}>
+                            {(flight.flightDetails?.status === "booked" || flight.flightNumber) ? "Booked" : "Searching"}
                           </Badge>
                         </div>
-                        {flight.status === "booked" && (
+                        {(flight.flightDetails?.status === "booked" || flight.flightNumber) && (
                           <div className="grid md:grid-cols-2 gap-2 text-sm text-muted-foreground">
                             <p>Flight: {flight.flightDetails?.userProvidedFlightNumber || flight.flightNumber}</p>
                             <p>Arrives: {flight.flightDetails?.userProvidedArrivalDate || flight.arrivalTime?.split('T')[0]}</p>
