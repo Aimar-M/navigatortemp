@@ -15,6 +15,7 @@ export default function Flights() {
   const { toast } = useToast();
   const [showBookingQuestion, setShowBookingQuestion] = useState(false);
   const [showFlightForm, setShowFlightForm] = useState(false);
+  const [editingFlight, setEditingFlight] = useState<any>(null);
   const [flightForm, setFlightForm] = useState({
     flightNumber: "",
     departureDate: ""
@@ -56,6 +57,30 @@ export default function Flights() {
     }
   });
 
+  // Edit flight mutation
+  const editFlightMutation = useMutation({
+    mutationFn: async (data: { flightNumber: string; arrivalDate: string }) => {
+      return await apiRequest("PUT", `/api/flights/${editingFlight.id}`, data);
+    },
+    onSuccess: () => {
+      refetchFlights();
+      setFlightForm({ flightNumber: "", departureDate: "" });
+      setEditingFlight(null);
+      setShowFlightForm(false);
+      toast({
+        title: "Flight updated",
+        description: "Your flight information has been updated and verified."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update flight",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Delete flight mutation
   const deleteFlightMutation = useMutation({
     mutationFn: async (flightId: number) => {
@@ -87,10 +112,25 @@ export default function Flights() {
       return;
     }
 
-    addFlightMutation.mutate({
+    const flightData = {
       flightNumber: flightForm.flightNumber.toUpperCase().trim(),
       arrivalDate: flightForm.departureDate
+    };
+
+    if (editingFlight) {
+      editFlightMutation.mutate(flightData);
+    } else {
+      addFlightMutation.mutate(flightData);
+    }
+  };
+
+  const handleEditFlight = (flight: any) => {
+    setEditingFlight(flight);
+    setFlightForm({
+      flightNumber: flight.flightNumber,
+      departureDate: flight.arrivalDate
     });
+    setShowFlightForm(true);
   };
 
   const handleBookingRedirect = () => {
@@ -161,7 +201,7 @@ export default function Flights() {
         }}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Your Flight Details</DialogTitle>
+              <DialogTitle>{editingFlight ? "Edit Flight Details" : "Add Your Flight Details"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
@@ -188,10 +228,13 @@ export default function Flights() {
               <div className="flex gap-2">
                 <Button 
                   onClick={handleAddFlight}
-                  disabled={addFlightMutation.isPending}
+                  disabled={addFlightMutation.isPending || editFlightMutation.isPending}
                   className="w-full"
                 >
-                  {addFlightMutation.isPending ? "Adding..." : "Add Flight"}
+                  {editingFlight 
+                    ? (editFlightMutation.isPending ? "Updating..." : "Update Flight")
+                    : (addFlightMutation.isPending ? "Adding..." : "Add Flight")
+                  }
                 </Button>
               </div>
             </div>
@@ -229,14 +272,24 @@ export default function Flights() {
                         Verified
                       </Badge>
                       {user?.id === flight.userId && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteFlightMutation.mutate(flight.id)}
-                          disabled={deleteFlightMutation.isPending}
-                        >
-                          🗑️
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditFlight(flight)}
+                            disabled={editFlightMutation.isPending}
+                          >
+                            ✏️
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteFlightMutation.mutate(flight.id)}
+                            disabled={deleteFlightMutation.isPending}
+                          >
+                            🗑️
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
