@@ -17,6 +17,7 @@ export default function TripTabs({ tripId }: TripTabsProps) {
   const tabs: Tab[] = [
     { name: "Overview", href: `/trips/${tripId}` },
     { name: "Itinerary", href: `/trips/${tripId}/itinerary` },
+    { name: "Flights", href: `/trips/${tripId}/flights` },
     { name: "Chat", href: `/trips/${tripId}/chat` },
     { name: "Budget", href: `/trips/${tripId}/budget` },
     { name: "Group Expense Tracker", href: `/trips/${tripId}/expenses` },
