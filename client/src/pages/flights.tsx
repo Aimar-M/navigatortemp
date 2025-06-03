@@ -8,18 +8,21 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/use-auth";
 import TripDetailLayout from "@/components/trip-detail-layout";
 
 export default function Flights() {
   const { tripId } = useParams<{ tripId: string }>();
-  const { user } = useAuth();
   const { toast } = useToast();
   const [newFlight, setNewFlight] = useState({
     flightNumber: "",
     arrivalDate: ""
   });
   const [editingFlight, setEditingFlight] = useState<any>(null);
+
+  // Fetch user data
+  const { data: user, isLoading: isUserLoading } = useQuery({
+    queryKey: ["/api/auth/me"]
+  });
 
   // Fetch trip data
   const { data: trip, isLoading: isTripLoading } = useQuery({
@@ -151,7 +154,7 @@ export default function Flights() {
     updateFlightMutation.mutate(updateData);
   };
 
-  if (isTripLoading || isFlightsLoading || !user || !trip) {
+  if (isUserLoading || isTripLoading || isFlightsLoading || !user || !trip) {
     return (
       <TripDetailLayout tripId={tripId}>
         <div className="flex items-center justify-center h-64">
