@@ -33,6 +33,12 @@ export default function Flights() {
     enabled: !!tripId
   });
 
+  // Fetch trip members to get user information
+  const { data: members = [] } = useQuery({
+    queryKey: [`/api/trips/${tripId}/members`],
+    enabled: !!tripId
+  });
+
   // Add flight mutation
   const addFlightMutation = useMutation({
     mutationFn: async (data: { flightNumber: string; arrivalDate: string }) => {
@@ -260,13 +266,27 @@ export default function Flights() {
               </CardContent>
             </Card>
           ) : (
-            (flights as any[]).map((flight: any) => (
-              <Card key={flight.id}>
+            (flights as any[])
+              .sort((a: any, b: any) => {
+                // Sort by arrival date (departure date in our case)
+                const dateA = new Date(a.arrivalDate || a.departureDate);
+                const dateB = new Date(b.arrivalDate || b.departureDate);
+                return dateA.getTime() - dateB.getTime();
+              })
+              .map((flight: any) => {
+                const flightUser = (members as any[]).find((member: any) => member.userId === flight.userId);
+                return (
+                  <Card key={flight.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">
-                      {flight.flightNumber || "Flight Details"}
-                    </CardTitle>
+                    <div>
+                      <CardTitle className="text-lg">
+                        {flight.flightNumber || "Flight Details"}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Added by {flightUser?.username || 'User'}
+                      </p>
+                    </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="default">
                         Verified
@@ -303,9 +323,9 @@ export default function Flights() {
                     <div>
                       <span className="font-medium">Departure Date:</span>
                       <p>
-                        {flight.departureTime 
-                          ? new Date(flight.departureTime).toLocaleDateString()
-                          : flight.flightDetails?.userProvidedArrivalDate || "TBD"
+                        {flight.arrivalDate 
+                          ? new Date(flight.arrivalDate).toLocaleDateString()
+                          : "TBD"
                         }
                       </p>
                     </div>
@@ -326,7 +346,8 @@ export default function Flights() {
                   )}
                 </CardContent>
               </Card>
-            ))
+                );
+              })
           )}
         </div>
       </div>
