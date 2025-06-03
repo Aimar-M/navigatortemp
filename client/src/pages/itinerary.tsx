@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 
 import { Plus, MapPin, Clock, DollarSign, Users, Calendar } from "lucide-react";
-import { ActivityCard } from "@/components/activity-card";
+import ActivityCard from "@/components/activity-card";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -20,7 +20,11 @@ export default function Itinerary() {
   const { id } = useParams<{ id: string }>();
   const tripId = parseInt(id!);
   const { toast } = useToast();
-  const { user } = useAuth();
+  // Fetch user data
+  const { data: user } = useQuery({
+    queryKey: ["/api/auth/me"],
+    retry: false
+  });
   const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -46,7 +50,7 @@ export default function Itinerary() {
   });
 
   // Check if user is organizer
-  const isOrganizer = trip && user && trip.organizerId === user.id;
+  const isOrganizer = trip && user && (trip as any).organizerId === (user as any).id;
 
   // Add activity mutation
   const addActivityMutation = useMutation({
@@ -120,7 +124,7 @@ export default function Itinerary() {
     <TripDetailLayout 
       tripId={tripId}
       title="Itinerary"
-      description={`Plan your activities for ${trip.name}`}
+      description={`Plan your activities for ${(trip as any)?.name || 'this trip'}`}
     >
       <div className="space-y-6">
         {/* Activities Section */}
@@ -145,7 +149,7 @@ export default function Itinerary() {
                   <p>Loading activities...</p>
                 </CardContent>
               </Card>
-            ) : activities.length === 0 ? (
+            ) : (activities as any[]).length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -159,8 +163,16 @@ export default function Itinerary() {
               (activities as any[]).map((activity: any) => (
                 <ActivityCard 
                   key={activity.id} 
-                  activity={activity} 
-                  canEdit={user?.id === activity.userId || isOrganizer}
+                  id={activity.id}
+                  name={activity.name}
+                  description={activity.description}
+                  date={activity.date}
+                  location={activity.location}
+                  duration={activity.duration}
+                  cost={activity.cost}
+                  confirmedCount={activity.confirmedCount || 0}
+                  totalCount={activity.totalCount || 0}
+                  rsvps={activity.rsvps || []}
                 />
               ))
             )}
