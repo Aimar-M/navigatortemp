@@ -1810,22 +1810,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Not a member of this trip' });
       }
       
-      // Convert arrival date string to timestamp for database storage
-      const arrivalDate = new Date(req.body.arrivalDate);
-      const departureDate = new Date(req.body.arrivalDate); // Default to same day for now
+      // Try to lookup flight information first
+      let flightInfo = null;
+      try {
+        const { lookupFlightInfo } = await import('./flight-lookup');
+        flightInfo = await lookupFlightInfo(req.body.flightNumber, req.body.arrivalDate);
+        console.log('Flight lookup result:', flightInfo);
+      } catch (error) {
+        console.log('Flight lookup failed, using user-provided data:', (error as Error).message);
+      }
       
-      // Create complete flight data with defaults for required fields
+      // Convert arrival date string to timestamp for database storage
+      const arrivalDate = flightInfo ? new Date(flightInfo.arrivalTime) : new Date(req.body.arrivalDate);
+      const departureDate = flightInfo ? new Date(flightInfo.departureTime) : new Date(req.body.arrivalDate);
+      
+      // Create complete flight data with lookup results or defaults
       const flightData = insertFlightInfoSchema.parse({
         tripId,
         userId: user.id,
         flightNumber: req.body.flightNumber,
-        // Set defaults for required fields - will be updated when flight lookup is implemented
-        airline: req.body.airline || "TBD",
-        departureAirport: req.body.departureAirport || "TBD", 
-        departureCity: req.body.departureCity || "TBD",
+        // Use lookup data if available, otherwise defaults
+        airline: flightInfo?.airline || "TBD",
+        departureAirport: flightInfo?.departureAirport || "TBD", 
+        departureCity: flightInfo?.departureCity || "TBD",
         departureTime: departureDate,
-        arrivalAirport: req.body.arrivalAirport || "TBD",
-        arrivalCity: req.body.arrivalCity || "TBD", 
+        arrivalAirport: flightInfo?.arrivalAirport || "TBD",
+        arrivalCity: flightInfo?.arrivalCity || "TBD", 
         arrivalTime: arrivalDate,
         // Optional fields
         price: req.body.price,
@@ -1833,11 +1843,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bookingReference: req.body.bookingReference,
         bookingStatus: req.body.bookingStatus || "confirmed",
         seatNumber: req.body.seatNumber,
-        notes: `Flight: ${req.body.flightNumber}, Arrival: ${req.body.arrivalDate}`,
+        notes: flightInfo ? `Auto-lookup: ${flightInfo.status}` : `User input: ${req.body.flightNumber}`,
         flightDetails: {
           userProvidedFlightNumber: req.body.flightNumber,
           userProvidedArrivalDate: req.body.arrivalDate,
-          status: req.body.status || "booked"
+          status: "booked",
+          lookupData: flightInfo,
+          hasRealTimeData: !!flightInfo,
+          gate: flightInfo?.gate,
+          terminal: flightInfo?.terminal,
+          delay: flightInfo?.delay,
+          flightStatus: flightInfo?.status
         },
       });
       
