@@ -341,32 +341,46 @@ async function lookupFlightAware(flightNumber: string, date: string): Promise<Fl
 }
 
 async function lookupAviationStack(flightNumber: string, date: string): Promise<FlightData | null> {
-  const response = await axios.get('http://api.aviationstack.com/v1/flights', {
-    params: {
-      access_key: process.env.AVIATIONSTACK_API_KEY,
-      flight_iata: flightNumber,
-      flight_date: date
-    }
-  });
-
-  if (response.data.data && response.data.data.length > 0) {
-    const flight = response.data.data[0];
-    return {
-      flightNumber: flight.flight?.iata || flightNumber,
-      airline: flight.airline?.name || 'Unknown',
-      departureAirport: flight.departure?.iata || 'Unknown',
-      departureCity: flight.departure?.timezone || 'Unknown',
-      departureTime: flight.departure?.scheduled || 'Unknown',
-      arrivalAirport: flight.arrival?.iata || 'Unknown',
-      arrivalCity: flight.arrival?.timezone || 'Unknown',
-      arrivalTime: flight.arrival?.scheduled || 'Unknown',
-      status: flight.flight_status || 'Unknown',
-      gate: flight.arrival?.gate,
-      terminal: flight.arrival?.terminal,
-      delay: flight.arrival?.delay
-    };
+  if (!process.env.AVIATIONSTACK_API_KEY) {
+    console.log('AviationStack API key not available');
+    return null;
   }
 
+  try {
+    const fetch = (await import('node-fetch')).default;
+    const url = `http://api.aviationstack.com/v1/flights?access_key=${process.env.AVIATIONSTACK_API_KEY}&flight_iata=${flightNumber}&flight_date=${date}`;
+    
+    console.log('Calling AviationStack API for flight:', flightNumber, 'on date:', date);
+    const response = await fetch(url);
+    const data = await response.json();
+
+    console.log('AviationStack response:', JSON.stringify(data, null, 2));
+
+    if (data && data.data && data.data.length > 0) {
+      const flight = data.data[0];
+      
+      const result = {
+        flightNumber: flight.flight?.iata || flightNumber,
+        airline: flight.airline?.name || 'Unknown',
+        departureAirport: flight.departure?.iata || 'Unknown',
+        departureCity: flight.departure?.airport || 'Unknown',
+        departureTime: flight.departure?.scheduled || 'Unknown',
+        arrivalAirport: flight.arrival?.iata || 'Unknown',
+        arrivalCity: flight.arrival?.airport || 'Unknown',
+        arrivalTime: flight.arrival?.scheduled || 'Unknown',
+        status: flight.flight_status || 'Unknown',
+        gate: flight.arrival?.gate,
+        terminal: flight.arrival?.terminal,
+        delay: flight.arrival?.delay || 0
+      };
+      
+      console.log('Parsed AviationStack result:', result);
+      return result;
+    }
+  } catch (error) {
+    console.error('AviationStack API error:', error);
+  }
+  
   return null;
 }
 
