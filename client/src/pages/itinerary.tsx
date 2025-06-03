@@ -261,15 +261,42 @@ export default function Itinerary() {
                     </div>
                     
                     {userFlight.departureAirport !== 'TBD' && userFlight.arrivalAirport !== 'TBD' && (
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Departure</p>
-                          <p className="font-medium">{userFlight.departureAirport} → {userFlight.arrivalAirport}</p>
+                      <div className="space-y-3">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Departure</p>
+                            <p className="font-medium">{userFlight.departureAirport} ({userFlight.departureCity})</p>
+                            <p className="text-sm text-muted-foreground">
+                              {userFlight.flightDetails?.departureTime ? 
+                                new Date(userFlight.flightDetails.departureTime).toLocaleString() : 
+                                new Date(userFlight.departureTime).toLocaleString()
+                              }
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Arrival</p>
+                            <p className="font-medium">{userFlight.arrivalAirport} ({userFlight.arrivalCity})</p>
+                            <p className="text-sm text-muted-foreground">
+                              {userFlight.flightDetails?.arrivalTime ? 
+                                new Date(userFlight.flightDetails.arrivalTime).toLocaleString() : 
+                                new Date(userFlight.arrivalTime).toLocaleString()
+                              }
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Arrival Time</p>
-                          <p className="font-medium">{new Date(userFlight.arrivalTime).toLocaleString()}</p>
-                        </div>
+                        
+                        {(userFlight.flightDetails?.gate || userFlight.flightDetails?.terminal) && (
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground">Gate</p>
+                              <p className="font-medium">{userFlight.flightDetails?.gate || 'TBD'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Terminal</p>
+                              <p className="font-medium">{userFlight.flightDetails?.terminal || 'TBD'}</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                     
@@ -321,9 +348,34 @@ export default function Itinerary() {
                             </div>
                             
                             {flight.departureAirport !== 'TBD' && flight.arrivalAirport !== 'TBD' && (
-                              <div className="grid md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                                <p>Route: {flight.departureAirport} → {flight.arrivalAirport}</p>
-                                <p>Arrives: {new Date(flight.arrivalTime).toLocaleString()}</p>
+                              <div className="space-y-2">
+                                <div className="grid md:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                                  <div>
+                                    <p className="font-medium">Departure: {flight.departureAirport} ({flight.departureCity})</p>
+                                    <p className="text-xs">
+                                      {flight.flightDetails?.departureTime ? 
+                                        new Date(flight.flightDetails.departureTime).toLocaleString() : 
+                                        new Date(flight.departureTime).toLocaleString()
+                                      }
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Arrival: {flight.arrivalAirport} ({flight.arrivalCity})</p>
+                                    <p className="text-xs">
+                                      {flight.flightDetails?.arrivalTime ? 
+                                        new Date(flight.flightDetails.arrivalTime).toLocaleString() : 
+                                        new Date(flight.arrivalTime).toLocaleString()
+                                      }
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                {(flight.flightDetails?.gate || flight.flightDetails?.terminal) && (
+                                  <div className="grid md:grid-cols-2 gap-2 text-xs text-muted-foreground">
+                                    <p>Gate: {flight.flightDetails?.gate || 'TBD'}</p>
+                                    <p>Terminal: {flight.flightDetails?.terminal || 'TBD'}</p>
+                                  </div>
+                                )}
                               </div>
                             )}
                             
