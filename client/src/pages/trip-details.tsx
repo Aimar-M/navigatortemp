@@ -338,7 +338,7 @@ export default function TripDetails() {
                     <div className="text-gray-600">
                       {trip.accommodationLink ? (
                         <a 
-                          href={trip.accommodationLink} 
+                          href={trip.accommodationLink.startsWith('http') ? trip.accommodationLink : `https://${trip.accommodationLink}`} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:text-blue-800 underline"
