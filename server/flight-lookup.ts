@@ -364,20 +364,20 @@ async function lookupAviationStack(flightNumber: string, date: string): Promise<
         const airline = airlineData.data[0];
         console.log('Found airline:', airline.airline_name);
         
-        // Return basic airline information (this is what we can get from free tier)
+        // Return only authentic airline information (this is what we can verify from free tier)
         return {
           flightNumber: flightNumber,
-          airline: airline.airline_name || 'Unknown',
-          departureAirport: 'TBD',
-          departureCity: 'TBD', 
-          departureTime: new Date(date).toISOString(),
-          arrivalAirport: 'TBD',
-          arrivalCity: 'TBD',
-          arrivalTime: new Date(date).toISOString(),
-          status: 'Scheduled',
+          airline: airline.airline_name,
+          departureAirport: undefined,
+          departureCity: undefined, 
+          departureTime: undefined,
+          arrivalAirport: undefined,
+          arrivalCity: undefined,
+          arrivalTime: undefined,
+          status: undefined,
           gate: undefined,
           terminal: undefined,
-          delay: 0
+          delay: undefined
         };
       }
     }
