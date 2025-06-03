@@ -27,13 +27,13 @@ export default function Flights() {
   // Fetch trip data
   const { data: trip, isLoading: isTripLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}`],
-    enabled: !!tripId
+    enabled: !!tripId && !isNaN(parseInt(tripId))
   });
 
   // Fetch flights
   const { data: flights = [], isLoading: isFlightsLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}/flights`],
-    enabled: !!tripId
+    enabled: !!tripId && !isNaN(parseInt(tripId))
   });
 
   // Add flight mutation
