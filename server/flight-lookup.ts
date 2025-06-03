@@ -67,34 +67,27 @@ function parseFlightNumber(flightNumber: string): { airline: string; code: strin
 export async function lookupFlightInfo(flightNumber: string, date: string): Promise<FlightData | null> {
   const { airline, code } = parseFlightNumber(flightNumber);
   
-  // Try multiple free flight tracking sources
-  const flightData = await tryMultipleFlightSources(code, date);
+  // Only use authentic AviationStack API data
+  console.log('Looking up flight info for:', code, 'on', date);
   
-  if (flightData) {
-    return {
-      ...flightData,
-      airline: flightData.airline || airline,
-      flightNumber: code
-    };
+  try {
+    const flightData = await lookupAviationStack(code, date);
+    
+    if (flightData) {
+      console.log('AviationStack returned authentic data:', flightData);
+      return {
+        ...flightData,
+        airline: flightData.airline || airline,
+        flightNumber: code
+      };
+    }
+  } catch (error) {
+    console.error('Flight lookup failed:', error);
   }
 
-  // Return enhanced airline info with common route patterns
-  const routeInfo = getCommonRouteInfo(airline, code, date);
-  
-  return {
-    flightNumber: code,
-    airline: airline,
-    departureAirport: routeInfo.departureAirport,
-    departureCity: routeInfo.departureCity,
-    departureTime: routeInfo.departureTime,
-    arrivalAirport: routeInfo.arrivalAirport,
-    arrivalCity: routeInfo.arrivalCity,
-    arrivalTime: routeInfo.arrivalTime,
-    status: 'Scheduled',
-    gate: undefined,
-    terminal: undefined,
-    delay: 0
-  };
+  // Return null if no authentic data found
+  console.log('No authentic flight data found for:', code);
+  return null;
 }
 
 // Try multiple free flight data sources
@@ -352,7 +345,7 @@ async function lookupAviationStack(flightNumber: string, date: string): Promise<
     
     console.log('Calling AviationStack API for flight:', flightNumber, 'on date:', date);
     const response = await fetch(url);
-    const data = await response.json();
+    const data = await response.json() as any;
 
     console.log('AviationStack response:', JSON.stringify(data, null, 2));
 
