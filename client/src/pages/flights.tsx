@@ -14,6 +14,7 @@ export default function Flights() {
   const { tripId } = useParams<{ tripId: string }>();
   const { toast } = useToast();
   const [showBookingQuestion, setShowBookingQuestion] = useState(false);
+  const [showFlightForm, setShowFlightForm] = useState(false);
   const [flightForm, setFlightForm] = useState({
     flightNumber: "",
     departureDate: ""
@@ -40,6 +41,7 @@ export default function Flights() {
       refetchFlights();
       setFlightForm({ flightNumber: "", departureDate: "" });
       setShowBookingQuestion(false);
+      setShowFlightForm(false);
       toast({
         title: "Flight added",
         description: "Your flight information has been added and verified."
@@ -127,13 +129,19 @@ export default function Flights() {
                 <p>Have you already booked your flight for this trip?</p>
                 <div className="flex gap-3">
                   <Button 
-                    onClick={() => setShowBookingQuestion(false)}
+                    onClick={() => {
+                      setShowBookingQuestion(false);
+                      setShowFlightForm(true);
+                    }}
                     variant="outline"
                   >
                     Yes, I have booked
                   </Button>
                   <Button 
-                    onClick={handleBookingRedirect}
+                    onClick={() => {
+                      handleBookingRedirect();
+                      setShowBookingQuestion(false);
+                    }}
                     variant="outline"
                   >
                     No, help me book
@@ -145,9 +153,9 @@ export default function Flights() {
         </div>
 
         {/* Flight Details Dialog - shown when user says they have booked */}
-        <Dialog open={showBookingQuestion === false} onOpenChange={(open) => {
+        <Dialog open={showFlightForm} onOpenChange={(open) => {
           if (!open) {
-            setShowBookingQuestion(true);
+            setShowFlightForm(false);
             setFlightForm({ flightNumber: "", departureDate: "" });
           }
         }}>
