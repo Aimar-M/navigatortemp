@@ -156,7 +156,8 @@ export default function Flights() {
 
   // Debug logging
   console.log('Loading states:', { isUserLoading, isTripLoading, isFlightsLoading });
-  console.log('Data:', { user: !!user, trip: !!trip, tripId });
+  console.log('Data:', { user: !!user, trip: !!trip, tripId, parsedTripId: parseInt(tripId) });
+  console.log('Trip query enabled:', !!tripId && !isNaN(parseInt(tripId)));
 
   if (isUserLoading || isTripLoading || isFlightsLoading) {
     return (
