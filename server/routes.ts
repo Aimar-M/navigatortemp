@@ -467,7 +467,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log('Received trip update data:', req.body);
-      const tripData = insertTripSchema.partial().parse(req.body);
+      
+      // Convert string dates to Date objects before validation
+      const bodyWithDates = {
+        ...req.body,
+        ...(req.body.startDate && { startDate: new Date(req.body.startDate) }),
+        ...(req.body.endDate && { endDate: new Date(req.body.endDate) })
+      };
+      
+      const tripData = insertTripSchema.partial().parse(bodyWithDates);
       console.log('Parsed trip data:', tripData);
       const updatedTrip = await storage.updateTrip(tripId, tripData);
       
