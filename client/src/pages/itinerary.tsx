@@ -1,15 +1,12 @@
 import { useState } from "react";
-import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { Plus, CalendarPlus } from "lucide-react";
+import { useParams } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Plus, CalendarPlus, Plane, Clock, MapPin, AlertCircle, CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
-import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import Header from "@/components/header";
-import MobileNavigation from "@/components/mobile-navigation";
-import TripTabs from "@/components/trip-tabs";
+import TripDetailLayout from "@/components/trip-detail-layout";
 import ActivityCard from "@/components/activity-card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -23,17 +20,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 export default function Itinerary() {
   const { id } = useParams<{ id: string }>();
-  const tripId = parseInt(id);
-  const [, navigate] = useLocation();
+  const tripId = parseInt(id!);
   const { toast } = useToast();
   const { user } = useAuth();
   const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
+  const [isAddFlightModalOpen, setIsAddFlightModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
+  const [flightBookingStatus, setFlightBookingStatus] = useState("unknown"); // "booked" | "not_booked" | "unknown"
+  
+  const [activityFormData, setActivityFormData] = useState({
     name: "",
     description: "",
     date: "",
@@ -41,505 +44,534 @@ export default function Itinerary() {
     duration: "",
     cost: "",
   });
-  
-  // Helper function to generate an array of dates between start and end dates
-  const getDaysBetweenDates = (startDate: Date, endDate: Date): string[] => {
-    const dates: string[] = [];
-    // Clone the start date to avoid modifying the original date
-    const currentDate = new Date(startDate);
-    
-    // Set hours to 0 to compare dates only - fix timezone issues
-    currentDate.setUTCHours(0, 0, 0, 0);
-    const lastDate = new Date(endDate);
-    lastDate.setUTCHours(0, 0, 0, 0);
-    
-    // Add each date until we reach the end date
-    while (currentDate <= lastDate) {
-      // Use UTC to avoid timezone issues
-      const year = currentDate.getUTCFullYear();
-      const month = String(currentDate.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(currentDate.getUTCDate()).padStart(2, '0');
-      dates.push(`${year}-${month}-${day}`);
-      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-    }
-    
-    return dates;
-  };
+
+  const [flightFormData, setFlightFormData] = useState({
+    flightNumber: "",
+    airline: "",
+    departureAirport: "",
+    arrivalAirport: "",
+    departureDate: "",
+    departureTime: "",
+    arrivalDate: "",
+    arrivalTime: "",
+    bookingReference: "",
+    seatNumber: "",
+    price: "",
+  });
 
   // Fetch trip details
   const { data: trip, isLoading: isTripLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}`],
-    queryFn: async () => {
-      // Get auth token for token-based authentication
-      const token = localStorage.getItem('auth_token');
-      
-      // Add token to authorization header
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetch(`/api/trips/${tripId}`, {
-        headers,
-      });
-      if (!response.ok) throw new Error("Failed to fetch trip");
-      return response.json();
-    },
     enabled: !!tripId && !!user,
   });
 
   // Fetch trip activities
-  const { data: activities, isLoading: isActivitiesLoading } = useQuery({
+  const { data: activities = [], isLoading: isActivitiesLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}/activities`],
-    queryFn: async () => {
-      // Get auth token for token-based authentication
-      const token = localStorage.getItem('auth_token');
-      
-      // Add token to authorization header
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetch(`/api/trips/${tripId}/activities`, {
-        headers,
-      });
-      if (!response.ok) throw new Error("Failed to fetch activities");
-      return response.json();
-    },
     enabled: !!tripId && !!user,
   });
+
+  // Fetch flight information
+  const { data: flights = [], isLoading: isFlightsLoading } = useQuery({
+    queryKey: [`/api/trips/${tripId}/flights`],
+    enabled: !!tripId && !!user,
+  });
+
+  // Check if current user has added flight info
+  const userFlight = flights.find((flight: any) => flight.userId === user?.id);
 
   // Check if user is organizer
   const isOrganizer = trip && user && trip.organizer === user.id;
 
-  // Group activities by date
-  const groupedActivities = activities
-    ? activities.reduce((grouped: Record<string, any[]>, activity: any) => {
-        console.log("Processing activity:", activity);
-        const date = formatDate(new Date(activity.date));
-        if (!grouped[date]) {
-          grouped[date] = [];
-        }
-        grouped[date].push(activity);
-        return grouped;
-      }, {})
-    : {};
-    
-  console.log("Grouped activities:", groupedActivities);
+  // Add flight mutation
+  const addFlightMutation = useMutation({
+    mutationFn: async (flightData: any) => {
+      return await apiRequest("POST", `/api/trips/${tripId}/flights`, flightData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/flights`] });
+      setIsAddFlightModalOpen(false);
+      setFlightFormData({
+        flightNumber: "",
+        airline: "",
+        departureAirport: "",
+        arrivalAirport: "",
+        departureDate: "",
+        departureTime: "",
+        arrivalDate: "",
+        arrivalTime: "",
+        bookingReference: "",
+        seatNumber: "",
+        price: "",
+      });
+      setFlightBookingStatus("unknown");
+      toast({
+        title: "Flight information added",
+        description: "Your flight details have been saved successfully."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add flight information",
+        variant: "destructive"
+      });
+    }
+  });
 
-  // Sort dates
-  const sortedDates = Object.keys(groupedActivities).sort(
-    (a, b) => new Date(a).getTime() - new Date(b).getTime()
-  );
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      description: "",
-      date: "",
-      location: "",
-      duration: "",
-      cost: "",
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-
+  // Handle adding new activity
+  const handleAddActivity = async () => {
     setIsSubmitting(true);
     try {
-      // Validate required fields
-      if (!formData.name || !formData.date) {
-        toast({
-          title: "Missing information",
-          description: "Please provide a name and date for the activity",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Format date properly
-      let dateValue = formData.date;
-      
-      // Create a proper date object
-      const dateObj = new Date(dateValue);
-      if (isNaN(dateObj.getTime())) {
-        toast({
-          title: "Invalid date",
-          description: "Please enter a valid date and time",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Always use ISO format for consistency
-      dateValue = dateObj.toISOString();
-      
-      // Prepare data for submission
-      const activityData = {
-        name: formData.name,
-        description: formData.description,
-        date: dateValue,
-        location: formData.location,
-        tripId,
-        duration: formData.duration ? parseInt(formData.duration) : undefined,
-        cost: formData.cost,
-      };
-
-      // Get auth token for our token-based authentication
-      const token = localStorage.getItem('auth_token');
-      
-      console.log("Submitting activity data:", activityData);
-      
-      // Use direct fetch with authentication headers instead of apiRequest
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetch(`/api/trips/${tripId}/activities`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(activityData)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Failed to create activity: ${errorData.message || response.status}`);
-      }
-      
-      const createdActivity = await response.json();
-      
-      // Refresh data
+      await apiRequest("POST", `/api/trips/${tripId}/activities`, activityFormData);
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/activities`] });
-      
-      // UI updates
       setIsAddActivityModalOpen(false);
-      resetForm();
-      
-      toast({
-        title: "Activity created",
-        description: "Your activity has been added to the itinerary",
+      setActivityFormData({
+        name: "",
+        description: "",
+        date: "",
+        location: "",
+        duration: "",
+        cost: "",
       });
-    } catch (error) {
-      console.error("Error creating activity:", error);
-      
-      // Show more specific error message if possible
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      
       toast({
-        title: "Error creating activity",
-        description: errorMessage.includes(":") ? 
-          errorMessage.split(":")[1].trim() : 
-          "There was a problem creating your activity. Please try again.",
-        variant: "destructive",
+        title: "Activity added",
+        description: "The activity has been added to the itinerary."
       });
-    } finally {
-      setIsSubmitting(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add activity",
+        variant: "destructive"
+      });
+    }
+    setIsSubmitting(false);
+  };
+
+  // Handle adding flight information
+  const handleAddFlight = () => {
+    if (flightBookingStatus === "booked") {
+      addFlightMutation.mutate({
+        ...flightFormData,
+        status: "booked",
+        isBooked: true
+      });
+    } else {
+      // For not booked flights, redirect to flight search
+      toast({
+        title: "Flight search",
+        description: "Redirecting to flight booking options..."
+      });
+      // Here we would integrate with flight booking APIs
     }
   };
 
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
-
-  if (isTripLoading) {
+  if (isTripLoading || isActivitiesLoading || isFlightsLoading || !user || !trip) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        <Header />
-        <div className="flex-1 flex justify-center items-center">
-          <Skeleton className="h-12 w-12 rounded-full" />
+      <TripDetailLayout tripId={tripId}>
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
         </div>
-      </div>
-    );
-  }
-
-  if (!trip) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        <Header />
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Trip not found</h1>
-          <p className="text-gray-600 mb-4">The trip you're looking for doesn't exist or you don't have access to it.</p>
-          <Button onClick={() => navigate("/")}>Return Home</Button>
-        </div>
-      </div>
+      </TripDetailLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header />
-      
-      <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0">
-        {/* Trip Header */}
-        <div className="bg-white border-b border-gray-200 p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center">
-                <h2 className="text-xl font-bold text-gray-900">{trip.name}</h2>
+    <TripDetailLayout 
+      tripId={tripId}
+      title="Itinerary"
+      description={`Plan your activities and manage flights for ${trip.name}`}
+    >
+      <Tabs defaultValue="activities" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="activities">Activities</TabsTrigger>
+          <TabsTrigger value="flights">Flight Information</TabsTrigger>
+        </TabsList>
+
+        {/* Activities Tab */}
+        <TabsContent value="activities">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Trip Activities</h2>
+                <p className="text-muted-foreground">
+                  {isOrganizer ? "Manage activities for your group" : "View planned activities"}
+                </p>
               </div>
-              <p className="text-sm text-gray-600">Itinerary</p>
-            </div>
-            {isOrganizer && (
-              <Button onClick={() => setIsAddActivityModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Activity
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <TripTabs tripId={tripId} />
-
-        {/* Itinerary Content */}
-        <div className="flex-1 overflow-y-auto p-4 pb-8">
-          {isActivitiesLoading ? (
-            <div className="space-y-6">
-              {[1, 2].map((dayIndex) => (
-                <div key={dayIndex} className="mb-6">
-                  <Skeleton className="h-6 w-40 mb-3" />
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <Card key={i}>
-                        <CardContent className="p-3">
-                          <div className="flex justify-between">
-                            <div>
-                              <Skeleton className="h-3 w-20 mb-1" />
-                              <Skeleton className="h-5 w-40 mb-1" />
-                              <Skeleton className="h-4 w-60" />
-                            </div>
-                            <Skeleton className="h-6 w-16 rounded-full" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : sortedDates.length > 0 ? (
-            <div className="space-y-6">
-              {sortedDates.map((date) => (
-                <div key={date} className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">{date}</h3>
-                  <div className="space-y-3">
-                    {groupedActivities[date]
-                      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                      .map((activity: any) => (
-                        <ActivityCard
-                          key={activity.id}
-                          id={activity.id}
-                          name={activity.name}
-                          description={activity.description}
-                          date={activity.date}
-                          location={activity.location}
-                          confirmedCount={activity.rsvps?.filter((r: any) => r.status === 'going').length || 0}
-                          totalCount={activity.rsvps?.length || 0}
-                          rsvps={activity.rsvps}
-                        />
-                      ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <CalendarPlus className="h-16 w-16 text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-700">No activities planned yet</h3>
-              <p className="text-gray-500 mt-1 mb-4 max-w-md">
-                Plan your trip by adding activities to your itinerary.
-              </p>
               {isOrganizer && (
                 <Button onClick={() => setIsAddActivityModalOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add First Activity
+                  Add Activity
                 </Button>
               )}
             </div>
-          )}
-        </div>
-      </main>
-      
-      <MobileNavigation />
 
-      {/* Add Activity Modal */}
-      <Dialog open={isAddActivityModalOpen} onOpenChange={setIsAddActivityModalOpen}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add Activity</DialogTitle>
-            <DialogDescription>
-              Create a new activity for your trip itinerary.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4 py-2">
-              <div className="grid gap-3">
-                <div>
-                  <label htmlFor="name" className="text-sm font-medium text-gray-700 mb-1 block">
-                    Activity Name
-                  </label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="e.g., Sagrada Familia Tour"
-                    required
+            {activities && activities.length > 0 ? (
+              <div className="space-y-4">
+                {activities.map((activity: any) => (
+                  <ActivityCard
+                    key={activity.id}
+                    activity={activity}
+                    canEdit={isOrganizer}
                   />
-                </div>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <CalendarPlus className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-medium mb-2">No activities planned yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {isOrganizer ? "Start planning your trip by adding activities" : "Activities will appear here once the organizer adds them"}
+                  </p>
+                  {isOrganizer && (
+                    <Button onClick={() => setIsAddActivityModalOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add First Activity
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
 
-                <div>
-                  <label htmlFor="date" className="text-sm font-medium text-gray-700 mb-1 block">
-                    Date & Time
-                  </label>
-                  <div className="space-y-2">
-                    <Input
-                      type="datetime-local"
-                      id="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleChange}
-                      min={trip?.startDate ? new Date(trip.startDate).toISOString().slice(0, 16) : undefined}
-                      max={trip?.endDate ? new Date(new Date(trip.endDate).setHours(23, 59)).toISOString().slice(0, 16) : undefined}
-                      required
-                    />
-                    
-                    {/* Quick date selection options */}
-                    {trip && trip.startDate && trip.endDate && (
-                      <div className="mt-2">
-                        <div className="text-xs text-gray-500 mb-1">Quick select from trip dates:</div>
-                        {/* Generate buttons for first few days of the trip */}
-                        <div className="flex flex-wrap gap-2">
-                          {(() => {
-                            const days = getDaysBetweenDates(new Date(trip.startDate), new Date(trip.endDate));
-                            
-                            // Only show max 4 days for cleaner UI
-                            return days.slice(0, Math.min(4, days.length)).map((day: string, index: number) => {
-                              const formattedDate = new Date(day);
-                              // Set to noon by default for better UX
-                              formattedDate.setHours(12, 0, 0, 0);
-                              
-                              const dateValue = formattedDate.toISOString().slice(0, 16);
-                              
-                              // Format like "Tue, May 12"
-                              const dateFormatter = new Intl.DateTimeFormat('en-US', { 
-                                weekday: 'short', 
-                                month: 'short', 
-                                day: 'numeric' 
-                              });
-                              const formattedDateStr = dateFormatter.format(formattedDate);
-                              
-                              return (
-                                <Button
-                                  key={day}
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-xs px-2 py-1 h-auto flex flex-col items-center"
-                                  onClick={() => setFormData(prev => ({ ...prev, date: dateValue }))}
-                                >
-                                  <span className="font-medium">Day {index + 1}</span>
-                                  <span className="text-gray-500">{formattedDateStr}</span>
-                                </Button>
-                              );
-                            });
-                          })()}
+        {/* Flights Tab */}
+        <TabsContent value="flights">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Flight Information</h2>
+                <p className="text-muted-foreground">Manage your flight details and view group flights</p>
+              </div>
+              {!userFlight && (
+                <Button onClick={() => setIsAddFlightModalOpen(true)}>
+                  <Plane className="h-4 w-4 mr-2" />
+                  Add Flight Info
+                </Button>
+              )}
+            </div>
+
+            {/* User's Flight Status */}
+            {userFlight ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    Your Flight Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Flight</p>
+                      <p className="font-medium">{userFlight.airline} {userFlight.flightNumber}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Route</p>
+                      <p className="font-medium">{userFlight.departureAirport} → {userFlight.arrivalAirport}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Departure</p>
+                      <p className="font-medium">{userFlight.departureDate} at {userFlight.departureTime}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Arrival</p>
+                      <p className="font-medium">{userFlight.arrivalDate} at {userFlight.arrivalTime}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Plane className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-medium mb-2">No flight information added</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Add your flight details to help coordinate with your group
+                  </p>
+                  <Button onClick={() => setIsAddFlightModalOpen(true)}>
+                    <Plane className="h-4 w-4 mr-2" />
+                    Add Flight Details
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Group Flight Information */}
+            {flights && flights.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Group Flight Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {flights.map((flight: any) => (
+                      <div key={flight.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-medium">{flight.user?.name || flight.user?.username}</p>
+                          <Badge variant={flight.status === "booked" ? "default" : "secondary"}>
+                            {flight.status === "booked" ? "Booked" : "Searching"}
+                          </Badge>
                         </div>
+                        {flight.status === "booked" && (
+                          <div className="grid md:grid-cols-3 gap-2 text-sm text-muted-foreground">
+                            <p>{flight.airline} {flight.flightNumber}</p>
+                            <p>{flight.departureAirport} → {flight.arrivalAirport}</p>
+                            <p>{flight.departureDate} at {flight.departureTime}</p>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    ))}
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
 
-                <div>
-                  <label htmlFor="location" className="text-sm font-medium text-gray-700 mb-1 block">
-                    Location
-                  </label>
-                  <Input
-                    id="location"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    placeholder="Activity location"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="duration" className="text-sm font-medium text-gray-700 mb-1 block">
-                      Duration (minutes)
-                    </label>
-                    <Input
-                      type="number"
-                      id="duration"
-                      name="duration"
-                      value={formData.duration}
-                      onChange={handleChange}
-                      placeholder="e.g., 120"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="cost" className="text-sm font-medium text-gray-700 mb-1 block">
-                      Cost
-                    </label>
-                    <Input
-                      id="cost"
-                      name="cost"
-                      value={formData.cost}
-                      onChange={handleChange}
-                      placeholder="e.g., $25 per person"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="description" className="text-sm font-medium text-gray-700 mb-1 block">
-                    Description
-                  </label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    placeholder="Provide details about this activity"
-                    rows={3}
-                  />
-                </div>
+      {/* Add Activity Dialog */}
+      <Dialog open={isAddActivityModalOpen} onOpenChange={setIsAddActivityModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Activity</DialogTitle>
+            <DialogDescription>Add an activity to the trip itinerary</DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label>Activity Name</Label>
+              <Input
+                value={activityFormData.name}
+                onChange={(e) => setActivityFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g., Visit Eiffel Tower"
+              />
+            </div>
+            
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                value={activityFormData.description}
+                onChange={(e) => setActivityFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe the activity..."
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={activityFormData.date}
+                  onChange={(e) => setActivityFormData(prev => ({ ...prev, date: e.target.value }))}
+                />
+              </div>
+              
+              <div>
+                <Label>Duration</Label>
+                <Input
+                  value={activityFormData.duration}
+                  onChange={(e) => setActivityFormData(prev => ({ ...prev, duration: e.target.value }))}
+                  placeholder="e.g., 2 hours"
+                />
               </div>
             </div>
-            <DialogFooter className="mt-4 sm:justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsAddActivityModalOpen(false);
-                  resetForm();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting || !formData.name || !formData.date}>
-                {isSubmitting ? "Adding..." : "Add Activity"}
-              </Button>
-            </DialogFooter>
-          </form>
+            
+            <div>
+              <Label>Location</Label>
+              <Input
+                value={activityFormData.location}
+                onChange={(e) => setActivityFormData(prev => ({ ...prev, location: e.target.value }))}
+                placeholder="Activity location"
+              />
+            </div>
+            
+            <div>
+              <Label>Cost (optional)</Label>
+              <Input
+                value={activityFormData.cost}
+                onChange={(e) => setActivityFormData(prev => ({ ...prev, cost: e.target.value }))}
+                placeholder="e.g., $25 per person"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddActivityModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddActivity}
+              disabled={isSubmitting || !activityFormData.name || !activityFormData.date}
+            >
+              {isSubmitting ? "Adding..." : "Add Activity"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      {/* Add Flight Dialog */}
+      <Dialog open={isAddFlightModalOpen} onOpenChange={setIsAddFlightModalOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add Flight Information</DialogTitle>
+            <DialogDescription>
+              Add your flight details to coordinate with your group
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Flight Booking Status */}
+            <div>
+              <Label className="text-base font-medium">Have you already booked your flight?</Label>
+              <RadioGroup 
+                value={flightBookingStatus} 
+                onValueChange={setFlightBookingStatus}
+                className="mt-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="booked" id="booked" />
+                  <Label htmlFor="booked">Yes, I have booked my flight</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="not_booked" id="not_booked" />
+                  <Label htmlFor="not_booked">No, I need to book a flight</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {flightBookingStatus === "booked" && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Airline</Label>
+                    <Input
+                      value={flightFormData.airline}
+                      onChange={(e) => setFlightFormData(prev => ({ ...prev, airline: e.target.value }))}
+                      placeholder="e.g., American Airlines"
+                    />
+                  </div>
+                  <div>
+                    <Label>Flight Number</Label>
+                    <Input
+                      value={flightFormData.flightNumber}
+                      onChange={(e) => setFlightFormData(prev => ({ ...prev, flightNumber: e.target.value }))}
+                      placeholder="e.g., AA123"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Departure Airport</Label>
+                    <Input
+                      value={flightFormData.departureAirport}
+                      onChange={(e) => setFlightFormData(prev => ({ ...prev, departureAirport: e.target.value }))}
+                      placeholder="e.g., JFK"
+                    />
+                  </div>
+                  <div>
+                    <Label>Arrival Airport</Label>
+                    <Input
+                      value={flightFormData.arrivalAirport}
+                      onChange={(e) => setFlightFormData(prev => ({ ...prev, arrivalAirport: e.target.value }))}
+                      placeholder="e.g., LAX"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Departure Date & Time</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="date"
+                        value={flightFormData.departureDate}
+                        onChange={(e) => setFlightFormData(prev => ({ ...prev, departureDate: e.target.value }))}
+                      />
+                      <Input
+                        type="time"
+                        value={flightFormData.departureTime}
+                        onChange={(e) => setFlightFormData(prev => ({ ...prev, departureTime: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Arrival Date & Time</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="date"
+                        value={flightFormData.arrivalDate}
+                        onChange={(e) => setFlightFormData(prev => ({ ...prev, arrivalDate: e.target.value }))}
+                      />
+                      <Input
+                        type="time"
+                        value={flightFormData.arrivalTime}
+                        onChange={(e) => setFlightFormData(prev => ({ ...prev, arrivalTime: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Booking Reference (optional)</Label>
+                    <Input
+                      value={flightFormData.bookingReference}
+                      onChange={(e) => setFlightFormData(prev => ({ ...prev, bookingReference: e.target.value }))}
+                      placeholder="e.g., ABC123"
+                    />
+                  </div>
+                  <div>
+                    <Label>Seat Number (optional)</Label>
+                    <Input
+                      value={flightFormData.seatNumber}
+                      onChange={(e) => setFlightFormData(prev => ({ ...prev, seatNumber: e.target.value }))}
+                      placeholder="e.g., 12A"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {flightBookingStatus === "not_booked" && (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <Plane className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-medium mb-2">Flight Search & Booking</h3>
+                    <p className="text-muted-foreground mb-4">
+                      We'll help you find and book the best flights for your trip
+                    </p>
+                    <Badge variant="secondary">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      Flight API integration required
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddFlightModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddFlight}
+              disabled={addFlightMutation.isPending || flightBookingStatus === "unknown"}
+            >
+              {addFlightMutation.isPending ? "Saving..." : 
+               flightBookingStatus === "booked" ? "Save Flight Details" : 
+               flightBookingStatus === "not_booked" ? "Search Flights" : "Continue"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </TripDetailLayout>
   );
 }
