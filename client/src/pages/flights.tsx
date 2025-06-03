@@ -41,7 +41,7 @@ export default function Flights() {
 
   // Add flight mutation
   const addFlightMutation = useMutation({
-    mutationFn: async (data: { flightNumber: string; arrivalDate: string }) => {
+    mutationFn: async (data: { flightNumber: string; departureDate: string }) => {
       return await apiRequest("POST", `/api/trips/${tripId}/flights`, data);
     },
     onSuccess: () => {
@@ -65,7 +65,7 @@ export default function Flights() {
 
   // Edit flight mutation
   const editFlightMutation = useMutation({
-    mutationFn: async (data: { flightNumber: string; arrivalDate: string }) => {
+    mutationFn: async (data: { flightNumber: string; departureDate: string }) => {
       return await apiRequest("PUT", `/api/flights/${editingFlight.id}`, data);
     },
     onSuccess: () => {
@@ -120,7 +120,7 @@ export default function Flights() {
 
     const flightData = {
       flightNumber: flightForm.flightNumber.toUpperCase().trim(),
-      arrivalDate: flightForm.departureDate
+      departureDate: flightForm.departureDate
     };
 
     if (editingFlight) {
@@ -134,7 +134,7 @@ export default function Flights() {
     setEditingFlight(flight);
     setFlightForm({
       flightNumber: flight.flightNumber,
-      departureDate: flight.arrivalDate
+      departureDate: flight.flightDetails?.userProvidedDepartureDate || flight.departureTime || flight.arrivalTime
     });
     setShowFlightForm(true);
   };
@@ -328,8 +328,10 @@ export default function Flights() {
                     <div>
                       <span className="font-medium">Departure Date:</span>
                       <p>
-                        {flight.arrivalDate 
-                          ? new Date(flight.arrivalDate).toLocaleDateString()
+                        {flight.flightDetails?.userProvidedDepartureDate 
+                          ? new Date(flight.flightDetails.userProvidedDepartureDate).toLocaleDateString()
+                          : flight.departureTime 
+                          ? new Date(flight.departureTime).toLocaleDateString()
                           : "TBD"
                         }
                       </p>
