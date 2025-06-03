@@ -154,9 +154,13 @@ export default function Flights() {
     updateFlightMutation.mutate(updateData);
   };
 
-  if (isUserLoading || isTripLoading || isFlightsLoading || !user || !trip) {
+  // Debug logging
+  console.log('Loading states:', { isUserLoading, isTripLoading, isFlightsLoading });
+  console.log('Data:', { user: !!user, trip: !!trip, tripId });
+
+  if (isUserLoading || isTripLoading || isFlightsLoading) {
     return (
-      <TripDetailLayout tripId={tripId}>
+      <TripDetailLayout tripId={parseInt(tripId)}>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
@@ -167,8 +171,20 @@ export default function Flights() {
     );
   }
 
+  if (!user || !trip) {
+    return (
+      <TripDetailLayout tripId={parseInt(tripId)}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p>Unable to load trip or user data</p>
+          </div>
+        </div>
+      </TripDetailLayout>
+    );
+  }
+
   return (
-    <TripDetailLayout tripId={tripId}>
+    <TripDetailLayout tripId={parseInt(tripId)}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Flight Information</h2>
