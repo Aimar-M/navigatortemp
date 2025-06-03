@@ -1971,8 +1971,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Not authorized to update this flight information' });
       }
       
-      const flightUpdate = req.body;
-      const updatedFlight = await storage.updateFlightInfo(flightId, flightUpdate);
+      // If flight number is being updated, re-verify airline information
+      let flightInfo = null;
+      if (req.body.flightNumber && req.body.flightNumber !== flight.flightNumber) {
+        try {
+          const { lookupFlightInfo } = await import('./flight-lookup');
+          flightInfo = await lookupFlightInfo(req.body.flightNumber, req.body.arrivalDate || flight.flightDetails?.userProvidedArrivalDate);
+          console.log('Flight lookup result for update:', flightInfo);
+        } catch (error) {
+          console.log('Flight lookup failed during update:', (error as Error).message);
+        }
+      }
+
+      // Prepare update data
+      const updateData: any = {};
+      
+      if (req.body.flightNumber) {
+        updateData.flightNumber = req.body.flightNumber.toUpperCase().trim();
+        // Update airline if we have verified data
+        if (flightInfo?.airline) {
+          updateData.airline = flightInfo.airline;
+          updateData.notes = `Airline verified: ${flightInfo.airline}`;
+        }
+      }
+      
+      if (req.body.arrivalDate) {
+        updateData.arrivalTime = new Date(req.body.arrivalDate);
+        updateData.departureTime = new Date(req.body.arrivalDate);
+        // Update flight details with new date
+        updateData.flightDetails = {
+          ...flight.flightDetails,
+          userProvidedArrivalDate: req.body.arrivalDate,
+          verifiedAirline: flightInfo?.airline || flight.flightDetails?.verifiedAirline
+        };
+      }
+
+      const updatedFlight = await storage.updateFlightInfo(flightId, updateData);
       
       // Notify trip members about the updated flight information
       broadcastToTrip(wss, flight.tripId, {
