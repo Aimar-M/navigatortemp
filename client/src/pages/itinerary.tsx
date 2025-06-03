@@ -248,15 +248,36 @@ export default function Itinerary() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Flight Number</p>
-                      <p className="font-medium">{userFlight.flightDetails?.userProvidedFlightNumber || userFlight.flightNumber}</p>
+                  <div className="space-y-3">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Flight</p>
+                        <p className="font-medium">{userFlight.airline !== 'TBD' ? userFlight.airline : ''} {userFlight.flightNumber}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Status</p>
+                        <p className="font-medium">{userFlight.flightDetails?.flightStatus || 'Scheduled'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Arrival Date</p>
-                      <p className="font-medium">{userFlight.flightDetails?.userProvidedArrivalDate || userFlight.arrivalTime?.split('T')[0]}</p>
-                    </div>
+                    
+                    {userFlight.departureAirport !== 'TBD' && userFlight.arrivalAirport !== 'TBD' && (
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Departure</p>
+                          <p className="font-medium">{userFlight.departureAirport} → {userFlight.arrivalAirport}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Arrival Time</p>
+                          <p className="font-medium">{new Date(userFlight.arrivalTime).toLocaleString()}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {userFlight.flightDetails?.hasRealTimeData && (
+                      <div className="text-xs text-green-600">
+                        ✓ Real-time flight data
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
