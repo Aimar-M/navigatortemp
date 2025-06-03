@@ -295,7 +295,7 @@ export default function Itinerary() {
                         {flight.status === "booked" && (
                           <div className="grid md:grid-cols-2 gap-2 text-sm text-muted-foreground">
                             <p>Flight: {flight.flightNumber}</p>
-                            <p>Arrives: {flight.arrivalDate} at {flight.arrivalTime}</p>
+                            <p>Arrives: {flight.arrivalDate}</p>
                           </div>
                         )}
                       </div>
