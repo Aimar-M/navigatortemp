@@ -1853,7 +1853,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           gate: flightInfo?.gate,
           terminal: flightInfo?.terminal,
           delay: flightInfo?.delay,
-          flightStatus: flightInfo?.status
+          flightStatus: flightInfo?.status,
+          departureTime: flightInfo?.departureTime,
+          arrivalTime: flightInfo?.arrivalTime
         },
       });
       
