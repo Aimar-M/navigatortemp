@@ -405,7 +405,6 @@ export default function Flights() {
                     })
                     .map((flight: any) => {
                       const flightUser = (members as any[]).find((member: any) => member.userId === flight.userId);
-                      console.log('Flight user data:', flightUser); // Debug log
                       return (
                         <Card key={flight.id}>
                           <CardHeader>
