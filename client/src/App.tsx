@@ -18,6 +18,7 @@ import Polls from "@/pages/polls";
 import InvitationPage from "@/pages/invite";
 import Profile from "@/pages/profile";
 import UserProfile from "@/pages/user-profile";
+import BudgetDashboard from "@/pages/budget-dashboard";
 
 function Router() {
   return (
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/trips" component={TripsCalendar} />
       <Route path="/chat/:id" component={Chat} />
       <Route path="/invite/:token" component={InvitationPage} />
+      <Route path="/budget-dashboard" component={BudgetDashboard} />
       <Route path="/profile" component={Profile} />
       <Route path="/user/:userId" component={UserProfile} />
       <Route component={NotFound} />
