@@ -2446,10 +2446,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const members = await storage.getTripMembers(tripId);
           const memberCount = members.length;
           
-          // Calculate trip duration
+          // Calculate trip duration safely
           const startDate = new Date(trip.startDate);
           const endDate = new Date(trip.endDate);
-          const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+          const duration = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+          
+          // Get real expenses data
+          const expenses = await storage.getExpensesByTrip(tripId);
+          const expensesByCategory = {
+            accommodation: 0,
+            food: 0,
+            transportation: 0,
+            activities: 0,
+            incidentals: 0,
+            flights: 0
+          };
+          
+          // Categorize actual expenses
+          expenses.forEach(expense => {
+            const amount = parseFloat(expense.amount?.toString() || '0');
+            const category = expense.category?.toLowerCase() || 'incidentals';
+            if (expensesByCategory.hasOwnProperty(category)) {
+              expensesByCategory[category as keyof typeof expensesByCategory] += amount;
+            } else {
+              expensesByCategory.incidentals += amount;
+            }
+          });
           
           // Get activities with costs
           const activities = await storage.getActivitiesByTrip(tripId);
@@ -2457,11 +2479,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return sum + (activity.cost ? parseFloat(activity.cost.toString()) : 0);
           }, 0);
           
-          // Get expenses
-          const expenses = await storage.getExpensesByTrip(tripId);
-          const expensesTotal = expenses.reduce((sum, expense) => {
-            return sum + (expense.amount || 0);
-          }, 0);
+          // Add activity costs to activities category
+          expensesByCategory.activities += activitiesTotal;
           
           // Get flight information
           const flights = await storage.getFlightInfoByTrip(tripId);
@@ -2469,19 +2488,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return sum + (flight.price ? parseFloat(flight.price.toString()) : 0);
           }, 0);
           
-          // Calculate estimated budget based on destination and duration
-          // This would ideally come from saved budget estimates
-          const estimatedBudget = {
-            accommodation: duration * 80 * memberCount,
-            food: duration * 50 * memberCount,
-            transportation: duration * 30 * memberCount,
-            activities: Math.max(activitiesTotal, duration * 40 * memberCount),
-            incidentals: duration * 20 * memberCount,
-            flights: Math.max(flightsTotal, 400 * memberCount)
-          };
+          // Add flight costs to flights category
+          expensesByCategory.flights += flightsTotal;
           
-          const totalEstimated = Object.values(estimatedBudget).reduce((sum, val) => sum + val, 0);
-          const totalActual = expensesTotal;
+          const totalActual = Object.values(expensesByCategory).reduce((sum, val) => sum + val, 0);
           
           return {
             tripId: trip.id,
@@ -2492,8 +2502,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             memberCount,
             duration,
             budgetData: {
-              ...estimatedBudget,
-              total: totalEstimated,
+              ...expensesByCategory,
+              total: totalActual,
               actualSpent: totalActual,
               currency: 'USD'
             },
