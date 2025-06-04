@@ -874,13 +874,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const activities = await storage.getActivitiesByTrip(tripId);
       
-      // For each activity, get the RSVPs
+      // For each activity, get the RSVPs and calculate counts
       const activitiesWithRsvps = await Promise.all(
         activities.map(async (activity) => {
           const rsvps = await storage.getActivityRSVPs(activity.id);
+          const confirmedCount = rsvps.filter(rsvp => rsvp.status === 'going').length;
+          const totalCount = members.length; // Total trip members
+          
           return {
             ...activity,
-            rsvps
+            rsvps,
+            confirmedCount,
+            totalCount
           };
         })
       );
