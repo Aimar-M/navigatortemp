@@ -67,11 +67,12 @@ export default function BudgetDashboard() {
       flights: 0
     };
 
-    // Calculate monthly breakdown
+    // Calculate monthly breakdown with individual trip data
     const monthlyData: Record<string, any> = {};
+    const tripColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff88', '#ff6b6b', '#8dd1e1', '#d084d0'];
     
     // Process each trip using real budget data
-    const processedTrips = yearTrips.map((trip: any) => {
+    const processedTrips = yearTrips.map((trip: any, index: number) => {
       const startDate = new Date(trip.startDate);
       const total = trip.budgetData.total;
 
@@ -82,13 +83,32 @@ export default function BudgetDashboard() {
         }
       });
 
-      // Add to monthly data
+      // Add to monthly data with individual trip tracking
       const monthKey = startDate.toLocaleDateString('en-US', { month: 'short' });
       if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { month: monthKey, amount: 0, trips: 0 };
+        monthlyData[monthKey] = { 
+          month: monthKey, 
+          total: 0, 
+          trips: [],
+          tripDetails: []
+        };
       }
-      monthlyData[monthKey].amount += total;
-      monthlyData[monthKey].trips += 1;
+      
+      const tripColor = tripColors[index % tripColors.length];
+      const tripEntry = {
+        name: trip.tripName,
+        amount: total,
+        color: tripColor,
+        destination: trip.destination
+      };
+      
+      monthlyData[monthKey].total += total;
+      monthlyData[monthKey].trips.push(tripEntry);
+      monthlyData[monthKey].tripDetails.push({
+        [`trip_${index}`]: total,
+        [`trip_${index}_name`]: trip.tripName,
+        [`trip_${index}_color`]: tripColor
+      });
 
       return {
         tripId: trip.tripId,
@@ -105,14 +125,29 @@ export default function BudgetDashboard() {
 
     const totalBudget = Object.values(categoryTotals).reduce((sum, val) => sum + val, 0);
 
+    // Format monthly data for stacked bar chart
+    const formattedMonthlyData = Object.values(monthlyData).map((monthData: any) => {
+      const barData: any = { month: monthData.month, total: monthData.total };
+      
+      // Add each trip as a separate data point for stacking
+      monthData.trips.forEach((trip: any, index: number) => {
+        barData[`trip_${index}`] = trip.amount;
+        barData[`trip_${index}_name`] = trip.name;
+        barData[`trip_${index}_color`] = trip.color;
+      });
+      
+      return barData;
+    }).sort((a: any, b: any) => {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return months.indexOf(a.month) - months.indexOf(b.month);
+    });
+
     return {
       trips: processedTrips,
       categoryTotals,
       totalBudget,
-      monthlyData: Object.values(monthlyData).sort((a: any, b: any) => {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return months.indexOf(a.month) - months.indexOf(b.month);
-      }),
+      monthlyData: formattedMonthlyData,
+      rawMonthlyData: monthlyData,
       upcomingTrips: processedTrips.filter(trip => trip.status === 'upcoming'),
       ongoingTrips: processedTrips.filter(trip => trip.status === 'ongoing'),
       pastTrips: processedTrips.filter(trip => trip.status === 'past')
@@ -293,13 +328,57 @@ export default function BudgetDashboard() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={processedData.monthlyData}>
+                    <BarChart data={processedData.monthlyData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
                       <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                      <Tooltip formatter={(value: any) => [`$${value.toLocaleString()}`, 'Amount']} />
-                      <Line type="monotone" dataKey="amount" stroke="#8884d8" strokeWidth={2} />
-                    </LineChart>
+                      <Tooltip 
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length > 0) {
+                            const monthData = processedData.rawMonthlyData[label];
+                            return (
+                              <div className="bg-white p-3 border border-gray-200 rounded shadow-lg">
+                                <p className="font-semibold">{label}</p>
+                                <p className="text-sm text-gray-600 mb-2">
+                                  Total: ${monthData?.total?.toLocaleString()}
+                                </p>
+                                {monthData?.trips?.map((trip: any, index: number) => (
+                                  <div key={index} className="flex items-center gap-2 text-sm">
+                                    <div 
+                                      className="w-3 h-3 rounded-full" 
+                                      style={{ backgroundColor: trip.color }}
+                                    />
+                                    <span>{trip.name}: ${trip.amount.toLocaleString()}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      {/* Dynamically render bars for each trip */}
+                      {processedData.monthlyData.length > 0 && 
+                        Object.keys(processedData.monthlyData[0])
+                          .filter(key => key.startsWith('trip_') && !key.includes('_name') && !key.includes('_color'))
+                          .map((tripKey, index) => {
+                            const colorKey = `${tripKey}_color`;
+                            const nameKey = `${tripKey}_name`;
+                            const color = processedData.monthlyData[0][colorKey] || COLORS[index % COLORS.length];
+                            const tripName = processedData.monthlyData[0][nameKey] || `Trip ${index + 1}`;
+                            
+                            return (
+                              <Bar 
+                                key={tripKey} 
+                                dataKey={tripKey} 
+                                stackId="trips"
+                                fill={color}
+                                name={tripName}
+                              />
+                            );
+                          })
+                      }
+                    </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
