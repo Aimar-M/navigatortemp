@@ -15,6 +15,7 @@ import { Plus, MapPin, Clock, DollarSign, Users, Calendar } from "lucide-react";
 import ActivityCard from "@/components/activity-card";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Itinerary() {
   const { id } = useParams<{ id: string }>();
@@ -48,6 +49,37 @@ export default function Itinerary() {
     queryKey: [`/api/trips/${tripId}/activities`],
     enabled: !!tripId && !!user,
   });
+
+  // Generate trip days for the date selector
+  const generateTripDays = () => {
+    if (!trip?.startDate || !trip?.endDate) return [];
+    
+    const startDate = new Date(trip.startDate);
+    const endDate = new Date(trip.endDate);
+    const days = [];
+    
+    const currentDate = new Date(startDate);
+    let dayNumber = 1;
+    
+    while (currentDate <= endDate) {
+      const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
+      const monthDay = currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      days.push({
+        value: currentDate.toISOString().split('T')[0], // YYYY-MM-DD format
+        label: `Day ${dayNumber} - ${dayName}, ${monthDay}`,
+        dayNumber,
+        date: new Date(currentDate)
+      });
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+      dayNumber++;
+    }
+    
+    return days;
+  };
+
+  const tripDays = generateTripDays();
 
   // Check if user is organizer
   const isOrganizer = trip && user && (trip as any).organizerId === (user as any).id;
@@ -210,13 +242,22 @@ export default function Itinerary() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="activity-date">Date *</Label>
-                <Input
-                  id="activity-date"
-                  type="date"
+                <Label htmlFor="activity-date">Trip Day *</Label>
+                <Select
                   value={activityFormData.date}
-                  onChange={(e) => setActivityFormData(prev => ({ ...prev, date: e.target.value }))}
-                />
+                  onValueChange={(value) => setActivityFormData(prev => ({ ...prev, date: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a day..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tripDays.map((day) => (
+                      <SelectItem key={day.value} value={day.value}>
+                        {day.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
