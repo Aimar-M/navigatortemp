@@ -2423,6 +2423,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PROFILE MANAGEMENT ROUTES
   
   // Update user profile
+  // Budget Dashboard API - Get aggregated budget data for all user's trips
+  router.get('/budget/dashboard', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      // Get all trips for the user
+      const userTrips = await storage.getTripsByUser(user.id);
+      const userMemberships = await storage.getTripMembershipsByUser(user.id);
+      
+      // Get all trip IDs where user is a member
+      const memberTripIds = userMemberships.map(membership => membership.tripId);
+      const allTripIds = [...new Set([...userTrips.map(trip => trip.id), ...memberTripIds])];
+      
+      // Fetch detailed trip data with budget information
+      const tripsWithBudgets = await Promise.all(
+        allTripIds.map(async (tripId) => {
+          const trip = await storage.getTrip(tripId);
+          if (!trip) return null;
+          
+          const members = await storage.getTripMembers(tripId);
+          const memberCount = members.length;
+          
+          // Calculate trip duration
+          const startDate = new Date(trip.startDate);
+          const endDate = new Date(trip.endDate);
+          const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          // Get activities with costs
+          const activities = await storage.getActivitiesByTrip(tripId);
+          const activitiesTotal = activities.reduce((sum, activity) => {
+            return sum + (activity.cost ? parseFloat(activity.cost.toString()) : 0);
+          }, 0);
+          
+          // Get expenses
+          const expenses = await storage.getExpensesByTrip(tripId);
+          const expensesTotal = expenses.reduce((sum, expense) => {
+            return sum + (expense.amount || 0);
+          }, 0);
+          
+          // Get flight information
+          const flights = await storage.getFlightInfoByTrip(tripId);
+          const flightsTotal = flights.reduce((sum, flight) => {
+            return sum + (flight.price ? parseFloat(flight.price.toString()) : 0);
+          }, 0);
+          
+          // Calculate estimated budget based on destination and duration
+          // This would ideally come from saved budget estimates
+          const estimatedBudget = {
+            accommodation: duration * 80 * memberCount,
+            food: duration * 50 * memberCount,
+            transportation: duration * 30 * memberCount,
+            activities: Math.max(activitiesTotal, duration * 40 * memberCount),
+            incidentals: duration * 20 * memberCount,
+            flights: Math.max(flightsTotal, 400 * memberCount)
+          };
+          
+          const totalEstimated = Object.values(estimatedBudget).reduce((sum, val) => sum + val, 0);
+          const totalActual = expensesTotal;
+          
+          return {
+            tripId: trip.id,
+            tripName: trip.name,
+            destination: trip.destination,
+            startDate: trip.startDate,
+            endDate: trip.endDate,
+            memberCount,
+            duration,
+            budgetData: {
+              ...estimatedBudget,
+              total: totalEstimated,
+              actualSpent: totalActual,
+              currency: 'USD'
+            },
+            status: endDate < new Date() ? 'past' : startDate <= new Date() ? 'ongoing' : 'upcoming'
+          };
+        })
+      );
+      
+      const validTrips = tripsWithBudgets.filter(Boolean);
+      res.json(validTrips);
+      
+    } catch (error) {
+      console.error('Error fetching budget dashboard data:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   router.put('/users/profile', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);

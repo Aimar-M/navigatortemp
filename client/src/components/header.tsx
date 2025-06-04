@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Bell, ChevronDown, Menu, MessageCircle, CalendarPlus, UserPlus } from "lucide-react";
+import { Bell, ChevronDown, Menu, MessageCircle, CalendarPlus, UserPlus, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -128,6 +128,17 @@ export default function Header() {
 
         {user ? (
           <div className="flex items-center space-x-2">
+            {/* Budget Dashboard Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-500 hover:bg-gray-100"
+              onClick={() => navigate("/budget-dashboard")}
+              title="Budget Dashboard"
+            >
+              <PieChart className="h-5 w-5" />
+            </Button>
+
             <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
               <DropdownMenuTrigger asChild>
                 <Button
