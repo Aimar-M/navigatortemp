@@ -263,25 +263,46 @@ export default function BudgetDashboard() {
                   <CardTitle>Spending by Category</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={pieChartData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percentage }) => `${name}: ${percentage}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {pieChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: any) => [`$${value.toLocaleString()}`, 'Amount']} />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                    <div className="flex-1">
+                      <ResponsiveContainer width="100%" height={250}>
+                        <PieChart>
+                          <Pie
+                            data={pieChartData}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {pieChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value: any) => [`$${value.toLocaleString()}`, 'Amount']} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    
+                    {/* Custom Legend for Mobile */}
+                    <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 lg:w-48">
+                      {pieChartData.map((entry, index) => {
+                        const total = pieChartData.reduce((sum, item) => sum + item.value, 0);
+                        const percent = total > 0 ? ((entry.value / total) * 100).toFixed(0) : '0';
+                        return (
+                          <div key={entry.name} className="flex items-center gap-2 text-sm">
+                            <div
+                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            />
+                            <span className="text-xs lg:text-sm truncate">
+                              {entry.name} ({percent}%)
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
