@@ -33,7 +33,7 @@ interface TripBudget {
 export default function BudgetDashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
-  const [viewMode, setViewMode] = useState<'overview' | 'monthly' | 'by-trip'>('overview');
+  const [viewMode, setViewMode] = useState<'overview' | 'by-trip'>('overview');
 
   // Fetch all user trips with budget data
   const { data: trips, isLoading: tripsLoading } = useQuery({
@@ -191,7 +191,6 @@ export default function BudgetDashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="overview">Overview</SelectItem>
-                  <SelectItem value="monthly">Monthly View</SelectItem>
                   <SelectItem value="by-trip">By Trip</SelectItem>
                 </SelectContent>
               </Select>
