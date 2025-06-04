@@ -293,13 +293,13 @@ export default function BudgetDashboard() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={processedData.monthlyData}>
+                    <BarChart data={processedData.monthlyData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
                       <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
                       <Tooltip formatter={(value: any) => [`$${value.toLocaleString()}`, 'Amount']} />
-                      <Line type="monotone" dataKey="amount" stroke="#8884d8" strokeWidth={2} />
-                    </LineChart>
+                      <Bar dataKey="amount" fill="#8884d8" />
+                    </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
