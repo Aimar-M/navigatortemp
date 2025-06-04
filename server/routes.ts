@@ -809,11 +809,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       try {
-        // Convert date string to Date object before validation
+        // Convert date string to Date object and handle empty strings before validation
         const data = {
           ...req.body,
           tripId,
-          date: req.body.date ? new Date(req.body.date) : undefined
+          date: req.body.date ? new Date(req.body.date) : undefined,
+          duration: req.body.duration === '' ? null : req.body.duration,
+          cost: req.body.cost === '' ? null : req.body.cost
         };
         
         console.log('Activity data before validation:', data);
