@@ -47,12 +47,12 @@ export default function BudgetDashboard() {
     enabled: !!user,
   });
 
-  // Process trip data for dashboard visualization
+  // Process real budget data for dashboard visualization
   const processedData = useMemo(() => {
-    if (!trips || !Array.isArray(trips)) return null;
+    if (!budgetData || !Array.isArray(budgetData)) return null;
     
     const currentYear = parseInt(selectedYear);
-    const yearTrips = trips.filter((trip: any) => {
+    const yearTrips = budgetData.filter((trip: any) => {
       const tripYear = new Date(trip.startDate).getFullYear();
       return tripYear === currentYear;
     });
@@ -70,35 +70,16 @@ export default function BudgetDashboard() {
     // Calculate monthly breakdown
     const monthlyData: Record<string, any> = {};
     
-    // Process each trip
+    // Process each trip using real budget data
     const processedTrips = yearTrips.map((trip: any) => {
       const startDate = new Date(trip.startDate);
-      const endDate = new Date(trip.endDate);
-      const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      const currentDate = new Date();
-      
-      let status: 'upcoming' | 'ongoing' | 'past' = 'upcoming';
-      if (startDate <= currentDate && endDate >= currentDate) {
-        status = 'ongoing';
-      } else if (endDate < currentDate) {
-        status = 'past';
-      }
-
-      // Mock budget data - in real implementation, this would come from the budget API
-      const estimatedBudget = {
-        accommodation: duration * 80 * (trip.memberCount || 1),
-        food: duration * 50 * (trip.memberCount || 1),
-        transportation: duration * 30 * (trip.memberCount || 1),
-        activities: duration * 40 * (trip.memberCount || 1),
-        incidentals: duration * 20 * (trip.memberCount || 1),
-        flights: 400 * (trip.memberCount || 1)
-      };
-
-      const total = Object.values(estimatedBudget).reduce((sum, val) => sum + val, 0);
+      const total = trip.budgetData.total;
 
       // Add to category totals
-      Object.entries(estimatedBudget).forEach(([key, value]) => {
-        categoryTotals[key as keyof typeof categoryTotals] += value;
+      Object.entries(trip.budgetData).forEach(([key, value]) => {
+        if (key !== 'total' && key !== 'actualSpent' && key !== 'currency' && typeof value === 'number') {
+          categoryTotals[key as keyof typeof categoryTotals] += value;
+        }
       });
 
       // Add to monthly data
@@ -110,19 +91,15 @@ export default function BudgetDashboard() {
       monthlyData[monthKey].trips += 1;
 
       return {
-        tripId: trip.id,
-        tripName: trip.name,
+        tripId: trip.tripId,
+        tripName: trip.tripName,
         destination: trip.destination,
         startDate: trip.startDate,
         endDate: trip.endDate,
-        memberCount: trip.memberCount || 1,
-        duration,
-        budgetData: {
-          ...estimatedBudget,
-          total,
-          currency: 'USD'
-        },
-        status
+        memberCount: trip.memberCount,
+        duration: trip.duration,
+        budgetData: trip.budgetData,
+        status: trip.status
       };
     });
 
@@ -140,7 +117,7 @@ export default function BudgetDashboard() {
       ongoingTrips: processedTrips.filter(trip => trip.status === 'ongoing'),
       pastTrips: processedTrips.filter(trip => trip.status === 'past')
     };
-  }, [trips, selectedYear]);
+  }, [budgetData, selectedYear]);
 
   // Chart data preparation
   const pieChartData = processedData ? Object.entries(processedData.categoryTotals).map(([category, amount]) => ({
