@@ -49,7 +49,13 @@ export default function ActivityCard({
       await apiRequest("POST", `/api/activities/${id}/rsvp`, { status });
       
       // Invalidate and refetch activities to update the UI
-      await queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
+      const currentUrl = window.location.pathname;
+      const tripId = currentUrl.split('/')[2]; // Extract tripId from URL like /trip/39
+      
+      if (tripId) {
+        await queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/activities`] });
+      }
+      await queryClient.invalidateQueries({ queryKey: [`/api/activities`] });
       
       toast({
         title: status === "going" ? "You're going!" : "You're not going",
