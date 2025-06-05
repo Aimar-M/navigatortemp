@@ -1016,6 +1016,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status
         });
       }
+
+      // Auto-create expense for prepaid activities when user confirms attendance
+      if (status === 'going' && activity.paymentType === 'prepaid' && activity.cost) {
+        try {
+          // Check if expense already exists for this user and activity
+          const existingExpenses = await storage.getExpensesByTrip(activity.tripId);
+          const existingActivityExpense = existingExpenses.find(expense => 
+            expense.activityId === activityId && 
+            expense.splits?.some(split => split.userId === user.id)
+          );
+
+          if (!existingActivityExpense) {
+            // Find the activity creator (who is paying for the activity)
+            // For now, we'll use the first trip member as the payer - this should be configurable
+            const tripMembers = await storage.getTripMembers(activity.tripId);
+            const activityCreatorId = tripMembers[0]?.userId || user.id;
+            
+            // Create expense
+            const expense = await storage.createExpense({
+              tripId: activity.tripId,
+              title: `${activity.name} - Prepaid Activity`,
+              amount: activity.cost,
+              currency: 'USD',
+              category: 'activities',
+              description: `Auto-generated expense for prepaid activity: ${activity.name}`,
+              paidBy: activityCreatorId,
+              activityId: activityId,
+              date: new Date()
+            });
+
+            // Create split for the user who joined
+            await storage.createExpenseSplit({
+              expenseId: expense.id,
+              userId: user.id,
+              amount: activity.cost
+            });
+          }
+        } catch (expenseError) {
+          console.error('Error creating activity expense:', expenseError);
+          // Don't fail the RSVP if expense creation fails
+        }
+      }
       
       res.json(rsvp);
     } catch (error) {
