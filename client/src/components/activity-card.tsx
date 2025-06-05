@@ -150,9 +150,20 @@ export default function ActivityCard({
               {confirmedCount}/{totalCount} Going
             </Badge>
             {maxParticipants && (
-              <Badge variant="secondary" className="text-xs">
-                Cap: {maxParticipants}
-              </Badge>
+              <div className="flex flex-col items-end gap-1">
+                <Badge variant="secondary" className="text-xs">
+                  Cap: {maxParticipants}
+                </Badge>
+                <Badge 
+                  variant={maxParticipants - confirmedCount <= 0 ? "destructive" : maxParticipants - confirmedCount <= 3 ? "default" : "outline"} 
+                  className="text-xs"
+                >
+                  {maxParticipants - confirmedCount > 0 
+                    ? `${maxParticipants - confirmedCount} spots left`
+                    : "Full"
+                  }
+                </Badge>
+              </div>
             )}
           </div>
         </div>
