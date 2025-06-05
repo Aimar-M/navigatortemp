@@ -82,7 +82,8 @@ export default function ActivityCard({
   };
   
   return (
-    <Card className="border border-gray-200 rounded-lg">
+    <Card className="border border-gray-200 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => window.location.href = `/activities/${id}`}>
       <CardContent className="p-3">
         <div className="flex justify-between items-start">
           <div>
