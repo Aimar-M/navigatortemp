@@ -46,7 +46,7 @@ export default function ActivityDetails() {
     queryKey: [`/api/activities/${activityId}`],
   });
 
-  const { data: currentUser } = useQuery({
+  const { data: currentUser } = useQuery<{ id: number; name: string; email: string }>({
     queryKey: ["/api/auth/me"],
   });
 
