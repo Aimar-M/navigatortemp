@@ -321,44 +321,63 @@ export const insertInvitationLinkSchema = createInsertSchema(invitationLinks).pi
 export type InvitationLink = typeof invitationLinks.$inferSelect;
 export type InsertInvitationLink = z.infer<typeof insertInvitationLinkSchema>;
 
-// Trip Expenses schema
+// Trip Expenses schema - rebuilt for activity integration
 export const expenses = pgTable("expenses", {
   id: serial("id").primaryKey(),
   tripId: integer("trip_id").notNull().references(() => trips.id),
-  userId: integer("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   currency: text("currency").notNull().default("USD"),
   category: text("category").notNull(), // accommodation, transportation, food, activities, other
   date: timestamp("date").notNull().defaultNow(),
   description: text("description"),
-  paidBy: integer("paid_by").notNull().references(() => users.id),
-  splitMethod: text("split_method").notNull().default("equal"), // equal, percentage, fixed, etc.
-  splitDetails: jsonb("split_details"), // For storing details of custom splits
+  paidBy: integer("paid_by").notNull().references(() => users.id), // Who paid for this expense
+  activityId: integer("activity_id").references(() => activities.id), // Link to activity if auto-created from RSVP
   isSettled: boolean("is_settled").notNull().default(false),
   receiptUrl: text("receipt_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const expensesRelations = relations(expenses, ({ one }) => ({
+// Expense splits - who owes what for each expense
+export const expenseSplits = pgTable("expense_splits", {
+  id: serial("id").primaryKey(),
+  expenseId: integer("expense_id").notNull().references(() => expenses.id),
+  userId: integer("user_id").notNull().references(() => users.id), // Who owes this amount
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(), // How much they owe
+  isPaid: boolean("is_paid").notNull().default(false),
+  paidAt: timestamp("paid_at"),
+});
+
+export const expensesRelations = relations(expenses, ({ one, many }) => ({
   trip: one(trips, {
     fields: [expenses.tripId],
     references: [trips.id]
   }),
-  user: one(users, {
-    fields: [expenses.userId],
+  paidBy: one(users, {
+    fields: [expenses.paidBy],
     references: [users.id]
   }),
-  payer: one(users, {
-    fields: [expenses.paidBy],
+  activity: one(activities, {
+    fields: [expenses.activityId],
+    references: [activities.id]
+  }),
+  splits: many(expenseSplits)
+}));
+
+export const expenseSplitsRelations = relations(expenseSplits, ({ one }) => ({
+  expense: one(expenses, {
+    fields: [expenseSplits.expenseId],
+    references: [expenses.id]
+  }),
+  user: one(users, {
+    fields: [expenseSplits.userId],
     references: [users.id]
   })
 }));
 
 export const insertExpenseSchema = createInsertSchema(expenses).pick({
   tripId: true,
-  userId: true,
   title: true,
   amount: true,
   currency: true,
@@ -366,10 +385,20 @@ export const insertExpenseSchema = createInsertSchema(expenses).pick({
   date: true,
   description: true,
   paidBy: true,
-  splitMethod: true,
-  splitDetails: true,
+  activityId: true,
   receiptUrl: true,
 });
+
+export const insertExpenseSplitSchema = createInsertSchema(expenseSplits).pick({
+  expenseId: true,
+  userId: true,
+  amount: true,
+});
+
+export type Expense = typeof expenses.$inferSelect;
+export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+export type ExpenseSplit = typeof expenseSplits.$inferSelect;
+export type InsertExpenseSplit = z.infer<typeof insertExpenseSplitSchema>;
 
 // Flight Information schema
 export const flightInfo = pgTable("flight_info", {
@@ -426,39 +455,7 @@ export const insertFlightInfoSchema = createInsertSchema(flightInfo).pick({
   flightDetails: true,
 });
 
-// Define expense types using existing schema
-export type Expense = typeof expenses.$inferSelect;
-export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 
-export const expenseSplits = pgTable("expense_splits", {
-  id: serial("id").primaryKey(),
-  expenseId: integer("expense_id").notNull().references(() => expenses.id),
-  userId: integer("user_id").notNull().references(() => users.id),
-  amount: text("amount").notNull(),
-  settled: boolean("settled").notNull().default(false),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-export const expenseSplitsRelations = relations(expenseSplits, ({ one }) => ({
-  expense: one(expenses, {
-    fields: [expenseSplits.expenseId],
-    references: [expenses.id]
-  }),
-  user: one(users, {
-    fields: [expenseSplits.userId],
-    references: [users.id]
-  }),
-}));
-
-export const insertExpenseSplitSchema = createInsertSchema(expenseSplits).pick({
-  expenseId: true,
-  userId: true,
-  amount: true,
-  settled: true,
-});
-
-export type ExpenseSplit = typeof expenseSplits.$inferSelect;
-export type InsertExpenseSplit = z.infer<typeof insertExpenseSplitSchema>;
 
 export type FlightInfo = typeof flightInfo.$inferSelect;
 export type InsertFlightInfo = z.infer<typeof insertFlightInfoSchema>;
