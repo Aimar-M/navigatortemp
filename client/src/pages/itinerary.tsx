@@ -37,6 +37,7 @@ export default function Itinerary() {
     duration: "",
     cost: "",
     paymentType: "free",
+    maxParticipants: "",
   });
 
   // Fetch trip details
@@ -101,6 +102,7 @@ export default function Itinerary() {
         duration: "",
         cost: "",
         paymentType: "free",
+        maxParticipants: "",
       });
       toast({
         title: "Activity added",
@@ -142,6 +144,7 @@ export default function Itinerary() {
       const activityData = {
         ...activityFormData,
         cost: activityFormData.cost ? activityFormData.cost : null,
+        maxParticipants: activityFormData.maxParticipants ? parseInt(activityFormData.maxParticipants) : null,
       };
 
       addActivityMutation.mutate(activityData);
@@ -331,6 +334,19 @@ export default function Itinerary() {
                   <p className="text-sm text-red-600 mt-1">Cost is required for paid activities</p>
                 )}
               </div>
+
+              <div>
+                <Label htmlFor="activity-max-participants">Registration cap on participants (optional)</Label>
+                <Input
+                  id="activity-max-participants"
+                  type="number"
+                  min="1"
+                  value={activityFormData.maxParticipants}
+                  onChange={(e) => setActivityFormData(prev => ({ ...prev, maxParticipants: e.target.value }))}
+                  placeholder="e.g., 10"
+                />
+                <p className="text-sm text-gray-500 mt-1">Leave empty for unlimited participants</p>
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
@@ -346,6 +362,7 @@ export default function Itinerary() {
                     duration: "",
                     cost: "",
                     paymentType: "free",
+                    maxParticipants: "",
                   });
                 }}
               >
