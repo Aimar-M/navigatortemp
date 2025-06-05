@@ -174,7 +174,10 @@ export default function ActivityCard({
           <Button
             size="sm"
             variant={userStatus === "going" ? "default" : "outline"}
-            onClick={() => handleRsvp("going")}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRsvp("going");
+            }}
             disabled={isSubmitting}
             className={`flex items-center h-8 ${userStatus === "going" ? "bg-green-600 hover:bg-green-700" : ""}`}
           >
@@ -184,7 +187,10 @@ export default function ActivityCard({
           <Button
             size="sm"
             variant={userStatus === "not going" ? "default" : "outline"}
-            onClick={() => handleRsvp("not going")}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRsvp("not going");
+            }}
             disabled={isSubmitting}
             className={`flex items-center h-8 ${userStatus === "not going" ? "bg-red-600 hover:bg-red-700" : ""}`}
           >
