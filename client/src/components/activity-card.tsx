@@ -18,6 +18,7 @@ interface ActivityCardProps {
   duration?: number;
   cost?: string;
   paymentType?: string;
+  maxParticipants?: number;
   confirmedCount: number;
   totalCount: number;
   rsvps?: any[];
@@ -31,6 +32,7 @@ export default function ActivityCard({
   location,
   cost,
   paymentType,
+  maxParticipants,
   confirmedCount,
   totalCount,
   rsvps = [],
@@ -124,9 +126,16 @@ export default function ActivityCard({
               </div>
             )}
           </div>
-          <Badge variant="outline" className="bg-primary-100 text-primary-800 text-xs font-medium px-2 py-1 rounded-full">
-            {confirmedCount}/{totalCount} Going
-          </Badge>
+          <div className="flex flex-col items-end gap-1">
+            <Badge variant="outline" className="bg-primary-100 text-primary-800 text-xs font-medium px-2 py-1 rounded-full">
+              {confirmedCount}/{totalCount} Going
+            </Badge>
+            {maxParticipants && (
+              <Badge variant="secondary" className="text-xs">
+                Cap: {maxParticipants}
+              </Badge>
+            )}
+          </div>
         </div>
         
         {/* RSVP Buttons */}
