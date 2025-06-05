@@ -142,6 +142,7 @@ export const activities = pgTable("activities", {
   location: text("location"),
   duration: integer("duration"),
   cost: text("cost"),
+  paymentType: text("payment_type").notNull().default("free"), // free, payment_onsite, prepaid
 });
 
 export const activitiesRelations = relations(activities, ({ one, many }) => ({
@@ -160,6 +161,7 @@ export const insertActivitySchema = createInsertSchema(activities).pick({
   location: true,
   duration: true,
   cost: true,
+  paymentType: true,
 });
 
 // ActivityRSVP schema

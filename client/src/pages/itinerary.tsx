@@ -36,6 +36,7 @@ export default function Itinerary() {
     location: "",
     duration: "",
     cost: "",
+    paymentType: "free",
   });
 
   // Fetch trip details
@@ -99,6 +100,7 @@ export default function Itinerary() {
         location: "",
         duration: "",
         cost: "",
+        paymentType: "free",
       });
       toast({
         title: "Activity added",
@@ -283,6 +285,23 @@ export default function Itinerary() {
               </div>
 
               <div>
+                <Label htmlFor="activity-payment-type">Payment Type</Label>
+                <Select 
+                  value={activityFormData.paymentType} 
+                  onValueChange={(value) => setActivityFormData(prev => ({ ...prev, paymentType: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="payment_onsite">Payment Onsite</SelectItem>
+                    <SelectItem value="prepaid">Prepaid by Activity Creator</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <Label htmlFor="activity-cost">Cost (optional)</Label>
                 <Input
                   id="activity-cost"
@@ -308,6 +327,7 @@ export default function Itinerary() {
                     location: "",
                     duration: "",
                     cost: "",
+                    paymentType: "free",
                   });
                 }}
               >
