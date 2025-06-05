@@ -814,7 +814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...req.body,
           tripId,
           date: req.body.date ? new Date(req.body.date) : undefined,
-          duration: req.body.duration === '' ? null : parseInt(req.body.duration) || null,
+          duration: req.body.duration === '' ? null : req.body.duration || null,
           cost: req.body.cost === '' ? null : req.body.cost
         };
         

@@ -15,7 +15,7 @@ interface ActivityCardProps {
   description?: string;
   date: string;
   location?: string;
-  duration?: number;
+  duration?: string;
   cost?: string;
   paymentType?: string;
   maxParticipants?: number;
