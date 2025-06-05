@@ -218,6 +218,7 @@ export default function Itinerary() {
                   duration={activity.duration}
                   cost={activity.cost}
                   paymentType={activity.paymentType}
+                  maxParticipants={activity.maxParticipants}
                   confirmedCount={activity.confirmedCount || 0}
                   totalCount={activity.totalCount || 0}
                   rsvps={activity.rsvps || []}
