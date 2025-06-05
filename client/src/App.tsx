@@ -20,6 +20,7 @@ import Profile from "@/pages/profile";
 import UserProfile from "@/pages/user-profile";
 import BudgetDashboard from "@/pages/budget-dashboard";
 import ActivityDetails from "@/pages/activity-details";
+import ExpenseTracker from "@/pages/expense-tracker";
 
 function Router() {
   return (
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/trips/:id/flights" component={Flights} />
       <Route path="/trips/:id/budget" component={TripBudget} />
       <Route path="/trips/:id/expenses" component={TripExpenses} />
+      <Route path="/trips/:id/expense-tracker" component={ExpenseTracker} />
       <Route path="/trips/:id/polls" component={Polls} />
       <Route path="/chats" component={Chats} />
       <Route path="/trips" component={TripsCalendar} />
