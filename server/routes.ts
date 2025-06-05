@@ -1370,6 +1370,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Server error' });
     }
   });
+
+  // Get individual activity details with RSVPs
+  router.get('/activities/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      const activityId = parseInt(req.params.id);
+      const activity = await storage.getActivity(activityId);
+      
+      if (!activity) {
+        return res.status(404).json({ message: 'Activity not found' });
+      }
+
+      // Get RSVPs for this activity
+      const rsvps = await storage.getActivityRSVPs(activityId);
+      
+      // Add user information to RSVPs
+      const rsvpsWithUsers = await Promise.all(
+        rsvps.map(async (rsvp) => {
+          const rsvpUser = await storage.getUser(rsvp.userId);
+          return {
+            ...rsvp,
+            user: {
+              id: rsvpUser?.id,
+              name: rsvpUser?.name || 'Unknown User',
+              avatar: rsvpUser?.avatar
+            }
+          };
+        })
+      );
+
+      const activityWithRSVPs = {
+        ...activity,
+        rsvps: rsvpsWithUsers
+      };
+
+      res.json(activityWithRSVPs);
+    } catch (error) {
+      console.error('Error fetching activity details:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // Invitation Links
   router.post('/trips/:id/invite', isAuthenticated, async (req: Request, res: Response) => {
     try {
