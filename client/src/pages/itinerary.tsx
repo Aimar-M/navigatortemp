@@ -141,7 +141,7 @@ export default function Itinerary() {
     try {
       const activityData = {
         ...activityFormData,
-        cost: activityFormData.cost ? parseFloat(activityFormData.cost) : null,
+        cost: activityFormData.cost ? activityFormData.cost : null,
       };
 
       addActivityMutation.mutate(activityData);
