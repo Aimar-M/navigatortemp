@@ -140,7 +140,7 @@ export const activities = pgTable("activities", {
   description: text("description"),
   date: timestamp("date").notNull(),
   location: text("location"),
-  duration: integer("duration"),
+  duration: text("duration"), // changed from integer to text for free-form input
   cost: text("cost"),
   paymentType: text("payment_type").notNull().default("free"), // free, payment_onsite, prepaid
   maxParticipants: integer("max_participants"), // optional registration cap
