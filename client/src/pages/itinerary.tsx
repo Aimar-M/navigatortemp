@@ -204,6 +204,7 @@ export default function Itinerary() {
                   location={activity.location}
                   duration={activity.duration}
                   cost={activity.cost}
+                  paymentType={activity.paymentType}
                   confirmedCount={activity.confirmedCount || 0}
                   totalCount={activity.totalCount || 0}
                   rsvps={activity.rsvps || []}

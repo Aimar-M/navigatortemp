@@ -17,6 +17,7 @@ interface ActivityCardProps {
   location?: string;
   duration?: number;
   cost?: string;
+  paymentType?: string;
   confirmedCount: number;
   totalCount: number;
   rsvps?: any[];
@@ -28,6 +29,8 @@ export default function ActivityCard({
   description,
   date,
   location,
+  cost,
+  paymentType,
   confirmedCount,
   totalCount,
   rsvps = [],
@@ -102,6 +105,23 @@ export default function ActivityCard({
                 </svg>
                 {location}
               </p>
+            )}
+            {(cost || paymentType) && (
+              <div className="flex items-center gap-2 mt-2">
+                {cost && (
+                  <span className="text-xs text-gray-600 font-medium">${cost}</span>
+                )}
+                {paymentType && (
+                  <Badge 
+                    variant={paymentType === 'free' ? 'secondary' : paymentType === 'prepaid' ? 'default' : 'outline'}
+                    className="text-xs"
+                  >
+                    {paymentType === 'free' ? 'Free' : 
+                     paymentType === 'payment_onsite' ? 'Pay Onsite' : 
+                     'Prepaid'}
+                  </Badge>
+                )}
+              </div>
             )}
           </div>
           <Badge variant="outline" className="bg-primary-100 text-primary-800 text-xs font-medium px-2 py-1 rounded-full">
