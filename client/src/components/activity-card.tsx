@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { formatDateTime } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -85,7 +85,7 @@ export default function ActivityCard({
       <CardContent className="p-3">
         <div className="flex justify-between items-start">
           <div>
-            <span className="text-xs text-gray-500">{formatDateTime(date)}</span>
+            <span className="text-xs text-gray-500">{formatDate(date)}</span>
             <h4 className="font-medium text-gray-900">{name}</h4>
             {description && (
               <p className="text-sm text-gray-600 mt-1">{description}</p>
