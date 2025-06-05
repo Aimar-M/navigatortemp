@@ -126,6 +126,16 @@ export default function Itinerary() {
       return;
     }
 
+    // Validate cost is required when payment type is not free
+    if (activityFormData.paymentType !== "free" && (!activityFormData.cost || parseFloat(activityFormData.cost) <= 0)) {
+      toast({
+        title: "Cost required",
+        description: "Please provide a cost when the activity is not free",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -303,7 +313,9 @@ export default function Itinerary() {
               </div>
 
               <div>
-                <Label htmlFor="activity-cost">Cost (optional)</Label>
+                <Label htmlFor="activity-cost">
+                  Cost {activityFormData.paymentType === "free" ? "(optional)" : "*"}
+                </Label>
                 <Input
                   id="activity-cost"
                   type="number"
@@ -311,8 +323,13 @@ export default function Itinerary() {
                   step="0.01"
                   value={activityFormData.cost}
                   onChange={(e) => setActivityFormData(prev => ({ ...prev, cost: e.target.value }))}
-                  placeholder="0.00"
+                  placeholder={activityFormData.paymentType === "free" ? "0.00" : "Enter cost amount"}
+                  required={activityFormData.paymentType !== "free"}
+                  className={activityFormData.paymentType !== "free" && !activityFormData.cost ? "border-red-300" : ""}
                 />
+                {activityFormData.paymentType !== "free" && !activityFormData.cost && (
+                  <p className="text-sm text-red-600 mt-1">Cost is required for paid activities</p>
+                )}
               </div>
             </div>
 
