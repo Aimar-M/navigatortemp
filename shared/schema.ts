@@ -144,6 +144,7 @@ export const activities = pgTable("activities", {
   cost: text("cost"),
   paymentType: text("payment_type").notNull().default("free"), // free, payment_onsite, prepaid
   maxParticipants: integer("max_participants"), // optional registration cap
+  createdBy: integer("created_by").references(() => users.id), // who created this activity
 });
 
 export const activitiesRelations = relations(activities, ({ one, many }) => ({

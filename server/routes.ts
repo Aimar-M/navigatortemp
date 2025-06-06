@@ -817,7 +817,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tripId,
           date: req.body.date ? new Date(req.body.date) : undefined,
           duration: req.body.duration === '' ? null : req.body.duration || null,
-          cost: req.body.cost === '' ? null : req.body.cost
+          cost: req.body.cost === '' ? null : req.body.cost,
+          createdBy: authUser.id
         };
         
         console.log('Activity data before validation:', data);
