@@ -103,7 +103,15 @@ export default function ExpensesPage() {
 
   const addExpenseMutation = useMutation({
     mutationFn: async (data: typeof newExpense) => {
-      return await apiRequest(`/api/trips/${tripId}/expenses`, "POST", {
+      console.log('Sending expense data:', {
+        title: data.title,
+        amount: parseFloat(data.amount),
+        category: data.category,
+        description: data.description,
+        paidBy: parseInt(data.paidBy),
+        splitWith: data.splitWith.map(id => parseInt(id))
+      });
+      return await apiRequest("POST", `/api/trips/${tripId}/expenses`, {
         title: data.title,
         amount: parseFloat(data.amount),
         category: data.category,

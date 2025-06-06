@@ -7,7 +7,7 @@ import { queryClient } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckIcon, XIcon } from "lucide-react";
+import { CheckIcon, XIcon, Trash2 } from "lucide-react";
 
 interface ActivityCardProps {
   id: number;
@@ -22,6 +22,7 @@ interface ActivityCardProps {
   confirmedCount: number;
   totalCount: number;
   rsvps?: any[];
+  createdBy?: number;
 }
 
 export default function ActivityCard({
@@ -37,6 +38,7 @@ export default function ActivityCard({
   confirmedCount,
   totalCount,
   rsvps = [],
+  createdBy,
 }: ActivityCardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -74,6 +76,43 @@ export default function ActivityCard({
       toast({
         title: "RSVP Failed",
         description: "There was a problem with your RSVP. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    
+    if (!confirm('Are you sure you want to delete this activity? This will also remove all related expenses and RSVPs.')) {
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      
+      await apiRequest("DELETE", `/api/activities/${id}`);
+      
+      // Invalidate and refetch activities to update the UI
+      const currentUrl = window.location.pathname;
+      const tripId = currentUrl.split('/')[2]; // Extract tripId from URL like /trip/39
+      
+      if (tripId) {
+        await queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/activities`] });
+      }
+      await queryClient.invalidateQueries({ queryKey: [`/api/activities`] });
+      
+      toast({
+        title: "Activity Deleted",
+        description: "The activity and all related data have been removed.",
+      });
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast({
+        title: "Delete Failed",
+        description: "There was a problem deleting the activity. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -169,34 +208,73 @@ export default function ActivityCard({
           </div>
         </div>
         
-        {/* RSVP Buttons */}
+        {/* RSVP Buttons or Delete Button */}
         <div className="flex justify-end space-x-2 mt-3">
-          <Button
-            size="sm"
-            variant={userStatus === "going" ? "default" : "outline"}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRsvp("going");
-            }}
-            disabled={isSubmitting}
-            className={`flex items-center h-8 ${userStatus === "going" ? "bg-green-600 hover:bg-green-700" : ""}`}
-          >
-            <CheckIcon className="h-4 w-4 mr-1" />
-            {userStatus === "going" ? "You're Going" : "Going"}
-          </Button>
-          <Button
-            size="sm"
-            variant={userStatus === "not going" ? "default" : "outline"}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRsvp("not going");
-            }}
-            disabled={isSubmitting}
-            className={`flex items-center h-8 ${userStatus === "not going" ? "bg-red-600 hover:bg-red-700" : ""}`}
-          >
-            <XIcon className="h-4 w-4 mr-1" />
-            Not Going
-          </Button>
+          {user?.id === createdBy && paymentType === 'prepaid' ? (
+            // For activity creators of prepaid activities - show delete button instead of RSVP
+            <>
+              <div className="text-xs text-gray-600 mr-2 self-center">
+                You created this activity
+              </div>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isSubmitting}
+                className="flex items-center h-8"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete Activity
+              </Button>
+            </>
+          ) : user?.id === createdBy ? (
+            // For activity creators of non-prepaid activities - show delete button along with going status
+            <>
+              <div className="text-xs text-gray-600 mr-2 self-center">
+                You created this activity
+              </div>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isSubmitting}
+                className="flex items-center h-8"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
+            </>
+          ) : (
+            // For regular users - show normal RSVP buttons
+            <>
+              <Button
+                size="sm"
+                variant={userStatus === "going" ? "default" : "outline"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRsvp("going");
+                }}
+                disabled={isSubmitting}
+                className={`flex items-center h-8 ${userStatus === "going" ? "bg-green-600 hover:bg-green-700" : ""}`}
+              >
+                <CheckIcon className="h-4 w-4 mr-1" />
+                {userStatus === "going" ? "You're Going" : "Going"}
+              </Button>
+              <Button
+                size="sm"
+                variant={userStatus === "not going" ? "default" : "outline"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRsvp("not going");
+                }}
+                disabled={isSubmitting}
+                className={`flex items-center h-8 ${userStatus === "not going" ? "bg-red-600 hover:bg-red-700" : ""}`}
+              >
+                <XIcon className="h-4 w-4 mr-1" />
+                Not Going
+              </Button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
