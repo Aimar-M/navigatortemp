@@ -256,10 +256,10 @@ export default function ActivityDetails() {
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={rsvp.user.avatar} />
                       <AvatarFallback className="bg-green-100 text-green-600">
-                        {rsvp.user.name.charAt(0).toUpperCase()}
+                        {(rsvp.user.name || rsvp.user.username || 'U').charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium text-gray-900">{rsvp.user.name}</span>
+                    <span className="text-sm font-medium text-gray-900">{rsvp.user.name || rsvp.user.username || 'Unknown User'}</span>
                   </div>
                 ))}
               </div>

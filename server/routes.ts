@@ -2862,6 +2862,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { title, amount, category, description, paidBy, splitWith } = req.body;
       
+      console.log('Creating manual expense:', { title, amount, category, description, paidBy, splitWith });
+      
+      // Validate required fields
+      if (!title || !amount || !paidBy) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
       // Create the expense
       const expense = await storage.createExpense({
         tripId,
@@ -2869,8 +2876,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: amount.toString(),
         currency: 'USD',
         category: category || 'food',
-        description,
-        paidBy,
+        description: description || null,
+        paidBy: parseInt(paidBy),
         date: new Date(),
       });
 
