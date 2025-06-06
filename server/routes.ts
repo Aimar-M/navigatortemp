@@ -1456,7 +1456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...rsvp,
             user: {
               id: rsvpUser?.id,
-              name: rsvpUser?.name || 'Unknown User',
+              name: rsvpUser?.name || rsvpUser?.username || 'Unknown User',
               avatar: rsvpUser?.avatar
             }
           };

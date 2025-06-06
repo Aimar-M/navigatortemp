@@ -52,7 +52,7 @@ export default function ActivityDetails() {
 
   const rsvpMutation = useMutation({
     mutationFn: async (status: string) => {
-      return await apiRequest(`/api/activities/${activityId}/rsvp`, "POST", { status });
+      return await apiRequest("POST", `/api/activities/${activityId}/rsvp`, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/activities/${activityId}`] });

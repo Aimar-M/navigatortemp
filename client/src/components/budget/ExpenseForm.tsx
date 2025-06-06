@@ -43,6 +43,7 @@ const expenseFormSchema = z.object({
   date: z.date(),
   description: z.string().optional(),
   paidBy: z.string().min(1, { message: "Please select who paid" }),
+  splitWith: z.array(z.string()).min(1, { message: "Must select at least one person to split with" }),
   splitMethod: z.string().default("equal"),
   receiptUrl: z.string().optional(),
 });
@@ -101,16 +102,10 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ tripId, expense, onSuccess })
 
       if (isEditing) {
         // Update existing expense
-        return await apiRequest(`/api/expenses/${expense.id}`, {
-          method: "PUT",
-          data: expenseData,
-        });
+        return await apiRequest("PUT", `/api/expenses/${expense.id}`, expenseData);
       } else {
         // Create new expense
-        return await apiRequest(`/api/trips/${tripId}/expenses`, {
-          method: "POST",
-          data: expenseData,
-        });
+        return await apiRequest("POST", `/api/trips/${tripId}/expenses`, expenseData);
       }
     },
     onSuccess: () => {
