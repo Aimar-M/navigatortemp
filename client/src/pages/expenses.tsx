@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "wouter";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -21,426 +23,503 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, DollarSign, Users, Receipt } from "lucide-react";
+import { Plus, DollarSign, Users, Receipt, Activity, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+interface ExpenseShare {
+  id: number;
+  userId: number;
+  amount: number;
+  isPaid: boolean;
+  user: {
+    id: number;
+    name: string;
+    username: string;
+  };
+}
 
 interface Expense {
   id: number;
-  description: string;
+  title: string;
   amount: number;
   category: string;
+  date: string;
+  description?: string;
   paidBy: number;
-  tripId: number;
-  createdAt: string;
-}
-
-interface Member {
-  userId: number;
-  username: string;
-  name?: string;
+  activityId?: number;
+  paidByUser: {
+    id: number;
+    name: string;
+    username: string;
+  };
+  activity?: {
+    id: number;
+    name: string;
+  };
+  shares: ExpenseShare[];
 }
 
 interface Balance {
   userId: number;
-  username: string;
   name: string;
-  owes: number;
-  owed: number;
-  net: number;
+  totalOwed: number;
+  totalPaid: number;
+  netBalance: number;
 }
 
 export default function ExpensesPage() {
   const { id: tripId } = useParams();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
-  // Form state
+  // Form state for manual expenses
   const [newExpense, setNewExpense] = useState({
-    description: "",
+    title: "",
     amount: "",
     category: "food",
-    paidBy: 0,
-    splitWith: [] as number[]
+    description: "",
+    paidBy: "",
+    splitWith: [] as string[]
   });
 
-  // Use React Query for data fetching like other pages
-  const { data: expenses = [], isLoading: expensesLoading } = useQuery({
+  // Fetch expenses
+  const { data: expenses = [], isLoading: expensesLoading } = useQuery<Expense[]>({
     queryKey: [`/api/trips/${tripId}/expenses`],
   });
 
+  // Fetch trip members
   const { data: members = [], isLoading: membersLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}/members`],
   });
 
-  const { data: balances = [], isLoading: balancesLoading } = useQuery({
+  // Fetch balances
+  const { data: balances = [], isLoading: balancesLoading } = useQuery<Balance[]>({
     queryKey: [`/api/trips/${tripId}/expenses/balances`],
   });
 
-  const loading = expensesLoading || membersLoading || balancesLoading;
+  const { data: currentUser } = useQuery<{ id: number; name: string }>({
+    queryKey: ["/api/auth/me"],
+  });
 
   const addExpenseMutation = useMutation({
     mutationFn: async (data: typeof newExpense) => {
-      return apiRequest("POST", `/api/trips/${tripId}/expenses`, {
-        description: data.description,
+      return await apiRequest(`/api/trips/${tripId}/expenses`, "POST", {
+        title: data.title,
         amount: parseFloat(data.amount),
         category: data.category,
-        paidBy: data.paidBy,
-        splitWith: data.splitWith.length > 0 ? data.splitWith : (members as any[]).map(m => m.userId)
+        description: data.description,
+        paidBy: parseInt(data.paidBy),
+        splitWith: data.splitWith.map(id => parseInt(id))
       });
     },
     onSuccess: () => {
       toast({
-        title: "Success!",
-        description: "Expense added successfully"
+        title: "Expense Added",
+        description: "The expense has been added successfully.",
       });
-      
-      // Reset form
       setNewExpense({
-        description: "",
+        title: "",
         amount: "",
         category: "food",
-        paidBy: 0,
+        description: "",
+        paidBy: "",
         splitWith: []
       });
-      
       setIsAddDialogOpen(false);
-      
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses`] });
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses/balances`] });
     },
-    onError: (error) => {
-      console.error("Error adding expense:", error);
+    onError: () => {
       toast({
         title: "Error",
-        description: "Failed to add expense",
+        description: "Failed to add expense. Please try again.",
         variant: "destructive"
       });
     }
   });
 
-  const addExpense = () => {
-    if (!newExpense.description || !newExpense.amount || !newExpense.paidBy) {
+  const markPaidMutation = useMutation({
+    mutationFn: async ({ expenseId, shareId }: { expenseId: number; shareId: number }) => {
+      return await apiRequest(`/api/expenses/${expenseId}/shares/${shareId}/mark-paid`, "POST", {});
+    },
+    onSuccess: () => {
       toast({
-        title: "Missing Information", 
-        description: "Please fill in all fields",
-        variant: "destructive"
+        title: "Payment Recorded",
+        description: "The payment has been marked as paid.",
       });
-      return;
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses/balances`] });
     }
-    addExpenseMutation.mutate(newExpense);
-  };
+  });
 
-  const categoryIcons = {
-    food: "Food",
-    transport: "Transport", 
-    accommodation: "Hotel",
-    activities: "Activity"
-  };
-
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      food: "bg-orange-100 text-orange-800",
-      transport: "bg-blue-100 text-blue-800",
-      accommodation: "bg-purple-100 text-purple-800",
-      activities: "bg-green-100 text-green-800"
-    };
-    return colors[category as keyof typeof colors] || "bg-gray-100 text-gray-800";
-  };
+  const loading = expensesLoading || membersLoading || balancesLoading;
 
   if (loading) {
     return (
-      <div className="p-4">
-        <div className="animate-pulse space-y-4">
-          <div className="h-32 bg-gray-200 rounded-lg"></div>
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
+      <TripDetailLayout tripId={parseInt(tripId!)}>
+        <div className="p-4">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-32 bg-gray-200 rounded"></div>
+            <div className="h-24 bg-gray-200 rounded"></div>
+          </div>
         </div>
-      </div>
+      </TripDetailLayout>
     );
   }
+
+  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'activities':
+        return <Activity className="h-4 w-4" />;
+      case 'food':
+        return <Receipt className="h-4 w-4" />;
+      case 'transportation':
+        return <DollarSign className="h-4 w-4" />;
+      default:
+        return <Receipt className="h-4 w-4" />;
+    }
+  };
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'activities':
+        return 'bg-purple-100 text-purple-800';
+      case 'food':
+        return 'bg-orange-100 text-orange-800';
+      case 'transportation':
+        return 'bg-blue-100 text-blue-800';
+      case 'accommodation':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   return (
     <TripDetailLayout tripId={parseInt(tripId!)}>
       <div className="p-4 space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalExpenses.toFixed(2)}</div>
-          </CardContent>
-        </Card>
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Group Expenses</h1>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Expense
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Manual Expense</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    value={newExpense.title}
+                    onChange={(e) => setNewExpense({...newExpense, title: e.target.value})}
+                    placeholder="Dinner at restaurant"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="amount">Amount ($)</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    value={newExpense.amount}
+                    onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
+                    placeholder="0.00"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="category">Category</Label>
+                  <Select
+                    value={newExpense.category}
+                    onValueChange={(value) => setNewExpense({...newExpense, category: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="food">Food & Drinks</SelectItem>
+                      <SelectItem value="transportation">Transportation</SelectItem>
+                      <SelectItem value="accommodation">Accommodation</SelectItem>
+                      <SelectItem value="activities">Activities</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Split Between</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{members.length} people</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Per Person</CardTitle>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${members.length > 0 ? (totalExpenses / members.length).toFixed(2) : "0.00"}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Add Expense Button */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Expenses</h2>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Expense
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Expense</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  value={newExpense.description}
-                  onChange={(e) => setNewExpense({...newExpense, description: e.target.value})}
-                  placeholder="What was this expense for?"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="amount">Amount ($)</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  value={newExpense.amount}
-                  onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
-                  placeholder="0.00"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <Select
-                  value={newExpense.category}
-                  onValueChange={(value) => setNewExpense({...newExpense, category: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="food">🍽️ Food & Drinks</SelectItem>
-                    <SelectItem value="transport">🚗 Transport</SelectItem>
-                    <SelectItem value="accommodation">🏨 Accommodation</SelectItem>
-                    <SelectItem value="activities">🎯 Activities</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="paidBy" className="text-lg font-bold text-blue-600">
-                  Who Paid for This?
-                </Label>
-                <Select
-                  value={newExpense.paidBy > 0 ? newExpense.paidBy.toString() : ""}
-                  onValueChange={(value) => setNewExpense({...newExpense, paidBy: parseInt(value)})}
-                >
-                  <SelectTrigger className="mt-2 h-12 text-base border-2 border-blue-300 focus:border-blue-500">
-                    <SelectValue placeholder="Click here to select who paid" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.isArray(members) && members.length > 0 ? (
-                      (members as any[]).map((member: any) => (
+                <div>
+                  <Label htmlFor="description">Description (optional)</Label>
+                  <Input
+                    id="description"
+                    value={newExpense.description}
+                    onChange={(e) => setNewExpense({...newExpense, description: e.target.value})}
+                    placeholder="Additional details..."
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="paidBy">Who paid?</Label>
+                  <Select
+                    value={newExpense.paidBy}
+                    onValueChange={(value) => setNewExpense({...newExpense, paidBy: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select who paid" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {members.map((member: any) => (
                         <SelectItem key={member.userId} value={member.userId.toString()}>
                           {member.name || member.username}
                         </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="demo" disabled>
-                        Loading members...
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-gray-500">
-                  Select the person who actually paid for this expense
-                </p>
-              </div>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {/* Split With Section */}
-              <div className="space-y-2">
-                <Label className="text-lg font-bold text-green-600">
-                  Who Should Split This Expense?
-                </Label>
-                <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto border rounded-lg p-3">
-                  {Array.isArray(members) && members.length > 0 ? (
-                    (members as any[]).map((member: any) => (
-                      <label key={member.userId} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+                <div>
+                  <Label>Split with:</Label>
+                  <div className="mt-2 space-y-2 max-h-32 overflow-y-auto border rounded p-2">
+                    {members.map((member: any) => (
+                      <label key={member.userId} className="flex items-center space-x-2">
                         <input
                           type="checkbox"
-                          checked={newExpense.splitWith.includes(member.userId)}
+                          checked={newExpense.splitWith.includes(member.userId.toString())}
                           onChange={(e) => {
                             if (e.target.checked) {
                               setNewExpense({
                                 ...newExpense,
-                                splitWith: [...newExpense.splitWith, member.userId]
+                                splitWith: [...newExpense.splitWith, member.userId.toString()]
                               });
                             } else {
                               setNewExpense({
                                 ...newExpense,
-                                splitWith: newExpense.splitWith.filter(id => id !== member.userId)
+                                splitWith: newExpense.splitWith.filter(id => id !== member.userId.toString())
                               });
                             }
                           }}
-                          className="rounded border-gray-300 text-green-600 focus:ring-green-500"
                         />
-                        <span className="font-medium">{member.name || member.username}</span>
+                        <span>{member.name || member.username}</span>
                       </label>
-                    ))
-                  ) : (
-                    <p className="text-gray-500">Loading members...</p>
-                  )}
+                    ))}
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNewExpense({
+                        ...newExpense,
+                        splitWith: members.map((m: any) => m.userId.toString())
+                      })}
+                    >
+                      Select All
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNewExpense({...newExpense, splitWith: []})}
+                    >
+                      Clear
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const allMemberIds = Array.isArray(members) ? (members as any[]).map(m => m.userId) : [];
-                      setNewExpense({...newExpense, splitWith: allMemberIds});
-                    }}
-                  >
-                    Select All
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setNewExpense({...newExpense, splitWith: []})}
-                  >
-                    Clear All
-                  </Button>
-                </div>
-                <p className="text-sm text-gray-500">
-                  Choose who should share the cost of this expense
-                </p>
+                
+                <Button 
+                  onClick={() => addExpenseMutation.mutate(newExpense)}
+                  className="w-full"
+                  disabled={!newExpense.title || !newExpense.amount || !newExpense.paidBy || newExpense.splitWith.length === 0}
+                >
+                  Add Expense
+                </Button>
               </div>
-              
-              <Button 
-                onClick={addExpense} 
-                className="w-full h-12 text-lg"
-                disabled={!newExpense.description || !newExpense.amount || !newExpense.paidBy || newExpense.splitWith.length === 0}
-              >
-                Add Expense
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-      {/* Expenses List */}
-      <div className="space-y-3">
-        {expenses.length === 0 ? (
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
-            <CardContent className="pt-6">
-              <div className="text-center text-gray-500">
-                <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No expenses yet</p>
-                <p className="text-sm">Add your first expense to get started!</p>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Split Between</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{members.length} people</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Per Person Avg</CardTitle>
+              <Receipt className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(members.length > 0 ? totalExpenses / members.length : 0)}
               </div>
             </CardContent>
           </Card>
-        ) : (
-          expenses.map((expense) => {
-            const payer = members.find(m => m.userId === expense.paidBy);
-            return (
-              <Card key={expense.id}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="text-2xl">
-                        {categoryIcons[expense.category as keyof typeof categoryIcons]}
-                      </div>
-                      <div>
-                        <p className="font-semibold">{expense.description}</p>
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${getCategoryColor(expense.category)}`}
-                          >
-                            {expense.category}
-                          </span>
-                          <span>•</span>
-                          <span>Paid by {payer?.name || payer?.username}</span>
-                        </div>
-                      </div>
+        </div>
+
+        {/* Balance Summary */}
+        {balances.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Who Owes What</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {balances.map((balance) => (
+                  <div key={balance.userId} className="p-4 border rounded-lg">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {balance.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{balance.name}</span>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold">${expense.amount.toFixed(2)}</p>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>Paid out:</span>
+                        <span className="font-medium">{formatCurrency(balance.totalPaid)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Owes:</span>
+                        <span className="font-medium">{formatCurrency(balance.totalOwed)}</span>
+                      </div>
+                      <div className="border-t pt-1 flex justify-between font-semibold">
+                        <span>Net:</span>
+                        <span className={balance.netBalance >= 0 ? "text-green-600" : "text-red-600"}>
+                          {balance.netBalance >= 0 ? "+" : ""}{formatCurrency(balance.netBalance)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
-      </div>
 
-      {/* Balances */}
-      {balances.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Who Owes What</h3>
-          <div className="space-y-3">
-            {balances.map((balance) => (
-              <Card key={balance.userId}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
+        {/* Expenses List */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">All Expenses</h2>
+          {expenses.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No expenses yet</h3>
+                <p className="text-gray-500">
+                  Expenses will appear here when you add them manually or when people RSVP to prepaid activities.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            expenses.map((expense) => (
+              <Card key={expense.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-semibold">{balance.name || balance.username}</p>
-                      <p className="text-sm text-gray-500">
-                        Paid: ${balance.owed.toFixed(2)} • Should pay: ${balance.owes.toFixed(2)}
+                      <CardTitle className="flex items-center gap-2">
+                        {getCategoryIcon(expense.category)}
+                        {expense.title}
+                        {expense.activity && (
+                          <Badge variant="outline" className="ml-2">
+                            Activity: {expense.activity.name}
+                          </Badge>
+                        )}
+                      </CardTitle>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Paid by {expense.paidByUser.name} • {new Date(expense.date).toLocaleDateString()}
                       </p>
-                    </div>
-                    <div className="text-right">
-                      {balance.net > 0 ? (
-                        <p className="text-green-600 font-semibold">
-                          Gets back ${balance.net.toFixed(2)}
-                        </p>
-                      ) : balance.net < 0 ? (
-                        <p className="text-red-600 font-semibold">
-                          Owes ${Math.abs(balance.net).toFixed(2)}
-                        </p>
-                      ) : (
-                        <p className="text-gray-500 font-semibold">Even</p>
+                      {expense.description && (
+                        <p className="text-sm text-gray-600 mt-1">{expense.description}</p>
                       )}
                     </div>
+                    <div className="text-right">
+                      <div className="text-xl font-bold">{formatCurrency(expense.amount)}</div>
+                      <Badge className={getCategoryColor(expense.category)}>
+                        {expense.category}
+                      </Badge>
+                    </div>
                   </div>
+                </CardHeader>
+                <CardContent>
+                  {expense.shares && expense.shares.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-3">Split details:</h4>
+                      <div className="space-y-2">
+                        {expense.shares.map((share) => (
+                          <div key={share.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarFallback>
+                                  {share.user.name.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{share.user.name}</p>
+                                <p className="text-sm text-gray-500">Owes {formatCurrency(share.amount)}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {share.isPaid ? (
+                                <Badge variant="outline" className="bg-green-100 text-green-800">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Paid
+                                </Badge>
+                              ) : (
+                                <>
+                                  <Badge variant="outline" className="bg-red-100 text-red-800">
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                    Unpaid
+                                  </Badge>
+                                  {(currentUser?.id === expense.paidBy || currentUser?.id === share.userId) && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => markPaidMutation.mutate({ expenseId: expense.id, shareId: share.id })}
+                                      disabled={markPaidMutation.isPending}
+                                    >
+                                      Mark Paid
+                                    </Button>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            ))
+          )}
         </div>
-      )}
       </div>
     </TripDetailLayout>
   );
