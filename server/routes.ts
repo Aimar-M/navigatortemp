@@ -2834,24 +2834,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Expense tracking routes
+  // Expense tracking routes - rebuilt for activity integration
   router.post('/trips/:id/expenses', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const tripId = parseInt(req.params.id);
       const user = ensureUser(req, res);
       if (!user) return;
       
-      const { description, amount, category, paidBy } = req.body;
+      const { title, amount, category, description, paidBy, splitWith } = req.body;
       
+      // Create the expense
       const expense = await storage.createExpense({
         tripId,
-        userId: user.id,
-        title: description,
+        title,
         amount: amount.toString(),
-        category: category || 'general',
+        currency: 'USD',
+        category: category || 'food',
+        description,
         paidBy,
         date: new Date(),
       });
+
+      // Create expense splits for each person
+      if (splitWith && splitWith.length > 0) {
+        const amountPerPerson = parseFloat(amount) / splitWith.length;
+        
+        for (const userId of splitWith) {
+          await storage.createExpenseSplit({
+            expenseId: expense.id,
+            userId: parseInt(userId),
+            amount: amountPerPerson.toFixed(2),
+          });
+        }
+      }
 
       res.json(expense);
     } catch (error) {

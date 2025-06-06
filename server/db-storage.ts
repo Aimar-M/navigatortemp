@@ -308,45 +308,86 @@ export class DatabaseStorage {
       .where(eq(surveyResponses.questionId, questionId));
   }
 
-  // Expense tracking methods
-  async createExpense(expense: any): Promise<any> {
+  // Expense tracking methods - rebuilt for activity integration
+  async createExpense(expense: InsertExpense): Promise<Expense> {
     const [newExpense] = await db
       .insert(expenses)
-      .values({
-        tripId: expense.tripId,
-        userId: expense.userId,
-        title: expense.description,
-        description: expense.description,
-        amount: expense.amount,
-        category: expense.category,
-        paidBy: expense.paidBy,
-        date: expense.date || new Date(),
-      })
+      .values(expense)
       .returning();
     
     return newExpense;
   }
 
+  async createExpenseSplit(split: InsertExpenseSplit): Promise<ExpenseSplit> {
+    const [newSplit] = await db
+      .insert(expenseSplits)
+      .values(split)
+      .returning();
+    
+    return newSplit;
+  }
+
   async getExpensesByTrip(tripId: number): Promise<any[]> {
-    return db
+    const tripExpenses = await db
       .select({
         id: expenses.id,
         tripId: expenses.tripId,
-        paidBy: expenses.paidBy,
+        title: expenses.title,
         amount: expenses.amount,
-        description: expenses.title,
+        currency: expenses.currency,
         category: expenses.category,
         date: expenses.date,
-        payer: {
+        description: expenses.description,
+        paidBy: expenses.paidBy,
+        activityId: expenses.activityId,
+        isSettled: expenses.isSettled,
+        receiptUrl: expenses.receiptUrl,
+        createdAt: expenses.createdAt,
+        updatedAt: expenses.updatedAt,
+        paidByUser: {
           id: users.id,
-          username: users.username,
           name: users.name,
+          username: users.username
+        },
+        activity: {
+          id: activities.id,
+          name: activities.name
         }
       })
       .from(expenses)
       .leftJoin(users, eq(expenses.paidBy, users.id))
+      .leftJoin(activities, eq(expenses.activityId, activities.id))
       .where(eq(expenses.tripId, tripId))
-      .orderBy(desc(expenses.date));
+      .orderBy(desc(expenses.createdAt));
+
+    // Get splits for each expense
+    const expensesWithSplits = await Promise.all(
+      tripExpenses.map(async (expense) => {
+        const splits = await db
+          .select({
+            id: expenseSplits.id,
+            userId: expenseSplits.userId,
+            amount: expenseSplits.amount,
+            isPaid: expenseSplits.isPaid,
+            paidAt: expenseSplits.paidAt,
+            user: {
+              id: users.id,
+              name: users.name,
+              username: users.username
+            }
+          })
+          .from(expenseSplits)
+          .leftJoin(users, eq(expenseSplits.userId, users.id))
+          .where(eq(expenseSplits.expenseId, expense.id));
+
+        return {
+          ...expense,
+          shares: splits
+        };
+      })
+    );
+
+    return expensesWithSplits;
   }
 
 
@@ -360,28 +401,30 @@ export class DatabaseStorage {
       // Get all expenses for the trip
       const tripExpenses = await this.getExpensesByTrip(tripId);
       
-      // Calculate balances
+      // Calculate balances based on actual expense splits
       const balances = [];
       
       for (const memberId of memberIds) {
         const memberUser = await this.getUser(memberId);
         
-        // Amount they paid
-        const paid = tripExpenses
+        // Amount they paid out (expenses they covered)
+        const totalPaid = tripExpenses
           .filter(e => e.paidBy === memberId)
-          .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+          .reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0);
         
-        // Their share (split equally among all members)
-        const totalExpenses = tripExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
-        const share = memberIds.length > 0 ? totalExpenses / memberIds.length : 0;
+        // Amount they owe (their share of all expenses)
+        const totalOwed = tripExpenses
+          .reduce((sum, expense) => {
+            const userShare = expense.shares?.find((s: any) => s.userId === memberId);
+            return sum + (userShare ? parseFloat(userShare.amount.toString()) : 0);
+          }, 0);
         
         balances.push({
           userId: memberId,
-          username: memberUser?.username || 'Unknown',
           name: memberUser?.name || memberUser?.username || 'Unknown',
-          owes: Math.round(share * 100) / 100, // How much they should pay
-          owed: Math.round(paid * 100) / 100, // How much they paid out
-          net: Math.round((paid - share) * 100) / 100 // Positive = they get money back, Negative = they owe money
+          totalPaid: Math.round(totalPaid * 100) / 100,
+          totalOwed: Math.round(totalOwed * 100) / 100,
+          netBalance: Math.round((totalPaid - totalOwed) * 100) / 100
         });
       }
 
@@ -390,6 +433,16 @@ export class DatabaseStorage {
       console.error('Error in calculateExpenseBalances:', error);
       return [];
     }
+  }
+
+  async markExpenseSharePaid(expenseId: number, shareId: number): Promise<void> {
+    await db
+      .update(expenseSplits)
+      .set({ 
+        isPaid: true, 
+        paidAt: new Date() 
+      })
+      .where(eq(expenseSplits.id, shareId));
   }
 
   // Add missing methods for app functionality
