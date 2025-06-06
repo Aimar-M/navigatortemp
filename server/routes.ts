@@ -1031,8 +1031,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (!existingActivityExpense) {
             // Find the activity creator (who is paying for the activity)
-            const tripMembers = await storage.getTripMembers(activity.tripId);
-            const activityCreatorId = activity.organizer || tripMembers[0]?.userId || user.id;
+            const activityCreatorId = activity.createdBy || user.id;
             
             // Create expense for the activity
             const expense = await storage.createExpense({
