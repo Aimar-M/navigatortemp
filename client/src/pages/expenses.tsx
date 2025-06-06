@@ -283,7 +283,7 @@ export default function ExpensesPage() {
                     <SelectContent>
                       {members.map((member: any) => (
                         <SelectItem key={member.userId} value={member.userId.toString()}>
-                          {member.name || member.username}
+                          {member.user?.name || member.user?.username || member.name || member.username || 'Unknown User'}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -312,7 +312,7 @@ export default function ExpensesPage() {
                             }
                           }}
                         />
-                        <span>{member.name || member.username}</span>
+                        <span>{member.user?.name || member.user?.username || member.name || member.username || 'Unknown User'}</span>
                       </label>
                     ))}
                   </div>
