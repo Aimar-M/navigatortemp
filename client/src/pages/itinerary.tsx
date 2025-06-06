@@ -222,6 +222,7 @@ export default function Itinerary() {
                   confirmedCount={activity.confirmedCount || 0}
                   totalCount={activity.totalCount || 0}
                   rsvps={activity.rsvps || []}
+                  createdBy={activity.createdBy}
                 />
               ))
             )}
