@@ -202,6 +202,30 @@ export class DatabaseStorage {
   }
 
   async deleteActivity(id: number): Promise<boolean> {
+    // First, delete associated expenses and their splits
+    const activityExpenses = await db
+      .select()
+      .from(expenses)
+      .where(eq(expenses.activityId, id));
+    
+    for (const expense of activityExpenses) {
+      // Delete expense splits first
+      await db
+        .delete(expenseSplits)
+        .where(eq(expenseSplits.expenseId, expense.id));
+      
+      // Then delete the expense
+      await db
+        .delete(expenses)
+        .where(eq(expenses.id, expense.id));
+    }
+    
+    // Delete activity RSVPs
+    await db
+      .delete(activityRsvp)
+      .where(eq(activityRsvp.activityId, id));
+    
+    // Finally, delete the activity
     const result = await db
       .delete(activities)
       .where(eq(activities.id, id));

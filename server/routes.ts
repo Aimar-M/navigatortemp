@@ -951,14 +951,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Activity not found' });
       }
       
-      // Check if user is the trip organizer
+      // Check if user is the activity creator or trip organizer
       const trip = await storage.getTrip(activity.tripId);
       if (!trip) {
         return res.status(404).json({ message: 'Trip not found' });
       }
       
-      if (trip.organizer !== user.id) {
-        return res.status(403).json({ message: 'Only the trip organizer can delete activities' });
+      const isActivityCreator = activity.createdBy === user.id;
+      const isTripOrganizer = trip.organizer === user.id;
+      
+      if (!isActivityCreator && !isTripOrganizer) {
+        return res.status(403).json({ message: 'Only the activity creator or trip organizer can delete activities' });
       }
       
       const success = await storage.deleteActivity(activityId);
@@ -2865,7 +2868,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Creating manual expense:', { title, amount, category, description, paidBy, splitWith });
       
       // Validate required fields
-      if (!title || !amount || !paidBy) {
+      if (!title || !amount || !paidBy || !splitWith) {
+        console.log('Validation failed:', { title: !!title, amount: !!amount, paidBy: !!paidBy, splitWith: !!splitWith });
         return res.status(400).json({ message: "Missing required fields" });
       }
       
