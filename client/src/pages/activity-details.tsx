@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, MapPin, Clock, DollarSign, Users, CheckIcon, XIcon } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, DollarSign, Users, CheckIcon, XIcon, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useState } from "react";
@@ -276,9 +276,22 @@ export default function ActivityDetails() {
               </Button>
             )}
             
+            {/* Show delete button for activity creators */}
+            {currentUser && activity.createdBy === currentUser.id && (
+              <Button
+                variant="destructive"
+                onClick={() => deleteMutation.mutate()}
+                disabled={isSubmitting}
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Activity
+              </Button>
+            )}
+            
             {/* Show message for prepaid activity creators */}
             {currentUser && activity.createdBy === currentUser.id && activity.paymentType === 'prepaid' && (
-              <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded">
+              <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded mt-2">
                 <span>As the creator of this prepaid activity, you must attend.</span>
               </div>
             )}
