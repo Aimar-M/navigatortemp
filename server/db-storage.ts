@@ -445,6 +445,52 @@ export class DatabaseStorage {
       .where(eq(expenseSplits.id, shareId));
   }
 
+  async removeExpenseSplits(expenseId: number): Promise<void> {
+    await db
+      .delete(expenseSplits)
+      .where(eq(expenseSplits.expenseId, expenseId));
+  }
+
+  async getExpense(id: number): Promise<any> {
+    const [expense] = await db
+      .select()
+      .from(expenses)
+      .where(eq(expenses.id, id));
+    return expense;
+  }
+
+  async updateExpense(id: number, data: any): Promise<any> {
+    const [expense] = await db
+      .update(expenses)
+      .set(data)
+      .where(eq(expenses.id, id))
+      .returning();
+    return expense;
+  }
+
+  async deleteExpense(id: number): Promise<boolean> {
+    // First delete expense splits
+    await this.removeExpenseSplits(id);
+    
+    // Then delete the expense
+    const result = await db
+      .delete(expenses)
+      .where(eq(expenses.id, id));
+    
+    return true;
+  }
+
+  async getTripExpenseSummary(tripId: number): Promise<any> {
+    const tripExpenses = await this.getExpensesByTrip(tripId);
+    const totalAmount = tripExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount.toString()), 0);
+    
+    return {
+      totalExpenses: tripExpenses.length,
+      totalAmount: totalAmount,
+      currency: 'USD'
+    };
+  }
+
   // Add missing methods for app functionality
   async getUserTripSettings(userId: number, tripId: number): Promise<any> {
     return { isPinned: false, isArchived: false };
