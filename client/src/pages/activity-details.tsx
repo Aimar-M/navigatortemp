@@ -62,6 +62,26 @@ export default function ActivityDetails() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("DELETE", `/api/activities/${activityId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Activity deleted",
+        description: "The activity has been removed from the trip.",
+      });
+      setLocation(`/trips/${activity?.tripId}`);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete activity. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-6">
@@ -134,7 +154,7 @@ export default function ActivityDetails() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center justify-between mb-6">
         <Button 
           variant="ghost" 
           size="sm"
@@ -144,6 +164,22 @@ export default function ActivityDetails() {
           <ArrowLeft className="h-4 w-4" />
           Back to Trip
         </Button>
+        
+        {/* Delete button - only show for activity creator */}
+        {currentUser && activity.createdBy === currentUser.id && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => {
+              if (confirm("Are you sure you want to delete this activity? This will also remove any associated expenses.")) {
+                deleteMutation.mutate();
+              }
+            }}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? "Deleting..." : "Delete Activity"}
+          </Button>
+        )}
       </div>
 
       {/* Activity Details Card */}
