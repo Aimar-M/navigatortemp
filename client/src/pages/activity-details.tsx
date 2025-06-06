@@ -33,6 +33,7 @@ interface ActivityDetail {
   cost?: string;
   paymentType: string;
   maxParticipants?: number;
+  createdBy: number;
   rsvps: ActivityRSVP[];
 }
 
@@ -261,15 +262,26 @@ export default function ActivityDetails() {
               <CheckIcon className="h-4 w-4" />
               {userRSVP?.status === "going" ? "You're Going" : "Going"}
             </Button>
-            <Button
-              variant={userRSVP?.status === "not going" ? "default" : "outline"}
-              onClick={() => handleRSVP("not going")}
-              disabled={isSubmitting}
-              className={`flex items-center gap-2 ${userRSVP?.status === "not going" ? "bg-red-600 hover:bg-red-700" : ""}`}
-            >
-              <XIcon className="h-4 w-4" />
-              {userRSVP?.status === "not going" ? "You're Not Going" : "Not Going"}
-            </Button>
+            
+            {/* Prevent activity creator from declining prepaid activities */}
+            {!(currentUser && activity.createdBy === currentUser.id && activity.paymentType === 'prepaid') && (
+              <Button
+                variant={userRSVP?.status === "not going" ? "default" : "outline"}
+                onClick={() => handleRSVP("not going")}
+                disabled={isSubmitting}
+                className={`flex items-center gap-2 ${userRSVP?.status === "not going" ? "bg-red-600 hover:bg-red-700" : ""}`}
+              >
+                <XIcon className="h-4 w-4" />
+                {userRSVP?.status === "not going" ? "You're Not Going" : "Not Going"}
+              </Button>
+            )}
+            
+            {/* Show message for prepaid activity creators */}
+            {currentUser && activity.createdBy === currentUser.id && activity.paymentType === 'prepaid' && (
+              <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded">
+                <span>As the creator of this prepaid activity, you must attend.</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
