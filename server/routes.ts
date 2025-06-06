@@ -1,7 +1,9 @@
 import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { storage } from "./storage";
+import { storage } from "./db-storage";
+import { db } from "./db";
+import { expenseSplits } from "@shared/schema";
 import { 
   insertUserSchema, insertTripSchema, insertTripMemberSchema, 
   insertActivitySchema, insertActivityRsvpSchema, insertMessageSchema,
@@ -2877,10 +2879,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const amountPerPerson = parseFloat(amount) / splitWith.length;
         
         for (const userId of splitWith) {
-          await storage.createExpenseSplit({
+          await db.insert(expenseSplits).values({
             expenseId: expense.id,
             userId: parseInt(userId),
             amount: amountPerPerson.toFixed(2),
+            isPaid: false,
           });
         }
       }
@@ -2906,7 +2909,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   router.get('/trips/:id/expenses/balances', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const tripId = parseInt(req.params.id);
-      const balances = await storage.calculateExpenseBalances(tripId);
+      
+      // Get all trip members
+      const tripMembers = await storage.getTripMembers(tripId);
+      const memberIds = tripMembers.map(m => m.userId);
+
+      // Get all expenses for the trip
+      const tripExpenses = await storage.getExpensesByTrip(tripId);
+      
+      // Calculate balances based on actual expense splits
+      const balances = [];
+      
+      for (const memberId of memberIds) {
+        const memberUser = await storage.getUser(memberId);
+        
+        // Amount they paid out (expenses they covered)
+        const totalPaid = tripExpenses
+          .filter(e => e.paidBy === memberId)
+          .reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0);
+        
+        // Amount they owe (their share of all expenses)
+        const totalOwed = tripExpenses
+          .reduce((sum, expense) => {
+            const userShare = expense.shares?.find((s: any) => s.userId === memberId);
+            return sum + (userShare ? parseFloat(userShare.amount.toString()) : 0);
+          }, 0);
+        
+        balances.push({
+          userId: memberId,
+          name: memberUser?.name || memberUser?.username || 'Unknown',
+          totalPaid: Math.round(totalPaid * 100) / 100,
+          totalOwed: Math.round(totalOwed * 100) / 100,
+          netBalance: Math.round((totalPaid - totalOwed) * 100) / 100
+        });
+      }
+
       res.json(balances);
     } catch (error) {
       console.error("Error calculating balances:", error);
