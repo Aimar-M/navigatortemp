@@ -480,16 +480,7 @@ export class DatabaseStorage {
     return true;
   }
 
-  async getTripExpenseSummary(tripId: number): Promise<any> {
-    const tripExpenses = await this.getExpensesByTrip(tripId);
-    const totalAmount = tripExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount.toString()), 0);
-    
-    return {
-      totalExpenses: tripExpenses.length,
-      totalAmount: totalAmount,
-      currency: 'USD'
-    };
-  }
+
 
   // Add missing methods for app functionality
   async getUserTripSettings(userId: number, tripId: number): Promise<any> {
@@ -516,21 +507,7 @@ export class DatabaseStorage {
     return null;
   }
 
-  async getTripExpenseSummary(tripId: number): Promise<any> {
-    return { total: 0, categories: {} };
-  }
 
-  async getExpense(id: number): Promise<any> {
-    return null;
-  }
-
-  async updateExpense(id: number, data: any): Promise<any> {
-    return null;
-  }
-
-  async deleteExpense(id: number): Promise<boolean> {
-    return true;
-  }
 
   async createFlightInfo(data: any): Promise<any> {
     return { id: 1, ...data };
