@@ -351,40 +351,7 @@ export default function ExpensesPage() {
           </Dialog>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Split Between</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{members.length} people</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Per Person Avg</CardTitle>
-              <Receipt className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(members.length > 0 ? totalExpenses / members.length : 0)}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Balance Summary */}
         {balances.length > 0 && (
@@ -456,7 +423,7 @@ export default function ExpensesPage() {
                         )}
                       </CardTitle>
                       <p className="text-sm text-gray-500 mt-1">
-                        Paid by {expense.paidByUser.name} • {new Date(expense.date).toLocaleDateString()}
+                        Paid by {expense.paidByUser.name || expense.paidByUser.username || 'Unknown User'} • {new Date(expense.date).toLocaleDateString()}
                       </p>
                       {expense.description && (
                         <p className="text-sm text-gray-600 mt-1">{expense.description}</p>
@@ -480,11 +447,11 @@ export default function ExpensesPage() {
                             <div className="flex items-center gap-3">
                               <Avatar className="h-8 w-8">
                                 <AvatarFallback>
-                                  {share.user.name.charAt(0).toUpperCase()}
+                                  {(share.user.name || share.user.username || 'U').charAt(0).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="font-medium">{share.user.name}</p>
+                                <p className="font-medium">{share.user.name || share.user.username || 'Unknown User'}</p>
                                 <p className="text-sm text-gray-500">Owes {formatCurrency(share.amount)}</p>
                               </div>
                             </div>
