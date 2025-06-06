@@ -88,7 +88,7 @@ export default function ExpensesPage() {
   });
 
   // Fetch trip members
-  const { data: members = [], isLoading: membersLoading } = useQuery({
+  const { data: members = [], isLoading: membersLoading } = useQuery<any[]>({
     queryKey: [`/api/trips/${tripId}/members`],
   });
 

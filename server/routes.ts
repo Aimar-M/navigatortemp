@@ -1018,39 +1018,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Auto-create expense for prepaid activities when user confirms attendance
-      if (status === 'going' && activity.paymentType === 'prepaid' && activity.cost) {
+      if (status === 'going' && activity.paymentType === 'prepaid' && activity.cost && parseFloat(activity.cost) > 0) {
         try {
-          // Check if expense already exists for this user and activity
+          // Check if expense already exists for this activity
           const existingExpenses = await storage.getExpensesByTrip(activity.tripId);
-          const existingActivityExpense = existingExpenses.find(expense => 
-            expense.activityId === activityId && 
-            expense.splits?.some(split => split.userId === user.id)
+          let existingActivityExpense = existingExpenses.find(expense => 
+            expense.activityId === activityId
           );
 
           if (!existingActivityExpense) {
             // Find the activity creator (who is paying for the activity)
-            // For now, we'll use the first trip member as the payer - this should be configurable
             const tripMembers = await storage.getTripMembers(activity.tripId);
-            const activityCreatorId = tripMembers[0]?.userId || user.id;
+            const activityCreatorId = activity.organizer || tripMembers[0]?.userId || user.id;
             
-            // Create expense
+            // Create expense for the activity
             const expense = await storage.createExpense({
               tripId: activity.tripId,
-              title: `${activity.name} - Prepaid Activity`,
+              title: `Activity: ${activity.name}`,
               amount: activity.cost,
               currency: 'USD',
               category: 'activities',
-              description: `Auto-generated expense for prepaid activity: ${activity.name}`,
+              description: `Prepaid activity expense for ${activity.name}`,
               paidBy: activityCreatorId,
               activityId: activityId,
               date: new Date()
             });
 
-            // Create split for the user who joined
+            existingActivityExpense = expense;
+          }
+
+          // Get all users who have RSVP'd "going" to this activity
+          const allRsvps = await storage.getActivityRSVPs(activityId);
+          const goingUserIds = allRsvps.filter(rsvp => rsvp.status === 'going').map(rsvp => rsvp.userId);
+          
+          // Include the current user if they're confirming and not already in the list
+          if (!goingUserIds.includes(user.id)) {
+            goingUserIds.push(user.id);
+          }
+
+          // Calculate cost per person
+          const costPerPerson = parseFloat(activity.cost) / goingUserIds.length;
+
+          // Remove existing splits and recreate them with updated amounts
+          await storage.removeExpenseSplits(existingActivityExpense.id);
+
+          // Create expense splits for all going users
+          for (const userId of goingUserIds) {
             await storage.createExpenseSplit({
-              expenseId: expense.id,
-              userId: user.id,
-              amount: activity.cost
+              expenseId: existingActivityExpense.id,
+              userId: userId,
+              amount: costPerPerson.toFixed(2)
             });
           }
         } catch (expenseError) {
