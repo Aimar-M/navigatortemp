@@ -168,7 +168,10 @@ export default function ExpensesPage() {
     );
   }
 
-  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+  const formatCurrency = (amount: number | string) => {
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return `$${num.toFixed(2)}`;
+  };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
