@@ -61,8 +61,19 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ tripId, expense, onSuccess })
   const isEditing = !!expense;
 
   // Fetch trip members for the paidBy dropdown
-  const { data: tripMembers, isLoading: loadingMembers } = useQuery({
-    queryKey: ['/api/trips', tripId, 'members'],
+  const { data: tripMembers, isLoading: loadingMembers } = useQuery<Array<{
+    tripId: number;
+    userId: number;
+    status: string;
+    user: {
+      id: number;
+      username: string;
+      name?: string;
+      email?: string;
+      avatar?: string;
+    };
+  }>>({
+    queryKey: [`/api/trips/${tripId}/members`],
     enabled: !!tripId,
   });
 
@@ -77,16 +88,22 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ tripId, expense, onSuccess })
       date: expense?.date ? new Date(expense.date) : new Date(),
       description: expense?.description || "",
       paidBy: expense?.paidBy ? String(expense.paidBy) : "",
+      splitWith: expense?.splitWith ? expense.splitWith.map(String) : [],
       splitMethod: expense?.splitMethod || "equal",
       receiptUrl: expense?.receiptUrl || "",
     },
   });
 
-  // Set form values after trip members have loaded (for paidBy field)
+  // Set form values after trip members have loaded
   useEffect(() => {
-    if (tripMembers && !form.getValues("paidBy") && !isEditing) {
-      // Default to current user if not editing
-      form.setValue("paidBy", String(tripMembers[0]?.userId));
+    if (tripMembers && tripMembers.length > 0 && !isEditing) {
+      if (!form.getValues("paidBy")) {
+        form.setValue("paidBy", String(tripMembers[0]?.userId));
+      }
+      if (!form.getValues("splitWith") || form.getValues("splitWith").length === 0) {
+        // Default to splitting with all members
+        form.setValue("splitWith", tripMembers.map(member => String(member.userId)));
+      }
     }
   }, [tripMembers, form, isEditing]);
 
@@ -98,6 +115,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ tripId, expense, onSuccess })
         ...data,
         amount: parseFloat(data.amount),
         paidBy: parseInt(data.paidBy),
+        splitWith: data.splitWith.map(id => parseInt(id)),
       };
 
       if (isEditing) {
@@ -287,6 +305,43 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ tripId, expense, onSuccess })
                   ))}
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="splitWith"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Split With</FormLabel>
+              <FormControl>
+                <div className="space-y-2">
+                  {tripMembers && tripMembers.map((member) => (
+                    <div key={member.userId} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`member-${member.userId}`}
+                        checked={field.value?.includes(String(member.userId)) || false}
+                        onChange={(e) => {
+                          const currentValue = field.value || [];
+                          const memberIdStr = String(member.userId);
+                          if (e.target.checked) {
+                            field.onChange([...currentValue, memberIdStr]);
+                          } else {
+                            field.onChange(currentValue.filter((id: string) => id !== memberIdStr));
+                          }
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <label htmlFor={`member-${member.userId}`} className="text-sm">
+                        {member.user?.name || member.user?.username || `User ${member.userId}`}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
