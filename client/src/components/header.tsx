@@ -15,6 +15,7 @@ import UserAvatar from "@/components/user-avatar";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import navigatorLogo from "@/assets/navigator-logo.svg";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -138,6 +139,8 @@ export default function Header() {
             >
               <PieChart className="h-5 w-5" />
             </Button>
+
+            <NotificationBell />
 
             <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
               <DropdownMenuTrigger asChild>
