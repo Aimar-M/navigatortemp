@@ -440,47 +440,35 @@ export default function ExpensesPage() {
                         value: balance.netBalance
                       }))}
                       layout="horizontal"
-                      margin={{ top: 20, right: 50, left: 120, bottom: 20 }}
-                      barCategoryGap="20%"
+                      margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
                     >
-                      <CartesianGrid strokeDasharray="2 2" stroke="#e5e7eb" strokeWidth={1.5} />
+                      <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         type="number"
                         domain={(() => {
                           const values = balances.map(b => b.netBalance);
                           if (values.length === 0) return [-100, 100];
                           const maxAbs = Math.max(...values.map(v => Math.abs(v)), 1);
-                          const padding = maxAbs * 0.15;
+                          const padding = maxAbs * 0.1;
                           return [-maxAbs - padding, maxAbs + padding];
                         })()}
                         tickFormatter={(value) => formatCurrency(value)}
-                        axisLine={{ stroke: "#6b7280", strokeWidth: 2 }}
-                        tickLine={{ stroke: "#6b7280", strokeWidth: 1.5 }}
-                        tick={{ fontSize: 11, fill: "#374151" }}
                       />
                       <YAxis 
                         type="category"
                         dataKey="name" 
-                        width={110}
-                        tick={{ fontSize: 12, fill: "#374151" }}
-                        axisLine={{ stroke: "#6b7280", strokeWidth: 2 }}
-                        tickLine={{ stroke: "#6b7280", strokeWidth: 1.5 }}
+                        width={90}
+                        tick={{ fontSize: 12 }}
                       />
                       <Tooltip 
                         formatter={(value, name) => [formatCurrency(value as number), 'Balance']}
                         labelFormatter={(label) => `User: ${label}`}
-                        contentStyle={{
-                          backgroundColor: "#f9fafb",
-                          border: "1px solid #d1d5db",
-                          borderRadius: "6px",
-                          fontSize: "12px"
-                        }}
                       />
-                      <ReferenceLine x={0} stroke="#1f2937" strokeWidth={3} />
+                      <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
                       <Bar 
                         dataKey="value"
-                        barSize={35}
-                        radius={[2, 2, 2, 2]}
+                        maxBarSize={40}
+                        minPointSize={2}
                       >
                         {balances.map((balance, index) => (
                           <Cell 
