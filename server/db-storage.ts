@@ -4,9 +4,9 @@ import {
   Activity, InsertActivity, ActivityRSVP, InsertActivityRSVP,
   Message, InsertMessage, SurveyQuestion, InsertSurveyQuestion,
   SurveyResponse, InsertSurveyResponse, Expense, InsertExpense,
-  ExpenseSplit, InsertExpenseSplit,
+  ExpenseSplit, InsertExpenseSplit, Settlement, InsertSettlement,
   users, trips, tripMembers, activities, activityRsvp, 
-  messages, surveyQuestions, surveyResponses, expenses, expenseSplits
+  messages, surveyQuestions, surveyResponses, expenses, expenseSplits, settlements
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 export class DatabaseStorage {
@@ -579,6 +579,64 @@ export class DatabaseStorage {
 
   async createPollVote(data: any): Promise<any> {
     return { id: 1, ...data };
+  }
+
+  // Settlement methods
+  async createSettlement(settlement: InsertSettlement): Promise<Settlement> {
+    const [newSettlement] = await db
+      .insert(settlements)
+      .values(settlement)
+      .returning();
+    return newSettlement;
+  }
+
+  async getSettlementsByTrip(tripId: number): Promise<Settlement[]> {
+    return await db
+      .select()
+      .from(settlements)
+      .where(eq(settlements.tripId, tripId))
+      .orderBy(desc(settlements.createdAt));
+  }
+
+  async getSettlement(id: number): Promise<Settlement | undefined> {
+    const [settlement] = await db.select().from(settlements).where(eq(settlements.id, id));
+    return settlement || undefined;
+  }
+
+  async updateSettlement(id: number, data: Partial<Settlement>): Promise<Settlement | undefined> {
+    const [updated] = await db
+      .update(settlements)
+      .set(data)
+      .where(eq(settlements.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async confirmSettlement(settlementId: number, confirmedBy: number): Promise<Settlement | undefined> {
+    const [confirmed] = await db
+      .update(settlements)
+      .set({
+        status: 'confirmed',
+        confirmedAt: new Date(),
+        confirmedBy: confirmedBy,
+        updatedAt: new Date()
+      })
+      .where(eq(settlements.id, settlementId))
+      .returning();
+    return confirmed || undefined;
+  }
+
+  async getPendingSettlementsForUser(userId: number): Promise<Settlement[]> {
+    return await db
+      .select()
+      .from(settlements)
+      .where(
+        and(
+          eq(settlements.status, 'pending'),
+          eq(settlements.payeeId, userId)
+        )
+      )
+      .orderBy(desc(settlements.createdAt));
   }
 }
 

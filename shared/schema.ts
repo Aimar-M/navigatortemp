@@ -548,6 +548,58 @@ export type InsertPoll = z.infer<typeof insertPollSchema>;
 export type PollVote = typeof pollVotes.$inferSelect;
 export type InsertPollVote = z.infer<typeof insertPollVoteSchema>;
 
+// Settlement tracking schema
+export const settlements = pgTable("settlements", {
+  id: serial("id").primaryKey(),
+  tripId: integer("trip_id").notNull().references(() => trips.id),
+  payerId: integer("payer_id").notNull().references(() => users.id), // Who owes money
+  payeeId: integer("payee_id").notNull().references(() => users.id), // Who is owed money
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default("USD"),
+  paymentMethod: text("payment_method"), // "venmo", "paypal", "cash", null
+  paymentLink: text("payment_link"), // Generated payment URL
+  status: text("status").notNull().default("pending"), // "pending", "confirmed", "cancelled"
+  initiatedAt: timestamp("initiated_at").notNull().defaultNow(),
+  confirmedAt: timestamp("confirmed_at"),
+  confirmedBy: integer("confirmed_by").references(() => users.id), // Who confirmed payment
+  notes: text("notes"), // Optional notes about the settlement
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const settlementsRelations = relations(settlements, ({ one }) => ({
+  trip: one(trips, {
+    fields: [settlements.tripId],
+    references: [trips.id]
+  }),
+  payer: one(users, {
+    fields: [settlements.payerId],
+    references: [users.id]
+  }),
+  payee: one(users, {
+    fields: [settlements.payeeId],
+    references: [users.id]
+  }),
+  confirmedByUser: one(users, {
+    fields: [settlements.confirmedBy],
+    references: [users.id]
+  })
+}));
+
+export const insertSettlementSchema = createInsertSchema(settlements).pick({
+  tripId: true,
+  payerId: true,
+  payeeId: true,
+  amount: true,
+  currency: true,
+  paymentMethod: true,
+  paymentLink: true,
+  notes: true,
+});
+
+export type Settlement = typeof settlements.$inferSelect;
+export type InsertSettlement = z.infer<typeof insertSettlementSchema>;
+
 // Add types for user trip settings
 export type UserTripSetting = typeof userTripSettings.$inferSelect;
 export type InsertUserTripSetting = z.infer<typeof insertUserTripSettingsSchema>;
