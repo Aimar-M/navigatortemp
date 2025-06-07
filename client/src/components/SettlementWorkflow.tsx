@@ -33,6 +33,8 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
   const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [isInitiating, setIsInitiating] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -100,6 +102,8 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
 
   const openPaymentLink = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer');
+    setHasRedirected(true);
+    setShowConfirmation(true);
   };
 
   // Check if there's already a pending settlement
