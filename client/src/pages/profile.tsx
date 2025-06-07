@@ -62,6 +62,13 @@ export default function Profile() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Validate Venmo username format
+    if (name === 'venmoUsername' && value && !value.startsWith('@')) {
+      setFormData(prev => ({ ...prev, [name]: '@' + value.replace('@', '') }));
+      return;
+    }
+    
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -115,6 +122,8 @@ export default function Profile() {
         lastName: profileData.lastName || "",
         bio: profileData.bio || "",
         location: profileData.location || "",
+        venmoUsername: profileData.venmoUsername || "",
+        paypalEmail: profileData.paypalEmail || "",
       });
     }
   };
@@ -351,6 +360,56 @@ export default function Profile() {
                       placeholder="Tell us about yourself..."
                       rows={3}
                     />
+                  </div>
+
+                  {/* Payment Methods Section */}
+                  <div className="border-t pt-6 mt-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Preferred Payment Methods</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Add your payment information to streamline settlement workflows. Both fields are optional.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor="venmoUsername" className="block text-sm font-medium text-gray-700 mb-1">
+                          Venmo Username
+                        </label>
+                        <Input
+                          id="venmoUsername"
+                          name="venmoUsername"
+                          value={formData.venmoUsername}
+                          onChange={handleInputChange}
+                          placeholder="@username"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Used to generate one-click payment links in the settlement workflow
+                        </p>
+                      </div>
+
+                      <div>
+                        <label htmlFor="paypalEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                          PayPal Email
+                        </label>
+                        <Input
+                          id="paypalEmail"
+                          name="paypalEmail"
+                          type="email"
+                          value={formData.paypalEmail}
+                          onChange={handleInputChange}
+                          placeholder="user@example.com"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Used to generate one-click payment links in the settlement workflow
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-blue-50 rounded-md">
+                      <p className="text-sm text-blue-800">
+                        <strong>Note:</strong> Users without online payment methods will be offered a "Settle in Cash" option 
+                        during the settlement workflow, which requires separate confirmation from both parties.
+                      </p>
+                    </div>
                   </div>
 
                   <div className="flex justify-end space-x-3 pt-4">
