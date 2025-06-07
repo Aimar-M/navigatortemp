@@ -86,8 +86,27 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
       return;
     }
 
+    // For cash payments, proceed directly to settlement initiation
+    if (selectedMethod === 'cash') {
+      setIsInitiating(true);
+      try {
+        await initiateMutation.mutateAsync({
+          payeeId: balance.userId,
+          amount,
+          paymentMethod: selectedMethod,
+          notes,
+        });
+      } finally {
+        setIsInitiating(false);
+      }
+    } else {
+      // For Venmo/PayPal, show confirmation screen first
+      setShowConfirmation(true);
+    }
+  };
+
+  const handleMarkAsSent = async () => {
     setIsInitiating(true);
-    
     try {
       await initiateMutation.mutateAsync({
         payeeId: balance.userId,
@@ -95,9 +114,23 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
         paymentMethod: selectedMethod,
         notes,
       });
+      setShowConfirmation(false);
+      setHasRedirected(false);
     } finally {
       setIsInitiating(false);
     }
+  };
+
+  const resetWorkflow = () => {
+    setShowConfirmation(false);
+    setHasRedirected(false);
+    setSelectedMethod('');
+    setNotes('');
+  };
+
+  const handleClose = () => {
+    resetWorkflow();
+    onClose();
   };
 
   const openPaymentLink = (url: string) => {
@@ -126,14 +159,14 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
           <div className="text-center py-4">
             <p className="text-gray-600">No outstanding balance with {balance.name}.</p>
           </div>
-          <Button onClick={onClose} className="w-full">Close</Button>
+          <Button onClick={handleClose} className="w-full">Close</Button>
         </DialogContent>
       </Dialog>
     );
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -161,6 +194,46 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
             </div>
           </div>
 
+          {/* Confirmation Screen */}
+          {showConfirmation && selectedMethod !== 'cash' && (
+            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+              <div className="text-center space-y-3">
+                <CheckCircle className="h-8 w-8 text-blue-600 mx-auto" />
+                <div>
+                  <h3 className="font-medium text-blue-900">Payment App Opened</h3>
+                  <p className="text-sm text-blue-700 mt-1">
+                    We opened {selectedMethod === 'venmo' ? 'Venmo' : 'PayPal'} for you to send ${amount.toFixed(2)} to {balance.name}.
+                  </p>
+                </div>
+                
+                <div className="bg-white p-3 rounded border">
+                  <p className="text-sm text-gray-600 mb-3">
+                    After completing the payment in the app, click the button below to notify {balance.name}.
+                  </p>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={resetWorkflow}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                    >
+                      Go Back
+                    </Button>
+                    <Button
+                      onClick={handleMarkAsSent}
+                      disabled={isInitiating}
+                      size="sm"
+                      className="flex-1"
+                    >
+                      {isInitiating ? "Confirming..." : "Mark as Sent"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {existingSettlement && (
             <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
@@ -178,8 +251,8 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
             </div>
           )}
 
-          {/* Settlement Options - Only show if user owes money and no pending settlement */}
-          {owes && !existingSettlement && (
+          {/* Settlement Options - Only show if user owes money, no pending settlement, and not in confirmation mode */}
+          {owes && !existingSettlement && !showConfirmation && (
             <>
               <Separator />
               
@@ -266,7 +339,7 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={onClose} variant="outline" className="flex-1">
+                <Button onClick={handleClose} variant="outline" className="flex-1">
                   Cancel
                 </Button>
                 <Button
@@ -286,7 +359,7 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
               <p className="text-gray-600 mb-4">
                 You are owed money by {balance.name}. They will need to initiate the settlement process.
               </p>
-              <Button onClick={onClose} variant="outline">
+              <Button onClick={handleClose} variant="outline">
                 Close
               </Button>
             </div>
