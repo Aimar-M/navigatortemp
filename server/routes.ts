@@ -2945,6 +2945,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   }
   // });
 
+  // Settlement API routes
+  router.post('/trips/:id/settlements/initiate', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      const tripId = parseInt(req.params.id);
+      const { payeeId, amount, paymentMethod, notes } = req.body;
+
+      if (isNaN(tripId) || !payeeId || !amount) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Get payee information for payment link generation
+      const payee = await storage.getUser(payeeId);
+      if (!payee) {
+        return res.status(404).json({ message: "Payee not found" });
+      }
+
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: "Trip not found" });
+      }
+
+      // Import settlement utilities
+      const { getSettlementOptions } = await import('./settlement-utils');
+      const settlementOptions = getSettlementOptions(payee, parseFloat(amount), user.name, trip.name);
+      
+      let paymentLink = null;
+      if (paymentMethod && paymentMethod !== 'cash') {
+        const selectedOption = settlementOptions.find(opt => opt.method === paymentMethod);
+        paymentLink = selectedOption?.paymentLink || null;
+      }
+
+      const settlement = await storage.createSettlement({
+        tripId,
+        payerId: user.id,
+        payeeId: parseInt(payeeId),
+        amount: amount.toString(),
+        currency: 'USD',
+        paymentMethod: paymentMethod || null,
+        paymentLink,
+        notes: notes || null,
+      });
+
+      res.json(settlement);
+    } catch (error) {
+      console.error("Error initiating settlement:", error);
+      res.status(500).json({ message: "Failed to initiate settlement" });
+    }
+  });
+
+  router.get('/trips/:id/settlements', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tripId = parseInt(req.params.id);
+      const settlements = await storage.getSettlementsByTrip(tripId);
+      
+      // Enhance with user information
+      const enhancedSettlements = await Promise.all(
+        settlements.map(async (settlement) => {
+          const payer = await storage.getUser(settlement.payerId);
+          const payee = await storage.getUser(settlement.payeeId);
+          return {
+            ...settlement,
+            payerName: payer?.name || 'Unknown',
+            payeeName: payee?.name || 'Unknown',
+          };
+        })
+      );
+
+      res.json(enhancedSettlements);
+    } catch (error) {
+      console.error("Error fetching settlements:", error);
+      res.status(500).json({ message: "Failed to fetch settlements" });
+    }
+  });
+
+  router.post('/settlements/:id/confirm', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      const settlementId = parseInt(req.params.id);
+      const settlement = await storage.getSettlement(settlementId);
+
+      if (!settlement) {
+        return res.status(404).json({ message: "Settlement not found" });
+      }
+
+      // Only the payee can confirm receipt of payment
+      if (settlement.payeeId !== user.id) {
+        return res.status(403).json({ message: "Only the payee can confirm payment" });
+      }
+
+      if (settlement.status === 'confirmed') {
+        return res.status(400).json({ message: "Settlement already confirmed" });
+      }
+
+      const confirmedSettlement = await storage.confirmSettlement(settlementId, user.id);
+      res.json(confirmedSettlement);
+    } catch (error) {
+      console.error("Error confirming settlement:", error);
+      res.status(500).json({ message: "Failed to confirm settlement" });
+    }
+  });
+
+  router.get('/settlements/pending', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      const pendingSettlements = await storage.getPendingSettlementsForUser(user.id);
+      
+      // Enhance with additional information
+      const enhancedSettlements = await Promise.all(
+        pendingSettlements.map(async (settlement) => {
+          const payer = await storage.getUser(settlement.payerId);
+          const trip = await storage.getTrip(settlement.tripId);
+          return {
+            ...settlement,
+            payerName: payer?.name || 'Unknown',
+            tripName: trip?.name || 'Unknown Trip',
+          };
+        })
+      );
+
+      res.json(enhancedSettlements);
+    } catch (error) {
+      console.error("Error fetching pending settlements:", error);
+      res.status(500).json({ message: "Failed to fetch pending settlements" });
+    }
+  });
+
+  router.get('/trips/:id/settlement-options/:payeeId', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      const tripId = parseInt(req.params.id);
+      const payeeId = parseInt(req.params.payeeId);
+      const { amount } = req.query;
+
+      if (isNaN(tripId) || isNaN(payeeId) || !amount) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      const payee = await storage.getUser(payeeId);
+      const trip = await storage.getTrip(tripId);
+
+      if (!payee || !trip) {
+        return res.status(404).json({ message: "Payee or trip not found" });
+      }
+
+      const { getSettlementOptions } = await import('./settlement-utils');
+      const options = getSettlementOptions(payee, parseFloat(amount as string), user.name, trip.name);
+
+      res.json(options);
+    } catch (error) {
+      console.error("Error getting settlement options:", error);
+      res.status(500).json({ message: "Failed to get settlement options" });
+    }
+  });
+
   app.use('/api', router);
   
   return httpServer;

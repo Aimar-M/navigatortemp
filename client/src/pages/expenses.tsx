@@ -23,9 +23,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, DollarSign, Users, Receipt, Activity, CheckCircle, XCircle, BarChart3, Grid3X3 } from "lucide-react";
+import { Plus, DollarSign, Users, Receipt, Activity, CheckCircle, XCircle, BarChart3, Grid3X3, HandHeart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, ReferenceLine, Tooltip, LabelList } from "recharts";
+import { SettlementWorkflow } from "@/components/SettlementWorkflow";
 
 interface ExpenseShare {
   id: number;
