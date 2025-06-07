@@ -437,17 +437,12 @@ export default function ExpensesPage() {
                         name: balance.name,
                         value: balance.netBalance
                       }))}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                      layout="horizontal"
+                      margin={{ top: 20, right: 60, left: 100, bottom: 20 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
-                        dataKey="name" 
-                        angle={-45}
-                        textAnchor="end"
-                        height={80}
-                        tick={{ fontSize: 12 }}
-                      />
-                      <YAxis 
+                        type="number"
                         domain={(() => {
                           const values = balances.map(b => b.netBalance);
                           if (values.length === 0) return [-100, 100];
@@ -457,19 +452,32 @@ export default function ExpensesPage() {
                         })()}
                         tickFormatter={(value) => formatCurrency(value)}
                       />
+                      <YAxis 
+                        type="category"
+                        dataKey="name" 
+                        width={90}
+                        tick={{ fontSize: 12 }}
+                      />
                       <Tooltip 
                         formatter={(value, name) => [formatCurrency(value as number), 'Balance']}
                         labelFormatter={(label) => `User: ${label}`}
                       />
-                      <ReferenceLine y={0} stroke="#374151" strokeWidth={2} />
+                      <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
                       <Bar 
                         dataKey="value"
-                        fill="#dc2626"
+                        fill="#8884d8"
                         stroke="#000"
-                        strokeWidth={2}
+                        strokeWidth={1}
                         minPointSize={10}
                         maxBarSize={50}
-                      />
+                      >
+                        {balances.map((balance, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={balance.netBalance >= 0 ? "#16a34a" : "#dc2626"}
+                          />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                   <div className="flex items-center justify-center gap-6 mt-4 text-sm">
