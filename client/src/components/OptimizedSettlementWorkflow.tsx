@@ -86,7 +86,7 @@ export function OptimizedSettlementWorkflow({
 
   const initiateMutation = useMutation({
     mutationFn: async (transaction: OptimizedTransaction) => {
-      return await apiRequest(`/api/trips/${tripId}/settlements/initiate`, 'POST', {
+      return await apiRequest('POST', `/api/trips/${tripId}/settlements/initiate`, {
         payeeId: transaction.toUserId,
         amount: transaction.amount,
         paymentMethod: 'optimized', // Special marker for algorithm-generated settlements
@@ -131,6 +131,7 @@ export function OptimizedSettlementWorkflow({
   const getUserTransactions = () => {
     if (!settlementData?.transactions) return { outgoing: [], incoming: [] };
     
+    // Use the exact same transactions from the settlement data
     const outgoing = settlementData.transactions.filter((t: OptimizedTransaction) => t.fromUserId === currentUserId);
     const incoming = settlementData.transactions.filter((t: OptimizedTransaction) => t.toUserId === currentUserId);
     
