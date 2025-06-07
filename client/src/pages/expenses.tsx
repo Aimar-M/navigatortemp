@@ -437,36 +437,30 @@ export default function ExpensesPage() {
                         name: balance.name,
                         net: balance.netBalance
                       }))}
-                      layout="horizontal"
-                      margin={{ top: 20, right: 60, left: 100, bottom: 20 }}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
-                        type="number" 
+                        dataKey="name" 
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis 
                         tickFormatter={(value) => formatCurrency(value)}
                         domain={(() => {
                           const values = balances.map(b => b.netBalance);
+                          if (values.length === 0) return [-100, 100];
                           const maxAbs = Math.max(...values.map(v => Math.abs(v)));
-                          const buffer = maxAbs * 0.1;
+                          const buffer = maxAbs * 0.1 || 10;
                           return [-maxAbs - buffer, maxAbs + buffer];
                         })()}
                       />
-                      <YAxis 
-                        type="category" 
-                        dataKey="name" 
-                        width={90}
-                        tick={{ fontSize: 12 }}
-                      />
-                      <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
+                      <ReferenceLine y={0} stroke="#374151" strokeWidth={2} />
                       <Bar 
                         dataKey="net" 
-                        radius={[0, 4, 4, 0]}
-                        label={{
-                          position: 'insideRight',
-                          formatter: (value: number) => formatCurrency(Math.abs(value)),
-                          fill: 'white',
-                          fontSize: 12
-                        }}
+                        strokeWidth={1}
                       >
                         {balances.map((balance, index) => (
                           <Cell 
