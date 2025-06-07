@@ -151,6 +151,14 @@ export default function ExpensesPage() {
   // TODO: Mark Paid functionality removed - was non-functional
   // Settlement tracking still works through balance calculations
 
+  const handleSettleClick = () => {
+    // TODO: Implement settlement workflow modal or page
+    toast({
+      title: "Settlement Feature",
+      description: "Settlement workflow coming soon!",
+    });
+  };
+
   const loading = expensesLoading || membersLoading || balancesLoading;
 
   if (loading) {
@@ -208,14 +216,23 @@ export default function ExpensesPage() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Group Expenses</h1>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Expense
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={handleSettleClick}
+              className="flex items-center gap-2"
+            >
+              <DollarSign className="h-4 w-4" />
+              Settle Up
+            </Button>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Expense
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add Manual Expense</DialogTitle>
               </DialogHeader>
@@ -348,6 +365,7 @@ export default function ExpensesPage() {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
 
