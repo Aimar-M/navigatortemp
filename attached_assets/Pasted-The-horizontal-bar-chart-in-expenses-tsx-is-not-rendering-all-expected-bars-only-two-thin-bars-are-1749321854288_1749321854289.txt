@@ -1,0 +1,57 @@
+The horizontal bar chart in expenses.tsx is not rendering all expected bars — only two thin bars are visible, regardless of the number of users in the data. Investigate and resolve the issue holistically. Here is what we know and what needs to be fixed:
+
+Chart Orientation and DataKey Consistency:
+
+The chart is a horizontal bar chart (XAxis type="number" and YAxis type="category").
+
+Bar width represents value.
+
+The <Bar> component uses dataKey="value", but the bar color depends on balance.netBalance.
+
+If value is not the same as netBalance, then either the wrong dataKey is used or the mapping is incorrect. Use dataKey="netBalance" if appropriate.
+
+Missing or Overlapping Bars:
+
+Only 2 bars are rendering. It's likely more exist but are hidden due to layout constraints.
+
+Investigate the height of the chart or the ResponsiveContainer. It might be too small.
+
+Make the chart height dynamic — for example: height={balances.length * 30}.
+
+Also adjust bar-related props like barCategoryGap, barGap, and maxBarSize to give each bar enough room to render clearly.
+
+Invisible Bars (0x0 Dimensions):
+
+In the DOM, <g class="recharts-bar-rectangle"> elements exist for more users but have 0 width and height.
+
+This indicates data is being passed but not rendered properly.
+
+Check that each item in the balances array has a numeric value for the dataKey used.
+
+Domain and Axis Calculations:
+
+The domain of the XAxis is calculated using the max absolute balance and padding.
+
+Make sure this logic correctly handles negative and positive values so that bars show to the left and right of the zero line (ReferenceLine x={0}).
+
+Confirm the XAxis scale allows all values to be seen.
+
+Data Mapping and Tooltip Accuracy:
+
+Ensure the value used in the bar height is the same value shown in the tooltip and used to determine fill color.
+
+Clean up inconsistencies between dataKey, Cell fill, and Tooltip formatter.
+
+What to do:
+
+Fix dataKey if it’s incorrect.
+
+Make chart height dynamic based on number of items.
+
+Fix spacing between bars.
+
+Ensure all data entries in balances are valid and numeric.
+
+Verify XAxis and ReferenceLine logic centers the graph correctly.
+
+Deliver a revised BarChart implementation that reflects these changes, with notes on what was updated and why.
