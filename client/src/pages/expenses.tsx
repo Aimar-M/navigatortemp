@@ -27,6 +27,7 @@ import { Plus, DollarSign, Users, Receipt, Activity, CheckCircle, XCircle, BarCh
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, ReferenceLine, Tooltip, LabelList } from "recharts";
 import { SettlementWorkflow } from "@/components/SettlementWorkflow";
+import { OptimizedSettlementWorkflow } from "@/components/OptimizedSettlementWorkflow";
 
 interface ExpenseShare {
   id: number;
@@ -78,6 +79,7 @@ export default function ExpensesPage() {
     isOpen: boolean;
     balance: { userId: number; name: string; balance: number } | null;
   }>({ isOpen: false, balance: null });
+  const [optimizedSettlementOpen, setOptimizedSettlementOpen] = useState(false);
   
   // Form state for manual expenses
   const [newExpense, setNewExpense] = useState({
@@ -111,30 +113,19 @@ export default function ExpensesPage() {
   const handleSettleClick = () => {
     if (!currentUser) return;
     
-    // Find balances where the current user has involvement (owes or is owed)
-    const relevantBalances = balances.filter(b => 
-      b.userId !== currentUser.id && b.netBalance !== 0
-    );
+    // Check if there are any outstanding balances
+    const hasOutstandingBalances = balances.some(b => Math.abs(b.netBalance) > 0.01);
     
-    if (relevantBalances.length === 0) {
+    if (!hasOutstandingBalances) {
       toast({
         title: "No Outstanding Balances",
-        description: "There are no outstanding balances to settle in this trip.",
+        description: "All balances are settled for this trip.",
       });
       return;
     }
 
-    // For simplicity, show the first relevant balance
-    // In production, you might want to show a list to choose from
-    const targetBalance = relevantBalances[0];
-    setSettlementWorkflow({
-      isOpen: true,
-      balance: {
-        userId: targetBalance.userId,
-        name: targetBalance.name,
-        balance: targetBalance.netBalance
-      }
-    });
+    // Open the optimized settlement workflow
+    setOptimizedSettlementOpen(true);
   };
 
   const addExpenseMutation = useMutation({
@@ -613,7 +604,7 @@ export default function ExpensesPage() {
           )}
         </div>
 
-        {/* Settlement Workflow */}
+        {/* Settlement Workflows */}
         {settlementWorkflow.balance && (
           <SettlementWorkflow
             tripId={parseInt(tripId!)}
@@ -622,6 +613,14 @@ export default function ExpensesPage() {
             onClose={() => setSettlementWorkflow({ isOpen: false, balance: null })}
           />
         )}
+
+        {/* Optimized Settlement Workflow */}
+        <OptimizedSettlementWorkflow
+          tripId={parseInt(tripId!)}
+          currentUserId={currentUser?.id || 0}
+          isOpen={optimizedSettlementOpen}
+          onClose={() => setOptimizedSettlementOpen(false)}
+        />
       </div>
     </TripDetailLayout>
   );
