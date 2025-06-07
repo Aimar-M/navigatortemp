@@ -131,8 +131,8 @@ export function OptimizedSettlementWorkflow({
   const getUserTransactions = () => {
     if (!settlementData?.transactions) return { outgoing: [], incoming: [] };
     
-    const outgoing = settlementData.transactions.filter(t => t.fromUserId === currentUserId);
-    const incoming = settlementData.transactions.filter(t => t.toUserId === currentUserId);
+    const outgoing = settlementData.transactions.filter((t: OptimizedTransaction) => t.fromUserId === currentUserId);
+    const incoming = settlementData.transactions.filter((t: OptimizedTransaction) => t.toUserId === currentUserId);
     
     return { outgoing, incoming };
   };
@@ -141,7 +141,7 @@ export function OptimizedSettlementWorkflow({
     if (!settlementData) return "";
     
     const { stats, originalBalances } = settlementData;
-    const usersWithBalance = originalBalances.filter(b => Math.abs(b.netBalance) > 0.01).length;
+    const usersWithBalance = originalBalances.filter((b: any) => Math.abs(b.netBalance) > 0.01).length;
     const maxPossibleTransactions = Math.max(0, usersWithBalance - 1);
     
     if (stats.totalTransactions === 0) {
@@ -251,7 +251,7 @@ export function OptimizedSettlementWorkflow({
                 <CardTitle className="text-red-600">Payments You Need to Make</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {outgoing.map((transaction, index) => (
+                {outgoing.map((transaction: OptimizedTransaction, index: number) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
                     <div className="flex items-center gap-3">
                       <ArrowRight className="h-4 w-4 text-red-600" />
@@ -280,7 +280,7 @@ export function OptimizedSettlementWorkflow({
                 <CardTitle className="text-green-600">Payments Coming to You</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {incoming.map((transaction, index) => (
+                {incoming.map((transaction: OptimizedTransaction, index: number) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                     <div className="flex items-center gap-3">
                       <ArrowRight className="h-4 w-4 text-green-600 rotate-180" />
@@ -311,7 +311,7 @@ export function OptimizedSettlementWorkflow({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {transactions.map((transaction, index) => (
+                    {transactions.map((transaction: OptimizedTransaction, index: number) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3 flex-1">
                           <div className="font-medium text-gray-900">
@@ -334,7 +334,7 @@ export function OptimizedSettlementWorkflow({
           )}
 
           {/* Validation Warning */}
-          {!settlementData.isValid && (
+          {settlementData && !settlementData.isValid && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-yellow-600" />
@@ -343,7 +343,7 @@ export function OptimizedSettlementWorkflow({
                 </span>
               </div>
               <p className="text-sm text-yellow-700 mt-1">
-                The calculated settlement plan may not perfectly balance all accounts. Please review carefully.
+                The calculated settlement plan may not perfectly balance all accounts due to rounding. Small differences under $0.05 are expected.
               </p>
             </div>
           )}
