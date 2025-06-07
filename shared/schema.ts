@@ -165,6 +165,7 @@ export const insertActivitySchema = createInsertSchema(activities).pick({
   cost: true,
   paymentType: true,
   maxParticipants: true,
+  createdBy: true,
 });
 
 // ActivityRSVP schema
