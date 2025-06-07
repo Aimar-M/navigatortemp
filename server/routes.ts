@@ -1,6 +1,7 @@
 import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import session from "express-session";
 import { storage } from "./db-storage";
 import { db } from "./db";
 import { expenseSplits } from "@shared/schema";
@@ -27,6 +28,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const router = express.Router();
   const httpServer = createServer(app);
   
+  // Configure session middleware
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'dev-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Set to true if using HTTPS
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  }));
+  
   // Helper function to check for authenticated user
   const ensureUser = (req: Request, res: Response): User | null => {
     if (!req.user) {
@@ -35,9 +48,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     return req.user;
   };
-  
-  // We'll use a simple token system for authentication
-  // No middleware needed
   
   // Setup WebSocket server for real-time chat
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
@@ -198,6 +208,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Don't send password in the response
       const { password: _, ...userWithoutPassword } = user;
+      
+      // Set session for session-based authentication
+      if (req.session) {
+        req.session.userId = user.id;
+      }
       
       // Generate token (in this simple implementation, just use the user ID)
       const token = `${user.id}`;
@@ -3206,12 +3221,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
-// Augment Express Request to include user
+// Augment Express Request to include user and session
 declare global {
   namespace Express {
     interface Request {
       user?: User;
-      session?: any;
     }
+  }
+}
+
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
   }
 }
