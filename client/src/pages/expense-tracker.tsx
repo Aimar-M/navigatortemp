@@ -75,19 +75,8 @@ export default function ExpenseTracker() {
     queryKey: ["/api/auth/me"],
   });
 
-  const markPaidMutation = useMutation({
-    mutationFn: async ({ expenseId, splitId }: { expenseId: number; splitId: number }) => {
-      return await apiRequest(`/api/expenses/${expenseId}/splits/${splitId}/pay`, "POST", {});
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses/balances`] });
-      toast({
-        title: "Payment Recorded",
-        description: "The payment has been marked as paid.",
-      });
-    },
-  });
+  // TODO: Mark Paid functionality removed - was non-functional
+  // Settlement tracking still works through balance calculations
 
   if (expensesLoading || balancesLoading) {
     return (
@@ -240,22 +229,10 @@ export default function ExpenseTracker() {
                                 Paid
                               </Badge>
                             ) : (
-                              <>
-                                <Badge variant="outline" className="bg-red-100 text-red-800">
-                                  <XCircle className="h-3 w-3 mr-1" />
-                                  Unpaid
-                                </Badge>
-                                {(currentUser?.id === expense.paidBy || currentUser?.id === split.userId) && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => markPaidMutation.mutate({ expenseId: expense.id, splitId: split.id })}
-                                    disabled={markPaidMutation.isPending}
-                                  >
-                                    Mark Paid
-                                  </Button>
-                                )}
-                              </>
+                              <Badge variant="outline" className="bg-red-100 text-red-800">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Unpaid
+                              </Badge>
                             )}
                           </div>
                         </div>

@@ -148,19 +148,8 @@ export default function ExpensesPage() {
     }
   });
 
-  const markPaidMutation = useMutation({
-    mutationFn: async ({ expenseId, shareId }: { expenseId: number; shareId: number }) => {
-      return await apiRequest(`/api/expenses/${expenseId}/shares/${shareId}/mark-paid`, "POST", {});
-    },
-    onSuccess: () => {
-      toast({
-        title: "Payment Recorded",
-        description: "The payment has been marked as paid.",
-      });
-      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses/balances`] });
-    }
-  });
+  // TODO: Mark Paid functionality removed - was non-functional
+  // Settlement tracking still works through balance calculations
 
   const loading = expensesLoading || membersLoading || balancesLoading;
 
@@ -469,14 +458,11 @@ export default function ExpensesPage() {
                           ))}
                           <LabelList 
                             dataKey="value"
-                            position={(entry: any) => {
-                              return entry.value >= 0 ? 'top' : 'bottom';
-                            }}
+                            position="outside"
                             formatter={(value: number) => formatCurrency(Math.abs(value))}
                             fontSize={12}
                             fontWeight={600}
                             fill="#374151"
-                            offset={5}
                           />
                         </Bar>
                       </BarChart>
@@ -566,22 +552,10 @@ export default function ExpensesPage() {
                                   Paid
                                 </Badge>
                               ) : (
-                                <>
-                                  <Badge variant="outline" className="bg-red-100 text-red-800">
-                                    <XCircle className="h-3 w-3 mr-1" />
-                                    Unpaid
-                                  </Badge>
-                                  {(currentUser?.id === expense.paidBy || currentUser?.id === share.userId) && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => markPaidMutation.mutate({ expenseId: expense.id, shareId: share.id })}
-                                      disabled={markPaidMutation.isPending}
-                                    >
-                                      Mark Paid
-                                    </Button>
-                                  )}
-                                </>
+                                <Badge variant="outline" className="bg-red-100 text-red-800">
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Unpaid
+                                </Badge>
                               )}
                             </div>
                           </div>
