@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, DollarSign, Users, Receipt, Activity, CheckCircle, XCircle, BarChart3, Grid3X3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, ReferenceLine, Tooltip } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, ReferenceLine, Tooltip, LabelList } from "recharts";
 
 interface ExpenseShare {
   id: number;
@@ -467,6 +467,17 @@ export default function ExpensesPage() {
                               fill={balance.netBalance >= 0 ? "#16a34a" : "#dc2626"}
                             />
                           ))}
+                          <LabelList 
+                            dataKey="value"
+                            position={(entry: any) => {
+                              return entry.value >= 0 ? 'top' : 'bottom';
+                            }}
+                            formatter={(value: number) => formatCurrency(Math.abs(value))}
+                            fontSize={12}
+                            fontWeight={600}
+                            fill="#374151"
+                            offset={5}
+                          />
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
