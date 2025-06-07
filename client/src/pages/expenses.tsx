@@ -438,13 +438,17 @@ export default function ExpensesPage() {
                         name: balance.name,
                         value: balance.netBalance
                       }))}
-                      layout="horizontal"
-                      margin={{ top: 20, right: 60, left: 100, bottom: 20 }}
-                      barCategoryGap={10}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
-                        type="number"
+                        dataKey="name" 
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis 
                         domain={(() => {
                           const values = balances.map(b => b.netBalance);
                           if (values.length === 0) return [-100, 100];
@@ -454,23 +458,14 @@ export default function ExpensesPage() {
                         })()}
                         tickFormatter={(value) => formatCurrency(value)}
                       />
-                      <YAxis 
-                        type="category"
-                        dataKey="name" 
-                        width={90}
-                        tick={{ fontSize: 12 }}
-                      />
                       <Tooltip 
                         formatter={(value, name) => [formatCurrency(value as number), 'Balance']}
                         labelFormatter={(label) => `User: ${label}`}
                       />
-                      <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
+                      <ReferenceLine y={0} stroke="#374151" strokeWidth={2} />
                       <Bar 
                         dataKey="value"
-                        fill="#8884d8"
-                        barSize={30}
-                        stroke="#333"
-                        strokeWidth={1}
+                        barSize={60}
                       >
                         {balances.map((balance, index) => (
                           <Cell 
