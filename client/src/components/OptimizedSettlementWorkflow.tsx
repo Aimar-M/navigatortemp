@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { SettlementWorkflow } from "@/components/SettlementWorkflow";
 import { 
   ArrowRight, 
   TrendingUp, 
@@ -57,6 +58,10 @@ export function OptimizedSettlementWorkflow({
   currentUserId 
 }: OptimizedSettlementWorkflowProps) {
   const [selectedTransaction, setSelectedTransaction] = useState<OptimizedTransaction | null>(null);
+  const [settlementWorkflow, setSettlementWorkflow] = useState<{
+    isOpen: boolean;
+    balance: { userId: number; name: string; balance: number } | null;
+  }>({ isOpen: false, balance: null });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -84,32 +89,7 @@ export function OptimizedSettlementWorkflow({
     enabled: isOpen,
   });
 
-  const initiateMutation = useMutation({
-    mutationFn: async (transaction: OptimizedTransaction) => {
-      return await apiRequest('POST', `/api/trips/${tripId}/settlements/initiate`, {
-        payeeId: transaction.toUserId,
-        amount: transaction.amount,
-        paymentMethod: 'optimized', // Special marker for algorithm-generated settlements
-        notes: `Optimized settlement: ${transaction.fromUserName} → ${transaction.toUserName}`
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Settlement Initiated",
-        description: "Optimized payment has been initiated successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/settlements`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses/balances`] });
-      setSelectedTransaction(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Settlement Failed",
-        description: error.message || "Failed to initiate settlement.",
-        variant: "destructive",
-      });
-    },
-  });
+  // Remove the old mutation and replace with settlement workflow trigger
 
   const handleInitiateTransaction = (transaction: OptimizedTransaction) => {
     if (transaction.fromUserId !== currentUserId) {
@@ -121,7 +101,15 @@ export function OptimizedSettlementWorkflow({
       return;
     }
     
-    initiateMutation.mutate(transaction);
+    // Open the existing SettlementWorkflow with the transaction details
+    setSettlementWorkflow({
+      isOpen: true,
+      balance: {
+        userId: transaction.toUserId,
+        name: transaction.toUserName,
+        balance: transaction.amount
+      }
+    });
   };
 
   const formatCurrency = (amount: number) => {
@@ -263,10 +251,9 @@ export function OptimizedSettlementWorkflow({
                     </div>
                     <Button
                       onClick={() => handleInitiateTransaction(transaction)}
-                      disabled={initiateMutation.isPending}
                       size="sm"
                     >
-                      {initiateMutation.isPending ? "Initiating..." : "Pay Now"}
+                      Pay Now
                     </Button>
                   </div>
                 ))}
@@ -361,6 +348,16 @@ export function OptimizedSettlementWorkflow({
             )}
           </div>
         </div>
+
+        {/* Settlement Workflow Modal */}
+        {settlementWorkflow.balance && (
+          <SettlementWorkflow
+            tripId={tripId}
+            balance={settlementWorkflow.balance}
+            isOpen={settlementWorkflow.isOpen}
+            onClose={() => setSettlementWorkflow({ isOpen: false, balance: null })}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
