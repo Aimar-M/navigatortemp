@@ -1,0 +1,34 @@
+The horizontal bar chart in `expenses.tsx` is not rendering all expected bars — only two thin bars are visible, regardless of the number of users in the data. Investigate and resolve the issue holistically.
+
+Here's what we know and need addressed:
+
+1. **Chart Direction & Value Mapping**:
+   - The chart is a **horizontal bar chart**: `XAxis type="number"` and `YAxis type="category"`.
+   - The width of each bar represents the value.
+   - `dataKey` on the `<Bar>` is set to `"value"`, but the colors are determined from `balance.netBalance`. If these are different, update `dataKey` to `"netBalance"` for consistency unless there's a reason.
+
+2. **Missing Bars / Overlap**:
+   - Only 2 bars are rendering. We suspect this is due to limited vertical space and/or tight bar spacing.
+   - Check if the chart or its container has a **fixed or too-small height**. If so, dynamically scale height based on number of items in the `balances` array (`balances.length * 30` is a good rule).
+   - Examine and adjust `barCategoryGap`, `barGap`, and `barSize` to ensure bars are spaced out enough to render clearly.
+   - Confirm if `ResponsiveContainer` and `BarChart` are getting enough height to show all rows.
+
+3. **Invisible Bars (0-width or 0-height)**:
+   - Confirm that all `balances` items contain a **valid numeric value** for the field used in `dataKey` (`netBalance` or `value`).
+   - Some `<g class="recharts-bar-rectangle">` are being created with 0x0 dimensions. This could mean the data is being passed, but Recharts can't render them due to layout or value issues.
+
+4. **Chart Domain & Center Line**:
+   - The `XAxis` domain is being calculated based on absolute balance values with padding. Confirm this logic is correctly calculating min/max and padding.
+   - There is a `ReferenceLine` at x=0, which is good. Make sure the chart is centered and rendering bars both to the left and right of that line as intended.
+
+5. **DataField Audit**:
+   - Do a full audit to ensure the values used for the bars are consistent with those used to determine fill color and tooltips.
+   - If the data field `"value"` is not correct, replace it with `"netBalance"` or whatever is actually used for bar value.
+
+👉 Please update the code to:
+- Dynamically size the chart height based on the number of items.
+- Ensure proper bar spacing and visibility.
+- Align the `dataKey` with the actual value used.
+- Validate and fix any mismatches in the `balances` data structure.
+
+Provide a clean, updated `BarChart` implementation with all fixes applied, along with notes on what was changed and why.
