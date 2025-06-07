@@ -1670,49 +1670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // EXPENSE ROUTES
   
-  // Create a new expense
-  router.post('/trips/:id/expenses', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const user = ensureUser(req, res);
-      if (!user) return; // Response already sent by ensureUser
-      
-      const tripId = parseInt(req.params.id);
-      if (isNaN(tripId)) {
-        return res.status(400).json({ message: 'Invalid trip ID' });
-      }
-      
-      // Check if user is a member of the trip
-      const members = await storage.getTripMembers(tripId);
-      const isMember = members.some(member => member.userId === user.id);
-      
-      if (!isMember) {
-        return res.status(403).json({ message: 'Not a member of this trip' });
-      }
-      
-      const expenseData = insertExpenseSchema.parse({
-        ...req.body,
-        tripId,
-        userId: user.id
-      });
-      
-      const expense = await storage.createExpense(expenseData);
-      
-      // Notify trip members about the new expense
-      broadcastToTrip(wss, tripId, {
-        type: 'NEW_EXPENSE',
-        data: expense
-      });
-      
-      res.status(201).json(expense);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: 'Invalid expense data', errors: error.errors });
-      } else {
-        console.error('Error creating expense:', error);
-        res.status(500).json({ message: 'Server error' });
-      }
-    }
-  });
+  // Removed duplicate expense route - using the one at line 2860 instead
   
   // Get all expenses for a trip
   router.get('/trips/:id/expenses', isAuthenticated, async (req: Request, res: Response) => {
