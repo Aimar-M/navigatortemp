@@ -61,10 +61,22 @@ export function OptimizedSettlementWorkflow({
   const queryClient = useQueryClient();
 
   // Fetch optimized settlement plan
-  const { data: settlementData, isLoading } = useQuery<OptimizedSettlementData>({
+  const { data: settlementData, isLoading, error } = useQuery<OptimizedSettlementData>({
     queryKey: [`/api/settlements/${tripId}/optimized`],
     enabled: isOpen,
   });
+
+  // Debug logging for settlement data
+  if (isOpen) {
+    console.log('Settlement data query:', {
+      isLoading,
+      error: error?.message || null,
+      tripId,
+      isOpen,
+      hasData: !!settlementData,
+      data: settlementData
+    });
+  }
 
   // Get user-specific recommendations
   const { data: userRecommendations } = useQuery<{ recommendations: OptimizedTransaction[] }>({
