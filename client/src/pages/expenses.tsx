@@ -425,13 +425,6 @@ export default function ExpensesPage() {
                 </div>
               ) : (
                 <div className="h-96">
-                  {/* Debug data display */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <div className="mb-4 text-xs bg-gray-100 p-2 rounded space-y-1">
-                      <div>Data: {JSON.stringify(balances.map(b => ({ name: b.name, value: b.netBalance })))}</div>
-                      <div>Count: {balances.length} users</div>
-                    </div>
-                  )}
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={balances.map(balance => ({
