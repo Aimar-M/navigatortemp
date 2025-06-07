@@ -299,6 +299,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Debug logging for authentication issues
+      console.log('Authentication failed - Session:', req.session?.userId, 'Auth header:', authHeader);
+      
       res.status(401).json({ message: 'Authentication required' });
     } catch (error) {
       console.error('Auth error:', error);
@@ -3160,7 +3163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  router.get('/api/settlements/:tripId/user-recommendations/:userId', isAuthenticated, async (req: Request, res: Response) => {
+  router.get('/settlements/:tripId/user-recommendations/:userId', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return;
