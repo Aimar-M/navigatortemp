@@ -434,28 +434,24 @@ export default function ExpensesPage() {
                   )}
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={balances.length > 0 ? balances.map(balance => ({
+                      data={balances.map(balance => ({
                         name: balance.name,
                         value: balance.netBalance
-                      })) : [
-                        { name: "Test User 1", value: 50 },
-                        { name: "Test User 2", value: -30 }
-                      ]}
+                      }))}
                       layout="horizontal"
-                      width={600}
-                      height={300}
                       margin={{ top: 20, right: 60, left: 100, bottom: 20 }}
                       barCategoryGap={10}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         type="number"
-                        domain={balances.length > 0 ? (() => {
+                        domain={(() => {
                           const values = balances.map(b => b.netBalance);
+                          if (values.length === 0) return [-100, 100];
                           const maxAbs = Math.max(...values.map(v => Math.abs(v)));
-                          const padding = maxAbs * 0.2;
+                          const padding = Math.max(maxAbs * 0.2, 10);
                           return [-maxAbs - padding, maxAbs + padding];
-                        })() : [-100, 100]}
+                        })()}
                         tickFormatter={(value) => formatCurrency(value)}
                       />
                       <YAxis 
@@ -471,13 +467,12 @@ export default function ExpensesPage() {
                       <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
                       <Bar 
                         dataKey="value"
-                        fill="#dc2626"
-                        barSize={25}
+                        fill="#8884d8"
+                        barSize={30}
+                        stroke="#333"
+                        strokeWidth={1}
                       >
-                        {(balances.length > 0 ? balances : [
-                          { netBalance: 50 },
-                          { netBalance: -30 }
-                        ]).map((balance, index) => (
+                        {balances.map((balance, index) => (
                           <Cell 
                             key={`cell-${index}`} 
                             fill={balance.netBalance >= 0 ? "#16a34a" : "#dc2626"}
