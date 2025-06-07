@@ -435,8 +435,7 @@ export default function ExpensesPage() {
                     <BarChart
                       data={balances.map(balance => ({
                         name: balance.name,
-                        value: balance.netBalance,
-                        absValue: Math.abs(balance.netBalance)
+                        net: balance.netBalance
                       }))}
                       layout="horizontal"
                       margin={{ top: 20, right: 60, left: 100, bottom: 20 }}
@@ -460,7 +459,7 @@ export default function ExpensesPage() {
                       />
                       <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
                       <Bar 
-                        dataKey="value" 
+                        dataKey="net" 
                         radius={[0, 4, 4, 0]}
                         label={{
                           position: 'insideRight',
