@@ -438,13 +438,32 @@ export default function ExpensesPage() {
                         value: balance.netBalance
                       }))}
                       layout="horizontal"
-                      margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
+                      margin={{ top: 20, right: 60, left: 100, bottom: 20 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis type="category" dataKey="name" width={90} />
-                      <ReferenceLine x={0} stroke="#000" strokeWidth={1} />
-                      <Bar dataKey="value">
+                      <XAxis 
+                        type="number"
+                        domain={(() => {
+                          const values = balances.map(b => b.netBalance);
+                          if (values.length === 0) return [-100, 100];
+                          const maxAbs = Math.max(...values.map(v => Math.abs(v)));
+                          const padding = maxAbs * 0.2;
+                          return [-maxAbs - padding, maxAbs + padding];
+                        })()}
+                        tickFormatter={(value) => formatCurrency(value)}
+                      />
+                      <YAxis 
+                        type="category" 
+                        dataKey="name" 
+                        width={90}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
+                      <Bar 
+                        dataKey="value"
+                        fill="#8884d8"
+                        barSize={30}
+                      >
                         {balances.map((balance, index) => (
                           <Cell 
                             key={`cell-${index}`} 
