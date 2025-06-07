@@ -74,6 +74,10 @@ export default function ExpensesPage() {
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'chart'>('cards');
+  const [settlementWorkflow, setSettlementWorkflow] = useState<{
+    isOpen: boolean;
+    balance: { userId: number; name: string; balance: number } | null;
+  }>({ isOpen: false, balance: null });
   
   // Form state for manual expenses
   const [newExpense, setNewExpense] = useState({
@@ -103,6 +107,35 @@ export default function ExpensesPage() {
   const { data: currentUser } = useQuery<{ id: number; name: string }>({
     queryKey: ["/api/auth/me"],
   });
+
+  const handleSettleClick = () => {
+    if (!currentUser) return;
+    
+    // Find balances where the current user has involvement (owes or is owed)
+    const relevantBalances = balances.filter(b => 
+      b.userId !== currentUser.id && b.netBalance !== 0
+    );
+    
+    if (relevantBalances.length === 0) {
+      toast({
+        title: "No Outstanding Balances",
+        description: "There are no outstanding balances to settle in this trip.",
+      });
+      return;
+    }
+
+    // For simplicity, show the first relevant balance
+    // In production, you might want to show a list to choose from
+    const targetBalance = relevantBalances[0];
+    setSettlementWorkflow({
+      isOpen: true,
+      balance: {
+        userId: targetBalance.userId,
+        name: targetBalance.name,
+        balance: targetBalance.netBalance
+      }
+    });
+  };
 
   const addExpenseMutation = useMutation({
     mutationFn: async (data: typeof newExpense) => {
@@ -151,14 +184,6 @@ export default function ExpensesPage() {
 
   // TODO: Mark Paid functionality removed - was non-functional
   // Settlement tracking still works through balance calculations
-
-  const handleSettleClick = () => {
-    // TODO: Implement settlement workflow modal or page
-    toast({
-      title: "Settlement Feature",
-      description: "Settlement workflow coming soon!",
-    });
-  };
 
   const loading = expensesLoading || membersLoading || balancesLoading;
 
@@ -587,6 +612,16 @@ export default function ExpensesPage() {
             ))
           )}
         </div>
+
+        {/* Settlement Workflow */}
+        {settlementWorkflow.balance && (
+          <SettlementWorkflow
+            tripId={parseInt(tripId!)}
+            balance={settlementWorkflow.balance}
+            isOpen={settlementWorkflow.isOpen}
+            onClose={() => setSettlementWorkflow({ isOpen: false, balance: null })}
+          />
+        )}
       </div>
     </TripDetailLayout>
   );
