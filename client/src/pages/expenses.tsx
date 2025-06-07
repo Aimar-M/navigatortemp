@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, DollarSign, Users, Receipt, Activity, CheckCircle, XCircle, BarChart3, Grid3X3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, ReferenceLine, Tooltip } from "recharts";
 
 interface ExpenseShare {
   id: number;
@@ -437,12 +437,17 @@ export default function ExpensesPage() {
                         name: balance.name,
                         value: balance.netBalance
                       }))}
-                      layout="horizontal"
-                      margin={{ top: 20, right: 60, left: 100, bottom: 20 }}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
-                        type="number"
+                        dataKey="name" 
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis 
                         domain={(() => {
                           const values = balances.map(b => b.netBalance);
                           if (values.length === 0) return [-100, 100];
@@ -452,25 +457,19 @@ export default function ExpensesPage() {
                         })()}
                         tickFormatter={(value) => formatCurrency(value)}
                       />
-                      <YAxis 
-                        type="category" 
-                        dataKey="name" 
-                        width={90}
-                        tick={{ fontSize: 12 }}
+                      <Tooltip 
+                        formatter={(value, name) => [formatCurrency(value as number), 'Balance']}
+                        labelFormatter={(label) => `User: ${label}`}
                       />
-                      <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
+                      <ReferenceLine y={0} stroke="#374151" strokeWidth={2} />
                       <Bar 
                         dataKey="value"
-                        fill="#8884d8"
-                        barSize={30}
-                      >
-                        {balances.map((balance, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={balance.netBalance >= 0 ? "#16a34a" : "#dc2626"} 
-                          />
-                        ))}
-                      </Bar>
+                        fill="#dc2626"
+                        stroke="#000"
+                        strokeWidth={2}
+                        minPointSize={10}
+                        maxBarSize={50}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                   <div className="flex items-center justify-center gap-6 mt-4 text-sm">
