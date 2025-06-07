@@ -437,17 +437,12 @@ export default function ExpensesPage() {
                         name: balance.name,
                         net: balance.netBalance
                       }))}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                      layout="horizontal"
+                      margin={{ top: 20, right: 60, left: 100, bottom: 20 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
-                        dataKey="name" 
-                        angle={-45}
-                        textAnchor="end"
-                        height={80}
-                        tick={{ fontSize: 12 }}
-                      />
-                      <YAxis 
+                        type="number"
                         tickFormatter={(value) => formatCurrency(value)}
                         domain={(() => {
                           const values = balances.map(b => b.netBalance);
@@ -457,10 +452,17 @@ export default function ExpensesPage() {
                           return [-maxAbs - buffer, maxAbs + buffer];
                         })()}
                       />
-                      <ReferenceLine y={0} stroke="#374151" strokeWidth={2} />
+                      <YAxis 
+                        type="category"
+                        dataKey="name" 
+                        width={90}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
                       <Bar 
                         dataKey="net" 
                         strokeWidth={1}
+                        barSize={30}
                       >
                         {balances.map((balance, index) => (
                           <Cell 
