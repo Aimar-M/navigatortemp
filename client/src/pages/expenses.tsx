@@ -424,12 +424,13 @@ export default function ExpensesPage() {
                   ))}
                 </div>
               ) : (
-                <div className="h-96">
+                <div className="h-96 w-full">
                   {/* Debug data display */}
                   {process.env.NODE_ENV === 'development' && (
                     <div className="mb-4 text-xs bg-gray-100 p-2 rounded space-y-1">
                       <div>Data: {JSON.stringify(balances.map(b => ({ name: b.name, value: b.netBalance })))}</div>
                       <div>Count: {balances.length} users</div>
+                      <div>Max value: {Math.max(...balances.map(b => Math.abs(b.netBalance)))}</div>
                     </div>
                   )}
                   <ResponsiveContainer width="100%" height="100%">
@@ -444,7 +445,13 @@ export default function ExpensesPage() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         type="number"
-                        domain={['dataMin', 'dataMax']}
+                        domain={(() => {
+                          const values = balances.map(b => b.netBalance);
+                          if (values.length === 0) return [-100, 100];
+                          const maxAbs = Math.max(...values.map(v => Math.abs(v)), 1);
+                          const padding = maxAbs * 0.1;
+                          return [-maxAbs - padding, maxAbs + padding];
+                        })()}
                         tickFormatter={(value) => formatCurrency(value)}
                       />
                       <YAxis 
@@ -460,7 +467,8 @@ export default function ExpensesPage() {
                       <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
                       <Bar 
                         dataKey="value"
-                        height={20}
+                        maxBarSize={40}
+                        minPointSize={2}
                       >
                         {balances.map((balance, index) => (
                           <Cell 
