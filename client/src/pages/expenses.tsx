@@ -23,8 +23,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, DollarSign, Users, Receipt, Activity, CheckCircle, XCircle } from "lucide-react";
+import { Plus, DollarSign, Users, Receipt, Activity, CheckCircle, XCircle, BarChart3, Grid3X3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
 
 interface ExpenseShare {
   id: number;
@@ -71,6 +72,7 @@ export default function ExpensesPage() {
   const { id: tripId } = useParams();
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'chart'>('cards');
   
   // Form state for manual expenses
   const [newExpense, setNewExpense] = useState({
@@ -365,39 +367,109 @@ export default function ExpensesPage() {
         {balances.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Who Owes What</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Who Owes What</CardTitle>
+                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                  <Button
+                    size="sm"
+                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                    onClick={() => setViewMode('cards')}
+                    className="flex items-center gap-2 h-8"
+                  >
+                    <Grid3X3 className="h-4 w-4" />
+                    Cards
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={viewMode === 'chart' ? 'default' : 'ghost'}
+                    onClick={() => setViewMode('chart')}
+                    className="flex items-center gap-2 h-8"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    Chart
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {balances.map((balance) => (
-                  <div key={balance.userId} className="p-4 border rounded-lg">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {balance.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{balance.name}</span>
+              {viewMode === 'cards' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {balances.map((balance) => (
+                    <div key={balance.userId} className="p-4 border rounded-lg">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>
+                            {balance.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{balance.name}</span>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span>Paid out:</span>
+                          <span className="font-medium">{formatCurrency(balance.totalPaid)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Owes:</span>
+                          <span className="font-medium">{formatCurrency(balance.totalOwed)}</span>
+                        </div>
+                        <div className="border-t pt-1 flex justify-between font-semibold">
+                          <span>Net:</span>
+                          <span className={balance.netBalance >= 0 ? "text-green-600" : "text-red-600"}>
+                            {balance.netBalance >= 0 ? "+" : ""}{formatCurrency(balance.netBalance)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span>Paid out:</span>
-                        <span className="font-medium">{formatCurrency(balance.totalPaid)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Owes:</span>
-                        <span className="font-medium">{formatCurrency(balance.totalOwed)}</span>
-                      </div>
-                      <div className="border-t pt-1 flex justify-between font-semibold">
-                        <span>Net:</span>
-                        <span className={balance.netBalance >= 0 ? "text-green-600" : "text-red-600"}>
-                          {balance.netBalance >= 0 ? "+" : ""}{formatCurrency(balance.netBalance)}
-                        </span>
-                      </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-96">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={balances.map(balance => ({
+                        name: balance.name,
+                        value: balance.netBalance,
+                        fullName: balance.name
+                      }))}
+                      layout="horizontal"
+                      margin={{ top: 20, right: 30, left: 100, bottom: 20 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        type="number" 
+                        tickFormatter={(value) => formatCurrency(Math.abs(value))}
+                        domain={['dataMin', 'dataMax']}
+                      />
+                      <YAxis 
+                        type="category" 
+                        dataKey="name" 
+                        width={90}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <ReferenceLine x={0} stroke="#666" strokeDasharray="2 2" />
+                      <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                        {balances.map((balance, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={balance.netBalance >= 0 ? "#16a34a" : "#dc2626"} 
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                  <div className="flex items-center justify-center gap-6 mt-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-green-600 rounded"></div>
+                      <span>Owed money (credit)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-red-600 rounded"></div>
+                      <span>Owes money (debt)</span>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
