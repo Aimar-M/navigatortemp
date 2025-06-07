@@ -424,13 +424,12 @@ export default function ExpensesPage() {
                   ))}
                 </div>
               ) : (
-                <div className="h-96 w-full">
+                <div className="h-96">
                   {/* Debug data display */}
                   {process.env.NODE_ENV === 'development' && (
                     <div className="mb-4 text-xs bg-gray-100 p-2 rounded space-y-1">
                       <div>Data: {JSON.stringify(balances.map(b => ({ name: b.name, value: b.netBalance })))}</div>
                       <div>Count: {balances.length} users</div>
-                      <div>Max value: {Math.max(...balances.map(b => Math.abs(b.netBalance)))}</div>
                     </div>
                   )}
                   <ResponsiveContainer width="100%" height="100%">
@@ -439,48 +438,34 @@ export default function ExpensesPage() {
                         name: balance.name,
                         value: balance.netBalance
                       }))}
-                      layout="horizontal"
-                      margin={{ top: 20, right: 50, left: 120, bottom: 20 }}
-                      barCategoryGap="20%"
+                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
                     >
-                      <CartesianGrid strokeDasharray="2 2" stroke="#e5e7eb" strokeWidth={1.5} />
+                      <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
-                        type="number"
+                        dataKey="name" 
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis 
                         domain={(() => {
                           const values = balances.map(b => b.netBalance);
                           if (values.length === 0) return [-100, 100];
-                          const maxAbs = Math.max(...values.map(v => Math.abs(v)), 1);
-                          const padding = maxAbs * 0.15;
+                          const maxAbs = Math.max(...values.map(v => Math.abs(v)));
+                          const padding = Math.max(maxAbs * 0.2, 10);
                           return [-maxAbs - padding, maxAbs + padding];
                         })()}
                         tickFormatter={(value) => formatCurrency(value)}
-                        axisLine={{ stroke: "#6b7280", strokeWidth: 2 }}
-                        tickLine={{ stroke: "#6b7280", strokeWidth: 1.5 }}
-                        tick={{ fontSize: 11, fill: "#374151" }}
-                      />
-                      <YAxis 
-                        type="category"
-                        dataKey="name" 
-                        width={110}
-                        tick={{ fontSize: 12, fill: "#374151" }}
-                        axisLine={{ stroke: "#6b7280", strokeWidth: 2 }}
-                        tickLine={{ stroke: "#6b7280", strokeWidth: 1.5 }}
                       />
                       <Tooltip 
                         formatter={(value, name) => [formatCurrency(value as number), 'Balance']}
                         labelFormatter={(label) => `User: ${label}`}
-                        contentStyle={{
-                          backgroundColor: "#f9fafb",
-                          border: "1px solid #d1d5db",
-                          borderRadius: "6px",
-                          fontSize: "12px"
-                        }}
                       />
-                      <ReferenceLine x={0} stroke="#1f2937" strokeWidth={3} />
+                      <ReferenceLine y={0} stroke="#374151" strokeWidth={2} />
                       <Bar 
                         dataKey="value"
-                        barSize={35}
-                        radius={[2, 2, 2, 2]}
+                        barSize={60}
                       >
                         {balances.map((balance, index) => (
                           <Cell 
