@@ -428,42 +428,23 @@ export default function ExpensesPage() {
                   {/* Debug data display */}
                   {process.env.NODE_ENV === 'development' && (
                     <div className="mb-4 text-xs bg-gray-100 p-2 rounded">
-                      Debug: {JSON.stringify(balances.map(b => ({ name: b.name, net: b.netBalance })))}
+                      Data: {JSON.stringify(balances.map(b => ({ name: b.name, value: b.netBalance })))}
                     </div>
                   )}
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={balances.map(balance => ({
                         name: balance.name,
-                        net: balance.netBalance
+                        value: balance.netBalance
                       }))}
                       layout="horizontal"
-                      margin={{ top: 20, right: 60, left: 100, bottom: 20 }}
+                      margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        type="number"
-                        tickFormatter={(value) => formatCurrency(value)}
-                        domain={(() => {
-                          const values = balances.map(b => b.netBalance);
-                          if (values.length === 0) return [-100, 100];
-                          const maxAbs = Math.max(...values.map(v => Math.abs(v)));
-                          const buffer = maxAbs * 0.1 || 10;
-                          return [-maxAbs - buffer, maxAbs + buffer];
-                        })()}
-                      />
-                      <YAxis 
-                        type="category"
-                        dataKey="name" 
-                        width={90}
-                        tick={{ fontSize: 12 }}
-                      />
-                      <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
-                      <Bar 
-                        dataKey="net" 
-                        strokeWidth={1}
-                        barSize={30}
-                      >
+                      <XAxis type="number" />
+                      <YAxis type="category" dataKey="name" width={90} />
+                      <ReferenceLine x={0} stroke="#000" strokeWidth={1} />
+                      <Bar dataKey="value">
                         {balances.map((balance, index) => (
                           <Cell 
                             key={`cell-${index}`} 
