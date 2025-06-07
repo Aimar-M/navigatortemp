@@ -1,0 +1,71 @@
+🔧 Task: Add optional preferred payment method settings to the user profile page and user schema
+
+🧭 Objective:
+Allow users to optionally enter their preferred payment method details (Venmo username and/or PayPal email). These values will be used later during the "Settle Up" workflow to initiate payments — but they should not be required and must not interfere with any current functionality.
+
+✅ Implementation Guidelines:
+🖥️ Frontend – Profile Page UI:
+Add a new section titled "Preferred Payment Methods" on the user profile page.
+
+Include two optional fields:
+
+Venmo Username (e.g., @username)
+
+PayPal Email (e.g., user@example.com)
+
+Include placeholder text and tooltips to explain that these will be used later in the "Settle Up" workflow.
+
+Do not make these fields required – users should be able to save their profile without filling either.
+
+Add clear inline helper text that:
+
+Users may enter either or both
+
+If left blank, the user can still use other settlement options (e.g., cash)
+
+🧩 Backend – Schema/Model/API Updates:
+Carefully extend the user schema (or profile object) to include two new optional fields:
+
+venmoUsername (type: string, optional)
+
+paypalEmail (type: string, optional)
+
+Ensure:
+
+These fields do not overwrite or interfere with existing user fields or functionality
+
+API endpoints accept and return these fields without breaking current logic
+
+Add basic non-blocking validation:
+
+Venmo username should optionally start with @
+
+PayPal email should match a valid email pattern if entered
+
+Add clear comments or TODO: markers for future integration with payment workflows
+
+🧪 Safety Checklist:
+✅ Profile loads without errors for users who don’t have payment methods set
+
+✅ Existing functionality (expense editing, authentication, etc.) remains unchanged
+
+✅ Saving profile without filling these fields works normally
+
+✅ If filled, fields persist correctly and are available via existing user retrieval logic
+
+📝 Future Planning:
+Add a comment somewhere in the "Settle Up" trigger logic that users without payment methods will be offered a “Settle in Cash” fallback.
+
+This cash option will include a confirmation step and will be implemented in a later prompt.
+
+✅ Please ensure:
+
+No database migrations cause downtime
+
+Any modified forms are covered by fallback logic
+
+A backup of the original profile data model is kept (if relevant)
+
+All added code is commented and marked for non-breaking integration
+
+When complete, please confirm that the profile form accepts and saves this data properly, and that no existing expense functionality is affected.

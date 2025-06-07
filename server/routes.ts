@@ -2582,7 +2582,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = ensureUser(req, res);
       if (!user) return;
 
-      const { username, email, firstName, lastName, bio, location } = req.body;
+      const { username, email, firstName, lastName, bio, location, venmoUsername, paypalEmail } = req.body;
+
+      // Validate payment methods if provided
+      if (venmoUsername && !venmoUsername.startsWith('@')) {
+        return res.status(400).json({ message: 'Venmo username must start with @' });
+      }
+
+      if (paypalEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalEmail)) {
+        return res.status(400).json({ message: 'Please enter a valid PayPal email address' });
+      }
 
       // Check if username or email already exists for other users
       if (username && username !== user.username) {
@@ -2607,6 +2616,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: lastName || user.lastName,
         bio: bio || user.bio,
         location: location || user.location,
+        venmoUsername: venmoUsername || null,
+        paypalEmail: paypalEmail || null,
       });
 
       res.json(updatedUser);
