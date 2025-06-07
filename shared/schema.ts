@@ -15,6 +15,8 @@ export const users = pgTable("users", {
   bio: text("bio"),
   location: text("location"),
   avatar: text("avatar"),
+  venmoUsername: text("venmo_username"),
+  paypalEmail: text("paypal_email"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -34,6 +36,20 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   name: true,
   avatar: true,
+});
+
+export const updateUserProfileSchema = createInsertSchema(users).pick({
+  name: true,
+  bio: true,
+  location: true,
+  avatar: true,
+  venmoUsername: true,
+  paypalEmail: true,
+}).extend({
+  venmoUsername: z.string().optional().refine((val) => !val || val.startsWith('@'), {
+    message: "Venmo username must start with @"
+  }),
+  paypalEmail: z.string().email().optional().or(z.literal('')),
 });
 
 // Trip schema

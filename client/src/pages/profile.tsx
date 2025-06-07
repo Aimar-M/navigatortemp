@@ -27,6 +27,8 @@ export default function Profile() {
     lastName: "",
     bio: "",
     location: "",
+    venmoUsername: "",
+    paypalEmail: "",
   });
 
   // Fetch user profile data
@@ -52,6 +54,8 @@ export default function Profile() {
         lastName: profileData.lastName || "",
         bio: profileData.bio || "",
         location: profileData.location || "",
+        venmoUsername: profileData.venmoUsername || "",
+        paypalEmail: profileData.paypalEmail || "",
       });
     }
   }, [profile]);
