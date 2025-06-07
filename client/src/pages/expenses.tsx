@@ -439,6 +439,7 @@ export default function ExpensesPage() {
                       }))}
                       layout="horizontal"
                       margin={{ top: 20, right: 60, left: 100, bottom: 20 }}
+                      barCategoryGap="20%"
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
@@ -451,12 +452,16 @@ export default function ExpensesPage() {
                           return [-maxAbs - padding, maxAbs + padding];
                         })()}
                         tickFormatter={(value) => formatCurrency(value)}
+                        axisLine={true}
+                        tickLine={true}
                       />
                       <YAxis 
                         type="category"
                         dataKey="name" 
                         width={90}
                         tick={{ fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
                       />
                       <Tooltip 
                         formatter={(value, name) => [formatCurrency(value as number), 'Balance']}
@@ -466,10 +471,8 @@ export default function ExpensesPage() {
                       <Bar 
                         dataKey="value"
                         fill="#8884d8"
-                        stroke="#000"
-                        strokeWidth={1}
-                        minPointSize={10}
-                        maxBarSize={50}
+                        radius={[0, 4, 4, 0]}
+                        barSize={20}
                       >
                         {balances.map((balance, index) => (
                           <Cell 
