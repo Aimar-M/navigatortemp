@@ -3108,6 +3108,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  router.get('/api/settlements/:tripId/optimized', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      const tripId = parseInt(req.params.tripId);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: "Invalid trip ID" });
+      }
+
+      // Get current balances for the trip
+      const balances = await storage.calculateExpenseBalances(tripId);
+      
+      if (!balances || balances.length === 0) {
+        return res.json({
+          transactions: [],
+          stats: {
+            totalTransactions: 0,
+            totalAmount: 0,
+            usersInvolved: 0,
+            averageTransactionAmount: 0
+          }
+        });
+      }
+
+      // Import and run the settlement algorithm
+      const { 
+        calculateOptimizedSettlements, 
+        validateSettlementPlan, 
+        getSettlementStats 
+      } = await import('./settlement-algorithm');
+      
+      const optimizedTransactions = calculateOptimizedSettlements(balances);
+      const isValid = validateSettlementPlan(balances, optimizedTransactions);
+      const stats = getSettlementStats(optimizedTransactions);
+
+      if (!isValid) {
+        console.warn(`Settlement plan validation failed for trip ${tripId}`);
+      }
+
+      res.json({
+        transactions: optimizedTransactions,
+        stats,
+        isValid,
+        originalBalances: balances
+      });
+    } catch (error) {
+      console.error("Error calculating optimized settlements:", error);
+      res.status(500).json({ message: "Failed to calculate optimized settlements" });
+    }
+  });
+
+  router.get('/api/settlements/:tripId/user-recommendations/:userId', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      const tripId = parseInt(req.params.tripId);
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(tripId) || isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid trip ID or user ID" });
+      }
+
+      // Only allow users to get their own recommendations unless they're trip organizer
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: "Trip not found" });
+      }
+
+      if (user.id !== userId && trip.organizer !== user.id) {
+        return res.status(403).json({ message: "Not authorized to view these recommendations" });
+      }
+
+      const balances = await storage.calculateExpenseBalances(tripId);
+      
+      if (!balances || balances.length === 0) {
+        return res.json({ recommendations: [] });
+      }
+
+      const { getUserSettlementRecommendations } = await import('./settlement-algorithm');
+      const recommendations = getUserSettlementRecommendations(balances, userId);
+
+      res.json({ recommendations });
+    } catch (error) {
+      console.error("Error getting user settlement recommendations:", error);
+      res.status(500).json({ message: "Failed to get settlement recommendations" });
+    }
+  });
+
   app.use('/api', router);
   
   return httpServer;
