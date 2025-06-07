@@ -2920,18 +2920,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  router.post('/expenses/:expenseId/shares/:shareId/mark-paid', isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const expenseId = parseInt(req.params.expenseId);
-      const shareId = parseInt(req.params.shareId);
-      
-      await storage.markExpenseSharePaid(expenseId, shareId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error marking expense share as paid:", error);
-      res.status(500).json({ message: "Failed to mark as paid" });
-    }
-  });
+  // TODO: Mark Paid endpoint removed - was non-functional
+  // router.post('/expenses/:expenseId/shares/:shareId/mark-paid', isAuthenticated, async (req: Request, res: Response) => {
+  //   try {
+  //     const expenseId = parseInt(req.params.expenseId);
+  //     const shareId = parseInt(req.params.shareId);
+  //     
+  //     await storage.markExpenseSharePaid(expenseId, shareId);
+  //     res.json({ success: true });
+  //   } catch (error) {
+  //     console.error("Error marking expense share as paid:", error);
+  //     res.status(500).json({ message: "Failed to mark as paid" });
+  //   }
+  // });
 
   app.use('/api', router);
   
