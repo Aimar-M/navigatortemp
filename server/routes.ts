@@ -3108,7 +3108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  router.get('/settlements/:tripId/optimized', isAuthenticated, async (req: Request, res: Response) => {
+  router.get('/api/settlements/:tripId/optimized', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return;
@@ -3160,7 +3160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  router.get('/settlements/:tripId/user-recommendations/:userId', isAuthenticated, async (req: Request, res: Response) => {
+  router.get('/api/settlements/:tripId/user-recommendations/:userId', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return;
