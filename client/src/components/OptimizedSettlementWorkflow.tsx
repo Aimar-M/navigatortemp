@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,9 +61,19 @@ export function OptimizedSettlementWorkflow({
   const queryClient = useQueryClient();
 
   // Fetch optimized settlement plan
-  const { data: settlementData, isLoading } = useQuery<OptimizedSettlementData>({
+  const { data: settlementData, isLoading, error } = useQuery<OptimizedSettlementData>({
     queryKey: [`/api/settlements/${tripId}/optimized`],
     enabled: isOpen,
+    retry: false,
+  });
+
+  // Debug logging
+  console.log('Settlement data query:', { 
+    data: settlementData, 
+    isLoading, 
+    error, 
+    tripId, 
+    isOpen 
   });
 
   // Get user-specific recommendations
@@ -156,7 +166,7 @@ export function OptimizedSettlementWorkflow({
     );
   }
 
-  if (!settlementData) {
+  if (error) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-md">
@@ -165,6 +175,36 @@ export function OptimizedSettlementWorkflow({
               <AlertCircle className="h-5 w-5 text-red-600" />
               Unable to Calculate Settlement
             </DialogTitle>
+            <DialogDescription>
+              There was an error loading settlement data.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="text-center py-4">
+            <p className="text-gray-600">
+              Error: {error instanceof Error ? error.message : 'Unknown error occurred'}
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Please try again or contact support if the problem persists.
+            </p>
+          </div>
+          <Button onClick={onClose} className="w-full">Close</Button>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (!settlementData) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              No Settlement Data
+            </DialogTitle>
+            <DialogDescription>
+              Settlement data is not available.
+            </DialogDescription>
           </DialogHeader>
           <div className="text-center py-4">
             <p className="text-gray-600">Could not load settlement data for this trip.</p>
@@ -186,6 +226,9 @@ export function OptimizedSettlementWorkflow({
             <Zap className="h-5 w-5 text-blue-600" />
             Optimized Settlement Plan
           </DialogTitle>
+          <DialogDescription>
+            Smart algorithm calculates the minimum number of payments needed to settle all balances efficiently.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">

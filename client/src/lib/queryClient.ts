@@ -24,18 +24,13 @@ export async function apiRequest<T = any>(
   url: string,
   data?: unknown | undefined,
 ): Promise<T> {
-  // Set up headers with authentication token
+  // Set up headers
   const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
-  
-  // Add auth token if available
-  const token = localStorage.getItem('auth_token');
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   const res = await fetch(url, {
     method,
     headers,
+    credentials: 'include', // Include cookies for session authentication
     body: data ? JSON.stringify(data) : undefined,
   });
 
