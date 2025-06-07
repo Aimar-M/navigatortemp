@@ -450,7 +450,7 @@ export default function ExpensesPage() {
                             const padding = Math.max(maxAbs * 0.2, 10);
                             return [-maxAbs - padding, maxAbs + padding];
                           })()}
-                          tickFormatter={(value) => formatCurrency(value)}
+                          hide
                         />
                         <Tooltip 
                           formatter={(value, name) => [formatCurrency(value as number), 'Balance']}
