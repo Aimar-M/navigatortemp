@@ -425,21 +425,32 @@ export default function ExpensesPage() {
                 </div>
               ) : (
                 <div className="h-96">
+                  {/* Debug data display */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="mb-4 text-xs bg-gray-100 p-2 rounded">
+                      Debug: {JSON.stringify(balances.map(b => ({ name: b.name, net: b.netBalance })))}
+                    </div>
+                  )}
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={balances.map(balance => ({
                         name: balance.name,
                         value: balance.netBalance,
-                        fullName: balance.name
+                        absValue: Math.abs(balance.netBalance)
                       }))}
                       layout="horizontal"
-                      margin={{ top: 20, right: 30, left: 100, bottom: 20 }}
+                      margin={{ top: 20, right: 60, left: 100, bottom: 20 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         type="number" 
-                        tickFormatter={(value) => formatCurrency(Math.abs(value))}
-                        domain={['dataMin', 'dataMax']}
+                        tickFormatter={(value) => formatCurrency(value)}
+                        domain={(() => {
+                          const values = balances.map(b => b.netBalance);
+                          const maxAbs = Math.max(...values.map(v => Math.abs(v)));
+                          const buffer = maxAbs * 0.1;
+                          return [-maxAbs - buffer, maxAbs + buffer];
+                        })()}
                       />
                       <YAxis 
                         type="category" 
@@ -447,8 +458,17 @@ export default function ExpensesPage() {
                         width={90}
                         tick={{ fontSize: 12 }}
                       />
-                      <ReferenceLine x={0} stroke="#666" strokeDasharray="2 2" />
-                      <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                      <ReferenceLine x={0} stroke="#374151" strokeWidth={2} />
+                      <Bar 
+                        dataKey="value" 
+                        radius={[0, 4, 4, 0]}
+                        label={{
+                          position: 'insideRight',
+                          formatter: (value: number) => formatCurrency(Math.abs(value)),
+                          fill: 'white',
+                          fontSize: 12
+                        }}
+                      >
                         {balances.map((balance, index) => (
                           <Cell 
                             key={`cell-${index}`} 
