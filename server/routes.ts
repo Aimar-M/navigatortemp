@@ -659,11 +659,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'User is already a member of this trip' });
       }
       
+      // Initialize payment status based on trip requirements
+      const paymentStatus = trip.requiresDownPayment ? 'pending' : 'not_required';
+      
       const member = await storage.addTripMember({
         tripId,
         userId: userToAdd.id,
         status: 'pending',
-        rsvpStatus: 'pending' // New invitations default to pending RSVP
+        rsvpStatus: 'pending', // New invitations default to pending RSVP
+        paymentStatus,
+        paymentAmount: trip.requiresDownPayment ? trip.downPaymentAmount?.toString() : null
       });
       
       res.status(201).json(member);
