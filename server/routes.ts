@@ -401,11 +401,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const trips = await storage.getTripsByUser(user.id);
       const tripMemberships = await storage.getTripMembershipsByUser(user.id);
       
+      // Filter trips to only include those where user has confirmed RSVP status
+      const confirmedTrips = trips.filter(trip => {
+        const membership = tripMemberships.find(m => m.tripId === trip.id);
+        return membership && membership.rsvpStatus === 'confirmed';
+      });
+      
       // Fetch member counts and user settings for each trip
-      const tripsWithMemberCounts = await Promise.all(trips.map(async (trip) => {
+      const tripsWithMemberCounts = await Promise.all(confirmedTrips.map(async (trip) => {
         const members = await storage.getTripMembers(trip.id);
-        // Count only confirmed members
-        const confirmedMembers = members.filter(member => member.status === 'confirmed');
+        // Count only confirmed members with confirmed RSVP status
+        const confirmedMembers = members.filter(member => 
+          member.status === 'confirmed' && member.rsvpStatus === 'confirmed'
+        );
         
         // Get user-specific settings for this trip
         const settings = await storage.getUserTripSettings(user.id, trip.id);
@@ -427,6 +435,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(tripsWithMemberCounts);
     } catch (error) {
       console.error("Error fetching trips with member counts:", error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Get trips where user has pending RSVP status
+  router.get('/trips/rsvp/pending', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const tripMemberships = await storage.getTripMembershipsByUser(user.id);
+      
+      // Filter to only pending RSVP status trips
+      const pendingRSVPMemberships = tripMemberships.filter(membership => 
+        membership.rsvpStatus === 'pending'
+      );
+      
+      // Get trip details for pending RSVP trips
+      const pendingTrips = await Promise.all(
+        pendingRSVPMemberships.map(async (membership) => {
+          const trip = await storage.getTrip(membership.tripId);
+          if (!trip) return null;
+          
+          return {
+            ...trip,
+            membershipStatus: membership.status,
+            rsvpStatus: membership.rsvpStatus,
+            joinedAt: membership.joinedAt
+          };
+        })
+      );
+      
+      // Filter out null trips and return
+      const validPendingTrips = pendingTrips.filter(trip => trip !== null);
+      res.json(validPendingTrips);
+    } catch (error) {
       res.status(500).json({ message: 'Server error' });
     }
   });

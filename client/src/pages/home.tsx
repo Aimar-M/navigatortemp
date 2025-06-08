@@ -5,6 +5,7 @@ import { Link, useLocation } from "wouter";
 import { Search, Plus } from "lucide-react";
 import TripCard from "@/components/trip-card";
 import EnhancedTripCard from "@/components/enhanced-trip-card";
+import RSVPNotification from "@/components/rsvp-notification";
 import Header from "@/components/header";
 import MobileNavigation from "@/components/mobile-navigation";
 import { Button } from "@/components/ui/button";
