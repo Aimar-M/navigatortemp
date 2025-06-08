@@ -1,8 +1,12 @@
-import { Clock, CreditCard, AlertCircle, Bell, MapPin, Calendar, Users, DollarSign, Activity } from "lucide-react";
+import { Clock, CreditCard, AlertCircle, Bell, MapPin, Calendar, Users, DollarSign, Activity, Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { apiRequest } from "@/lib/queryClient";
 
 interface PendingStatusScreenProps {
   trip: {
@@ -16,6 +20,7 @@ interface PendingStatusScreenProps {
     downPaymentAmount?: string;
   };
   member: {
+    userId?: number;
     rsvpStatus?: string;
     paymentMethod?: string;
     paymentAmount?: string;
@@ -24,6 +29,35 @@ interface PendingStatusScreenProps {
 }
 
 export default function PendingStatusScreen({ trip, member }: PendingStatusScreenProps) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Confirm attendance mutation (for trips without payment requirement)
+  const confirmAttendanceMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+      return await apiRequest('PUT', `/api/trips/${trip.id}/members/${user.id}/rsvp`, { 
+        rsvpStatus: 'confirmed' 
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Attendance confirmed!",
+        description: "You're now confirmed for this trip"
+      });
+      // Refresh the page or redirect
+      window.location.reload();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Confirmation failed",
+        description: error.message || "Failed to confirm attendance",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Fetch trip activities for preview
   const { data: activities } = useQuery({
     queryKey: ['/api/trips', trip.id, 'activities'],
@@ -89,14 +123,31 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   };
 
   const getRSVPStatusMessage = () => {
-    if (member.rsvpStatus === 'pending' && (member.paymentStatus === 'submitted' || member.paymentStatus === 'pending')) {
-      return "Payment submitted - awaiting confirmation";
+    // If no payment is required, show simple RSVP status
+    if (!trip.requiresDownPayment) {
+      return "Awaiting organizer approval";
     }
-    return "Awaiting organizer approval";
+    
+    // If payment is required, check payment status
+    switch (member.paymentStatus) {
+      case 'submitted':
+      case 'pending':
+        return "Payment submitted - awaiting confirmation";
+      case 'confirmed':
+        return "Payment confirmed - awaiting final approval";
+      case 'rejected':
+        return "Payment rejected - please resubmit";
+      case 'not_required':
+        return "Awaiting organizer approval";
+      default:
+        return "Payment required to proceed";
+    }
   };
 
   const getStatusColor = () => {
-    if (!trip.requiresDownPayment) return "bg-blue-100 text-blue-800";
+    if (!trip.requiresDownPayment) {
+      return "bg-blue-100 text-blue-800";
+    }
     
     switch (member.paymentStatus) {
       case 'submitted':
@@ -106,8 +157,10 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         return "bg-green-100 text-green-800";
       case 'rejected':
         return "bg-red-100 text-red-800";
+      case 'not_required':
+        return "bg-blue-100 text-blue-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-orange-100 text-orange-800";
     }
   };
 
