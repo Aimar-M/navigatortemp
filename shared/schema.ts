@@ -67,6 +67,8 @@ export const trips = pgTable("trips", {
   airportGateway: text("airport_gateway"),
   isPinned: boolean("is_pinned").default(false),
   isArchived: boolean("is_archived").default(false),
+  requiresDownPayment: boolean("requires_down_payment").default(false),
+  downPaymentAmount: decimal("down_payment_amount", { precision: 10, scale: 2 }),
 });
 
 export const tripsRelations = relations(trips, ({ one, many }) => ({
@@ -93,6 +95,8 @@ export const insertTripSchema = createInsertSchema(trips).pick({
   organizer: true,
   accommodationLink: true,
   airportGateway: true,
+  requiresDownPayment: true,
+  downPaymentAmount: true,
 });
 
 // Add new table for user-specific trip settings
@@ -131,9 +135,14 @@ export const tripMembers = pgTable("trip_members", {
   tripId: integer("trip_id").notNull().references(() => trips.id),
   userId: integer("user_id").notNull().references(() => users.id),
   status: text("status").notNull().default("pending"), // pending, confirmed, declined (invitation status)
-  rsvpStatus: text("rsvp_status").notNull().default("pending"), // pending, confirmed, declined (RSVP status)
+  rsvpStatus: text("rsvp_status").notNull().default("pending"), // pending, awaiting_payment, confirmed, declined (RSVP status)
   joinedAt: timestamp("joined_at").defaultNow(),
   rsvpDate: timestamp("rsvp_date"),
+  paymentMethod: text("payment_method"), // venmo, paypal, cash
+  paymentStatus: text("payment_status").default("not_required"), // not_required, pending, confirmed
+  paymentAmount: decimal("payment_amount", { precision: 10, scale: 2 }),
+  paymentSubmittedAt: timestamp("payment_submitted_at"),
+  paymentConfirmedAt: timestamp("payment_confirmed_at"),
 }, (t) => ({
   pk: primaryKey({ columns: [t.tripId, t.userId] }),
 }));
@@ -156,6 +165,11 @@ export const insertTripMemberSchema = createInsertSchema(tripMembers).pick({
   rsvpStatus: true,
   joinedAt: true,
   rsvpDate: true,
+  paymentMethod: true,
+  paymentStatus: true,
+  paymentAmount: true,
+  paymentSubmittedAt: true,
+  paymentConfirmedAt: true,
 });
 
 // Activities schema

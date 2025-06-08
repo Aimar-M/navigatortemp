@@ -172,6 +172,45 @@ export class DatabaseStorage {
     return updatedMember || undefined;
   }
 
+  async updateTripMemberPaymentInfo(
+    tripId: number, 
+    userId: number, 
+    paymentData: {
+      paymentMethod?: string;
+      paymentStatus?: string;
+      paymentAmount?: string;
+      paymentSubmittedAt?: Date;
+      paymentConfirmedAt?: Date;
+    }
+  ): Promise<TripMember | undefined> {
+    const [updatedMember] = await db
+      .update(tripMembers)
+      .set(paymentData)
+      .where(
+        and(
+          eq(tripMembers.tripId, tripId),
+          eq(tripMembers.userId, userId)
+        )
+      )
+      .returning();
+    
+    return updatedMember || undefined;
+  }
+
+  async getTripMemberWithPaymentInfo(tripId: number, userId: number): Promise<TripMember | undefined> {
+    const [member] = await db
+      .select()
+      .from(tripMembers)
+      .where(
+        and(
+          eq(tripMembers.tripId, tripId),
+          eq(tripMembers.userId, userId)
+        )
+      );
+    
+    return member || undefined;
+  }
+
   async removeTripMember(tripId: number, userId: number): Promise<boolean> {
     const result = await db
       .delete(tripMembers)

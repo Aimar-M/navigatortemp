@@ -27,6 +27,8 @@ export default function TripForm({ onComplete }: TripFormProps) {
     startDate: "",
     endDate: "",
     description: "",
+    requiresDownPayment: false,
+    downPaymentAmount: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
