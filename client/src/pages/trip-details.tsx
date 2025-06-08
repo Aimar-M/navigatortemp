@@ -53,6 +53,8 @@ export default function TripDetails() {
     tripId: number;
     userId: number;
     status: string;
+    rsvpStatus?: string;
+    rsvpDate?: string;
     isOrganizer: boolean;
     user: {
       id: number;
@@ -92,6 +94,27 @@ export default function TripDetails() {
       toast({
         title: "Update failed",
         description: error.message || "Failed to update trip details",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // RSVP status update mutation
+  const updateRSVPMutation = useMutation({
+    mutationFn: async ({ userId, rsvpStatus }: { userId: number; rsvpStatus: string }) => {
+      return await apiRequest("PUT", `/api/trips/${tripId}/members/${userId}/rsvp`, { rsvpStatus });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
+      toast({
+        title: "RSVP updated",
+        description: "Your RSVP status has been updated"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "RSVP update failed",
+        description: error.message || "Failed to update RSVP status",
         variant: "destructive"
       });
     }
