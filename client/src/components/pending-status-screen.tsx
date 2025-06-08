@@ -554,8 +554,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                       return;
                     }
                     submitPaymentMutation.mutate({
-                      method: selectedPaymentMethod,
-                      amount: trip.downPaymentAmount || '0'
+                      paymentMethod: selectedPaymentMethod
                     });
                   }}
                   disabled={!selectedPaymentMethod || submitPaymentMutation.isPending}
