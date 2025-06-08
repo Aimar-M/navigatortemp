@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -32,6 +34,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
 
   // Confirm attendance mutation (for trips without payment requirement)
   const confirmAttendanceMutation = useMutation({
@@ -139,6 +142,10 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         return "Payment rejected - please resubmit";
       case 'not_required':
         return "Awaiting organizer approval";
+      case null:
+      case undefined:
+      case '':
+        return "Payment required to proceed";
       default:
         return "Payment required to proceed";
     }
@@ -159,10 +166,37 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         return "bg-red-100 text-red-800";
       case 'not_required':
         return "bg-blue-100 text-blue-800";
+      case null:
+      case undefined:
+      case '':
+        return "bg-orange-100 text-orange-800";
       default:
         return "bg-orange-100 text-orange-800";
     }
   };
+
+  // Submit payment mutation
+  const submitPaymentMutation = useMutation({
+    mutationFn: async (paymentData: { paymentMethod: string }) => {
+      if (!user) throw new Error("User not authenticated");
+      return await apiRequest('POST', `/api/trips/${trip.id}/members/${user.id}/payment`, paymentData);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Payment submitted!",
+        description: "Your payment has been submitted and is awaiting organizer confirmation"
+      });
+      // Refresh the page to show updated status
+      window.location.reload();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Payment submission failed",
+        description: error.message || "Failed to submit payment",
+        variant: "destructive"
+      });
+    }
+  });
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-4">
@@ -469,6 +503,72 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
             >
               {confirmAttendanceMutation.isPending ? 'Confirming...' : 'Confirm My Attendance'}
             </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Payment Submission Interface for trips requiring payment */}
+      {trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected') && (
+        <Card className="mb-6 border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-orange-600" />
+              Submit Payment
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-white p-4 rounded-lg border">
+              <div className="text-center mb-4">
+                <p className="text-lg font-semibold text-gray-900">
+                  Amount Due: ${trip.downPaymentAmount}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Down payment required to confirm your spot
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Payment Method
+                  </label>
+                  <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="venmo">Venmo</SelectItem>
+                      <SelectItem value="paypal">PayPal</SelectItem>
+                      <SelectItem value="cash">Cash</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button 
+                  onClick={() => {
+                    if (!selectedPaymentMethod) {
+                      toast({
+                        title: "Please select a payment method",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+                    submitPaymentMutation.mutate({
+                      method: selectedPaymentMethod,
+                      amount: trip.downPaymentAmount || '0'
+                    });
+                  }}
+                  disabled={!selectedPaymentMethod || submitPaymentMutation.isPending}
+                  className="w-full bg-orange-600 hover:bg-orange-700"
+                >
+                  {submitPaymentMutation.isPending ? 'Submitting...' : 'Submit Payment'}
+                </Button>
+                
+                <p className="text-xs text-gray-600 text-center">
+                  After submitting, the organizer will review and confirm your payment
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
