@@ -23,11 +23,11 @@ export function generateVenmoPaymentLink(username: string, amount: number, note:
 }
 
 export function generatePayPalPaymentLink(email: string, amount: number, note: string): string {
-  // PayPal.me uses usernames, not emails. For now, we'll use a generic PayPal payment request
-  // In production, users should provide their PayPal.me username instead of email
+  // PayPal.me requires usernames, not emails. Since we only have email, 
+  // we'll generate a basic PayPal payment request URL
   const encodedNote = encodeURIComponent(note);
   const encodedEmail = encodeURIComponent(email);
-  return `https://www.paypal.com/paypalme?amount=${amount}&note=${encodedNote}&recipient=${encodedEmail}`;
+  return `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${encodedEmail}&amount=${amount}&item_name=${encodedNote}&currency_code=USD`;
 }
 
 export function generateSettlementNote(payerName: string, tripName: string): string {

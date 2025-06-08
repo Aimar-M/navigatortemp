@@ -40,7 +40,7 @@ export function NotificationBell() {
 
   const confirmMutation = useMutation({
     mutationFn: async (settlementId: number) => {
-      return await apiRequest(`/api/settlements/${settlementId}/confirm`, 'POST', {});
+      return await apiRequest('POST', `/api/settlements/${settlementId}/confirm`, {});
     },
     onSuccess: () => {
       toast({
