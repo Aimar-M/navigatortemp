@@ -44,14 +44,7 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
 
   // Get settlement options for the payee
   const { data: settlementOptions = [], isLoading: optionsLoading, error: optionsError } = useQuery<SettlementOption[]>({
-    queryKey: [`/api/trips/${tripId}/settlement-options/${balance.userId}`, amount],
-    queryFn: async () => {
-      const response = await fetch(`/api/trips/${tripId}/settlement-options/${balance.userId}?amount=${amount}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch settlement options: ${response.statusText}`);
-      }
-      return response.json();
-    },
+    queryKey: [`/api/trips/${tripId}/settlement-options/${balance.userId}?amount=${amount}`],
     enabled: isOpen && owes, // Only fetch if user owes money
   });
 

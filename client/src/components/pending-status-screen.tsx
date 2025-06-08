@@ -120,8 +120,14 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         return "Payment confirmed";
       case 'rejected':
         return "Payment rejected - please resubmit";
+      case 'not_required':
+        return "No payment required";
+      case null:
+      case undefined:
+      case '':
+        return "Payment required - not yet submitted";
       default:
-        return "Payment required";
+        return "Payment required - not yet submitted";
     }
   };
 
@@ -206,7 +212,15 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">RSVP Pending</h1>
         <p className="text-gray-600">
-          Your RSVP for <span className="font-semibold">{trip.name}</span> is awaiting confirmation
+          {trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected') 
+            ? `Submit your ${trip.downPaymentAmount ? `$${trip.downPaymentAmount}` : ''} down payment to secure your spot on `
+            : 'Your request to join '
+          }
+          <span className="font-semibold">{trip.name}</span>
+          {trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected') 
+            ? '' 
+            : ' is pending organizer approval'
+          }
         </p>
         {trip.destination && (
           <p className="text-sm text-gray-500 mt-1">{trip.destination}</p>
