@@ -840,7 +840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update trip member RSVP status
+  // Update trip member RSVP status (no RSVP requirement for this endpoint)
   router.put('/trips/:tripId/members/:userId/rsvp', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
