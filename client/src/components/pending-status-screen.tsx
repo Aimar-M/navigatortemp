@@ -451,6 +451,28 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         </CardContent>
       </Card>
 
+      {/* Confirmation Button for trips without payment */}
+      {!trip.requiresDownPayment && member.rsvpStatus === 'pending' && (
+        <Card className="mb-6 border-green-200 bg-green-50">
+          <CardContent className="p-6 text-center">
+            <div className="mb-4">
+              <Check className="h-12 w-12 text-green-600 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-green-800 mb-2">Ready to Join?</h3>
+              <p className="text-sm text-green-700">
+                No payment required for this trip. You can confirm your attendance now.
+              </p>
+            </div>
+            <Button 
+              onClick={() => confirmAttendanceMutation.mutate()}
+              disabled={confirmAttendanceMutation.isPending}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {confirmAttendanceMutation.isPending ? 'Confirming...' : 'Confirm My Attendance'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="p-6">
           <div className="flex items-start gap-3">
