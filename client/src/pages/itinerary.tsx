@@ -53,8 +53,8 @@ export default function Itinerary() {
   });
 
   // Check user's RSVP status
-  const isOrganizerUser = user && trip && (trip as any).organizer === user.id;
-  const currentUserMembership = (members as any[]).find((member: any) => member.userId === user?.id);
+  const isOrganizerUser = user && trip && (trip as any).organizer === (user as any).id;
+  const currentUserMembership = (members as any[]).find((member: any) => member.userId === (user as any)?.id);
   const isConfirmedMember = currentUserMembership?.rsvpStatus === 'confirmed' || isOrganizerUser;
 
   // Fetch trip activities
@@ -67,8 +67,8 @@ export default function Itinerary() {
   const generateTripDays = () => {
     if (!trip?.startDate || !trip?.endDate) return [];
     
-    const startDate = new Date(trip.startDate);
-    const endDate = new Date(trip.endDate);
+    const startDate = new Date((trip as any).startDate);
+    const endDate = new Date((trip as any).endDate);
     const days = [];
     
     const currentDate = new Date(startDate);

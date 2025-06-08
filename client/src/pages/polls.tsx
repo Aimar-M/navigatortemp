@@ -21,8 +21,8 @@ export default function Polls() {
   });
 
   // Check user's RSVP status
-  const isOrganizer = user && trip && trip.organizer === user.id;
-  const currentUserMembership = members.find((member: any) => member.userId === user?.id);
+  const isOrganizer = user && trip && (trip as any).organizer === (user as any).id;
+  const currentUserMembership = (members as any[]).find((member: any) => member.userId === (user as any)?.id);
   const isConfirmedMember = currentUserMembership?.rsvpStatus === 'confirmed' || isOrganizer;
   
   const isLoading = authLoading || tripLoading;
