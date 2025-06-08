@@ -579,7 +579,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const member = await storage.addTripMember({
         tripId,
         userId: userToAdd.id,
-        status: 'pending'
+        status: 'pending',
+        rsvpStatus: 'pending' // New invitations default to pending RSVP
       });
       
       res.status(201).json(member);
@@ -752,6 +753,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(updatedMember);
       }
     } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Update trip member RSVP status
+  router.put('/trips/:tripId/members/:userId/rsvp', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const tripId = parseInt(req.params.tripId);
+      const userId = parseInt(req.params.userId);
+      const { rsvpStatus } = req.body;
+      
+      if (isNaN(tripId) || isNaN(userId)) {
+        return res.status(400).json({ message: 'Invalid trip ID or user ID' });
+      }
+      
+      if (!['pending', 'confirmed', 'declined'].includes(rsvpStatus)) {
+        return res.status(400).json({ message: 'Invalid RSVP status' });
+      }
+      
+      // Only the user themselves can update their RSVP status
+      if (userId !== user.id) {
+        return res.status(403).json({ message: 'You can only update your own RSVP status' });
+      }
+      
+      const updatedMember = await storage.updateTripMemberRSVPStatus(tripId, userId, rsvpStatus);
+      
+      if (!updatedMember) {
+        return res.status(404).json({ message: 'Trip member not found' });
+      }
+      
+      res.json(updatedMember);
+    } catch (error) {
+      console.error('Error updating trip member RSVP status:', error);
       res.status(500).json({ message: 'Server error' });
     }
   });
