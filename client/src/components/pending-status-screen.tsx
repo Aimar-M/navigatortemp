@@ -1,10 +1,12 @@
-import { Clock, CreditCard, AlertCircle, Bell } from "lucide-react";
+import { Clock, CreditCard, AlertCircle, Bell, MapPin, Calendar, Users, DollarSign, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useQuery } from "@tanstack/react-query";
 
 interface PendingStatusScreenProps {
   trip: {
+    id: number;
     name: string;
     destination?: string;
     startDate?: string;
@@ -22,6 +24,39 @@ interface PendingStatusScreenProps {
 }
 
 export default function PendingStatusScreen({ trip, member }: PendingStatusScreenProps) {
+  // Fetch trip activities for preview
+  const { data: activities } = useQuery({
+    queryKey: ['/api/trips', trip.id, 'activities'],
+    queryFn: async () => {
+      const response = await fetch(`/api/trips/${trip.id}/activities`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!trip.id
+  });
+
+  // Fetch budget summary for preview
+  const { data: budgetSummary } = useQuery({
+    queryKey: ['/api/trips', trip.id, 'expenses', 'summary'],
+    queryFn: async () => {
+      const response = await fetch(`/api/trips/${trip.id}/expenses/summary`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!trip.id
+  });
+
+  // Fetch trip members for count
+  const { data: tripMembers } = useQuery({
+    queryKey: ['/api/trips', trip.id, 'members'],
+    queryFn: async () => {
+      const response = await fetch(`/api/trips/${trip.id}/members`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!trip.id
+  });
+
   const formatPaymentMethod = (method: string) => {
     switch (method?.toLowerCase()) {
       case 'venmo':
@@ -94,6 +129,45 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
             {new Date(trip.startDate).toLocaleDateString()} - {new Date(trip.endDate).toLocaleDateString()}
           </p>
         )}
+        
+        {/* Quick Stats */}
+        <div className="flex justify-center gap-6 mt-4">
+          {trip.startDate && trip.endDate && (
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1">
+                <Calendar className="h-4 w-4 text-gray-400" />
+                <span className="text-sm font-medium text-gray-700">
+                  {Math.ceil((new Date(trip.endDate).getTime() - new Date(trip.startDate).getTime()) / (1000 * 60 * 60 * 24))} days
+                </span>
+              </div>
+              <span className="text-xs text-gray-500">Duration</span>
+            </div>
+          )}
+          
+          {tripMembers && (
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1">
+                <Users className="h-4 w-4 text-gray-400" />
+                <span className="text-sm font-medium text-gray-700">
+                  {tripMembers.filter((m: any) => m.rsvpStatus === 'confirmed').length}
+                </span>
+              </div>
+              <span className="text-xs text-gray-500">Confirmed</span>
+            </div>
+          )}
+          
+          {trip.destination && (
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1">
+                <MapPin className="h-4 w-4 text-gray-400" />
+                <span className="text-sm font-medium text-gray-700">
+                  {trip.destination}
+                </span>
+              </div>
+              <span className="text-xs text-gray-500">Destination</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Trip Details Card */}
@@ -120,6 +194,144 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                   <p className="font-medium">
                     {Math.ceil((new Date(trip.endDate).getTime() - new Date(trip.startDate).getTime()) / (1000 * 60 * 60 * 24))} days
                   </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Activities Preview */}
+      {activities && activities.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-blue-600" />
+              Planned Activities
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {activities.slice(0, 3).map((activity: any, index: number) => (
+                <div key={activity.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-blue-600">{index + 1}</span>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-gray-900 truncate">{activity.name}</h4>
+                    {activity.description && (
+                      <p className="text-xs text-gray-600 mt-1 line-clamp-2">{activity.description}</p>
+                    )}
+                    {activity.date && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Calendar className="h-3 w-3 text-gray-400" />
+                        <span className="text-xs text-gray-500">
+                          {new Date(activity.date).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {activities.length > 3 && (
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  +{activities.length - 3} more activities planned
+                </p>
+              )}
+              {activities.length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4">
+                  No activities planned yet
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Trip Members Preview */}
+      {tripMembers && tripMembers.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-purple-600" />
+              Trip Members
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {tripMembers.slice(0, 4).map((member: any) => (
+                <div key={member.userId} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-purple-600">
+                      {member.user?.name?.[0] || member.user?.username?.[0] || '?'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {member.user?.name || member.user?.username || 'Unknown User'}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={member.rsvpStatus === 'confirmed' ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
+                        {member.rsvpStatus === 'confirmed' ? 'Confirmed' : 'Pending'}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {tripMembers.length > 4 && (
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  +{tripMembers.length - 4} more members
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Budget Preview */}
+      {budgetSummary && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-green-600" />
+              Budget Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-green-50 rounded-lg border border-green-100">
+                <div className="text-2xl font-bold text-green-600">
+                  ${budgetSummary.totalExpenses || 0}
+                </div>
+                <div className="text-xs text-green-700 mt-1">Total Planned</div>
+              </div>
+              <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <div className="text-2xl font-bold text-blue-600">
+                  ${Math.round((budgetSummary.totalExpenses || 0) / (tripMembers?.filter((m: any) => m.rsvpStatus === 'confirmed').length || 1))}
+                </div>
+                <div className="text-xs text-blue-700 mt-1">Per Person</div>
+              </div>
+            </div>
+            {budgetSummary.categories && budgetSummary.categories.length > 0 && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Budget Categories</h4>
+                <div className="space-y-2">
+                  {budgetSummary.categories.slice(0, 3).map((category: any) => (
+                    <div key={category.name} className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">{category.name}</span>
+                      <span className="text-sm font-medium text-gray-900">${category.amount}</span>
+                    </div>
+                  ))}
+                  {budgetSummary.categories.length > 3 && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      +{budgetSummary.categories.length - 3} more categories
+                    </p>
+                  )}
                 </div>
               </div>
             )}
