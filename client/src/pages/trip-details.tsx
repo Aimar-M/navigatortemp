@@ -204,9 +204,46 @@ export default function TripDetails() {
     <TripDetailLayout 
       tripId={tripId}
       title={trip.name}
-      isConfirmedMember={isConfirmedMember}
+      isConfirmedMember={!!isConfirmedMember}
       description={`Trip to ${trip.destination}`}
     >
+      {/* RSVP Status Notice for Non-Confirmed Users */}
+      {!isConfirmedMember && (
+        <Card className="mb-6 border-amber-200 bg-amber-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Info className="h-5 w-5 text-amber-600" />
+              <div className="flex-1">
+                <h3 className="font-medium text-amber-800">RSVP Required</h3>
+                <p className="text-sm text-amber-700">
+                  {isPendingMember && "Please confirm your attendance to access trip features like expenses, activities, and chat."}
+                  {isDeclinedMember && "You have declined this trip invitation. Contact the organizer if you'd like to change your response."}
+                </p>
+                {isPendingMember && (
+                  <div className="flex gap-2 mt-3">
+                    <Button 
+                      size="sm" 
+                      onClick={() => updateRSVPMutation.mutate({ userId: user!.id, rsvpStatus: 'confirmed' })}
+                      disabled={updateRSVPMutation.isPending}
+                    >
+                      Confirm Attendance
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => updateRSVPMutation.mutate({ userId: user!.id, rsvpStatus: 'declined' })}
+                      disabled={updateRSVPMutation.isPending}
+                    >
+                      Decline
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Trip Image Upload */}
       <TripImageUpload 
         tripId={tripId}
