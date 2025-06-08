@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -74,6 +74,7 @@ interface Balance {
 
 export default function ExpensesPage() {
   const { id: tripId } = useParams();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'chart'>('cards');
@@ -569,7 +570,11 @@ export default function ExpensesPage() {
             </Card>
           ) : (
             expenses.map((expense) => (
-              <Card key={expense.id}>
+              <Card 
+                key={expense.id} 
+                className="cursor-pointer hover:shadow-md transition-shadow duration-200"
+                onClick={() => setLocation(`/trips/${tripId}/expenses/${expense.id}`)}
+              >
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div className="flex-1 min-w-0">
