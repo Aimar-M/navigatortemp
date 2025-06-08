@@ -232,7 +232,7 @@ export default function TripDetails() {
                   {isPendingMember && "Please confirm your attendance to access trip features like expenses, activities, and chat."}
                   {isDeclinedMember && "You have declined this trip invitation. Contact the organizer if you'd like to change your response."}
                 </p>
-                {isPendingMember && (
+                {isPendingMember && !trip.requiresDownPayment && (
                   <div className="flex gap-2 mt-3">
                     <Button 
                       size="sm" 
@@ -253,6 +253,36 @@ export default function TripDetails() {
                 )}
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Payment Workflow for trips requiring down payment */}
+      {trip.requiresDownPayment && isPendingMember && user && currentUserMembership && (
+        <Card className="mb-6 border-blue-200 bg-blue-50">
+          <CardContent className="p-6">
+            <RSVPPaymentWorkflow
+              tripId={tripId}
+              userId={user.id}
+              trip={trip}
+              member={currentUserMembership}
+              isOrganizer={isOrganizer}
+              onPaymentSubmitted={() => {
+                queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId, 'members'] });
+                toast({
+                  title: "Payment submitted",
+                  description: "Your payment information has been submitted for review."
+                });
+              }}
+              onPaymentConfirmed={() => {
+                queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId, 'members'] });
+                queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId] });
+                toast({
+                  title: "Payment confirmed!",
+                  description: "You now have full access to trip features."
+                });
+              }}
+            />
           </CardContent>
         </Card>
       )}
