@@ -323,6 +323,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(401).json({ message: 'Authentication error' });
     }
   };
+
+  // Middleware to check if user has confirmed RSVP status for a trip
+  const requireConfirmedRSVP = async (req: Request, res: Response, next: Function) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      const tripId = parseInt(req.params.id || req.params.tripId);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: 'Invalid trip ID' });
+      }
+
+      const members = await storage.getTripMembers(tripId);
+      const member = members.find(m => m.userId === user.id);
+
+      if (!member) {
+        return res.status(403).json({ message: 'Not a member of this trip' });
+      }
+
+      // Allow organizer regardless of RSVP status
+      const trip = await storage.getTrip(tripId);
+      if (trip?.organizer === user.id) {
+        return next();
+      }
+
+      // Check RSVP status
+      if (member.rsvpStatus !== 'confirmed') {
+        return res.status(403).json({ 
+          message: 'RSVP confirmation required', 
+          rsvpStatus: member.rsvpStatus,
+          requiresRSVP: true 
+        });
+      }
+
+      next();
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  };
   
   // Trip Routes
   router.post('/trips', isAuthenticated, async (req: Request, res: Response) => {
@@ -835,7 +874,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Activity Routes
-  router.post('/trips/:id/activities', isAuthenticated, async (req: Request, res: Response) => {
+  router.post('/trips/:id/activities', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       console.log('Activity creation request received:', req.body);
       
@@ -912,7 +951,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  router.get('/trips/:id/activities', isAuthenticated, async (req: Request, res: Response) => {
+  router.get('/trips/:id/activities', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
@@ -954,7 +993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  router.put('/activities/:id', isAuthenticated, async (req: Request, res: Response) => {
+  router.put('/activities/:id', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
