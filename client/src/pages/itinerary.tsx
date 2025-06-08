@@ -46,6 +46,17 @@ export default function Itinerary() {
     enabled: !!tripId && !!user,
   });
 
+  // Fetch trip members to check RSVP status
+  const { data: members = [] } = useQuery({
+    queryKey: [`/api/trips/${tripId}/members`],
+    enabled: !!tripId && !!user,
+  });
+
+  // Check user's RSVP status
+  const isOrganizerUser = user && trip && (trip as any).organizer === user.id;
+  const currentUserMembership = (members as any[]).find((member: any) => member.userId === user?.id);
+  const isConfirmedMember = currentUserMembership?.rsvpStatus === 'confirmed' || isOrganizerUser;
+
   // Fetch trip activities
   const { data: activities = [], isLoading: isActivitiesLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}/activities`],
@@ -83,8 +94,7 @@ export default function Itinerary() {
 
   const tripDays = generateTripDays();
 
-  // Check if user is organizer
-  const isOrganizer = trip && user && (trip as any).organizerId === (user as any).id;
+
 
   // Add activity mutation
   const addActivityMutation = useMutation({

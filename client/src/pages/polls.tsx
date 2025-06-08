@@ -13,6 +13,17 @@ export default function Polls() {
     queryKey: [`/api/trips/${tripId}`],
     enabled: !!tripId,
   });
+
+  // Fetch trip members to check RSVP status
+  const { data: members = [] } = useQuery({
+    queryKey: [`/api/trips/${tripId}/members`],
+    enabled: !!tripId && !!user,
+  });
+
+  // Check user's RSVP status
+  const isOrganizer = user && trip && trip.organizer === user.id;
+  const currentUserMembership = members.find((member: any) => member.userId === user?.id);
+  const isConfirmedMember = currentUserMembership?.rsvpStatus === 'confirmed' || isOrganizer;
   
   const isLoading = authLoading || tripLoading;
   

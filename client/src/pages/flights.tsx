@@ -34,11 +34,22 @@ export default function Flights() {
     enabled: !!tripId
   });
 
+  // Fetch trip details
+  const { data: trip } = useQuery({
+    queryKey: [`/api/trips/${tripId}`],
+    enabled: !!tripId
+  });
+
   // Fetch trip members to get user information
   const { data: members = [] } = useQuery({
     queryKey: [`/api/trips/${tripId}/members`],
     enabled: !!tripId
   });
+
+  // Check user's RSVP status
+  const isOrganizer = user && trip && trip.organizer === user.id;
+  const currentUserMembership = members.find((member: any) => member.userId === user?.id);
+  const isConfirmedMember = currentUserMembership?.rsvpStatus === 'confirmed' || isOrganizer;
 
   // Add flight mutation
   const addFlightMutation = useMutation({

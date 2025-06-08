@@ -471,50 +471,59 @@ export default function Chat() {
 
         {/* Message Input - Flush with bottom of screen */}
         <div className="bg-white border-t border-gray-200 p-2 md:p-3 sticky bottom-0 z-20 mt-auto">
-          <form onSubmit={handleSubmit} className="flex items-center space-x-2 flex-shrink-0">
-            {/* Add option button - Only show when coming from chats page */}
-            {isFromChatsPage && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    type="button"
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-10 w-10 text-gray-500 hover:text-primary-500"
-                  >
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent side="top" align="start" className="w-48 p-2">
-                  <div className="space-y-1">
-                    <CreatePollDialog tripId={tripId} variant="compact">
-                      <Button variant="ghost" size="sm" className="w-full justify-start">
-                        <PieChart className="h-4 w-4 mr-2" />
-                        Create Poll
-                      </Button>
-                    </CreatePollDialog>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-            
-            <Input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type a message..."
-              className="flex-1 h-10 text-sm"
-              autoComplete="off"
-            />
-            <Button 
-              type="submit" 
-              size="sm"
-              className="h-10 w-10 p-0 min-w-0 flex-shrink-0"
-              disabled={isSubmitting || !message.trim()}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
+          {!isConfirmedMember ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+              <p className="text-sm text-amber-700">
+                {isPendingMember && "Please confirm your RSVP to participate in chat"}
+                {isDeclinedMember && "You need confirmed attendance to chat"}
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex items-center space-x-2 flex-shrink-0">
+              {/* Add option button - Only show when coming from chats page */}
+              {isFromChatsPage && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      type="button"
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-10 w-10 text-gray-500 hover:text-primary-500"
+                    >
+                      <Plus className="h-5 w-5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" align="start" className="w-48 p-2">
+                    <div className="space-y-1">
+                      <CreatePollDialog tripId={tripId} variant="compact">
+                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                          <PieChart className="h-4 w-4 mr-2" />
+                          Create Poll
+                        </Button>
+                      </CreatePollDialog>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+              
+              <Input
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="flex-1 h-10 text-sm"
+                autoComplete="off"
+              />
+              <Button 
+                type="submit" 
+                size="sm"
+                className="h-10 w-10 p-0 min-w-0 flex-shrink-0"
+                disabled={isSubmitting || !message.trim()}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
+          )}
         </div>
       </main>
       

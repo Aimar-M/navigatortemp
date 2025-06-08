@@ -113,6 +113,15 @@ export default function ExpensesPage() {
     queryKey: ["/api/auth/me"],
   });
 
+  // Check user's RSVP status  
+  const { data: trip } = useQuery({
+    queryKey: [`/api/trips/${tripId}`],
+  });
+  
+  const isOrganizer = currentUser && trip && trip.organizer === currentUser.id;
+  const currentUserMembership = members.find((member: any) => member.userId === currentUser?.id);
+  const isConfirmedMember = currentUserMembership?.rsvpStatus === 'confirmed' || isOrganizer;
+
   // Format currency for mobile (whole numbers) vs desktop (2 decimals)
   const formatCurrency = (amount: number | string, isMobile: boolean = false) => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
