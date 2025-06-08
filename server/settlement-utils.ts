@@ -18,7 +18,8 @@ export function detectPaymentMethods(user: User): PaymentMethodInfo {
 
 export function generateVenmoPaymentLink(username: string, amount: number, note: string): string {
   const cleanUsername = username.startsWith('@') ? username.slice(1) : username;
-  return `https://account.venmo.com/pay?recipients=${cleanUsername}`;
+  const encodedNote = encodeURIComponent(note);
+  return `https://venmo.com/pay/${cleanUsername}?amount=${amount}&note=${encodedNote}`;
 }
 
 export function generatePayPalPaymentLink(email: string, amount: number, note: string): string {
