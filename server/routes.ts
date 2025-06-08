@@ -976,6 +976,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await storage.updateTripMemberRSVPStatus(tripId, userId, 'confirmed');
       
+      // Update the main status to confirmed to grant full access
+      await storage.updateTripMemberStatus(tripId, userId, 'confirmed');
+      
       res.json({ message: 'Payment confirmed successfully' });
     } catch (error) {
       console.error('Error confirming payment:', error);
@@ -1011,6 +1014,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       await storage.updateTripMemberRSVPStatus(tripId, userId, 'declined');
+      
+      // Update the main status to declined
+      await storage.updateTripMemberStatus(tripId, userId, 'declined');
       
       res.json({ message: 'Payment rejected successfully' });
     } catch (error) {
