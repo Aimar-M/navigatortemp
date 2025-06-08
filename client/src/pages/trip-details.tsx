@@ -6,6 +6,7 @@ import TripDetailLayout from "@/components/trip-detail-layout";
 import UserAvatar from "@/components/user-avatar";
 import RSVPPaymentWorkflow from "@/components/rsvp-payment-workflow";
 import OrganizerReviewDashboard from "@/components/organizer-review-dashboard";
+import PendingStatusScreen from "@/components/pending-status-screen";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -214,6 +215,23 @@ export default function TripDetails() {
     );
   }
   
+  // Show Pending Status Screen for users with pending RSVP status
+  if (isPendingMember && currentUserMembership && !isOrganizer) {
+    return (
+      <TripDetailLayout 
+        tripId={tripId}
+        title={trip.name}
+        isConfirmedMember={false}
+        description={`Trip to ${trip.destination}`}
+      >
+        <PendingStatusScreen 
+          trip={trip}
+          member={currentUserMembership}
+        />
+      </TripDetailLayout>
+    );
+  }
+
   return (
     <TripDetailLayout 
       tripId={tripId}
@@ -221,69 +239,19 @@ export default function TripDetails() {
       isConfirmedMember={!!isConfirmedMember}
       description={`Trip to ${trip.destination}`}
     >
-      {/* RSVP Status Notice for Non-Confirmed Users */}
-      {!isConfirmedMember && (
-        <Card className="mb-6 border-amber-200 bg-amber-50">
+      {/* RSVP Status Notice for Declined Users */}
+      {isDeclinedMember && (
+        <Card className="mb-6 border-red-200 bg-red-50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <Info className="h-5 w-5 text-amber-600" />
+              <Info className="h-5 w-5 text-red-600" />
               <div className="flex-1">
-                <h3 className="font-medium text-amber-800">RSVP Required</h3>
-                <p className="text-sm text-amber-700">
-                  {isPendingMember && "Please confirm your attendance to access trip features like expenses, activities, and chat."}
-                  {isDeclinedMember && "You have declined this trip invitation. Contact the organizer if you'd like to change your response."}
+                <h3 className="font-medium text-red-800">RSVP Declined</h3>
+                <p className="text-sm text-red-700">
+                  You have declined this trip invitation. Contact the organizer if you'd like to change your response.
                 </p>
-                {isPendingMember && !trip.requiresDownPayment && (
-                  <div className="flex gap-2 mt-3">
-                    <Button 
-                      size="sm" 
-                      onClick={() => updateRSVPMutation.mutate({ userId: user!.id, rsvpStatus: 'confirmed' })}
-                      disabled={updateRSVPMutation.isPending}
-                    >
-                      Confirm Attendance
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => updateRSVPMutation.mutate({ userId: user!.id, rsvpStatus: 'declined' })}
-                      disabled={updateRSVPMutation.isPending}
-                    >
-                      Decline
-                    </Button>
-                  </div>
-                )}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Payment Workflow for trips requiring down payment */}
-      {trip.requiresDownPayment && isPendingMember && user && currentUserMembership && (
-        <Card className="mb-6 border-blue-200 bg-blue-50">
-          <CardContent className="p-6">
-            <RSVPPaymentWorkflow
-              tripId={tripId}
-              userId={user.id}
-              trip={trip}
-              member={currentUserMembership}
-              isOrganizer={!!isOrganizer}
-              onPaymentSubmitted={() => {
-                queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId, 'members'] });
-                toast({
-                  title: "Payment submitted",
-                  description: "Your payment information has been submitted for review."
-                });
-              }}
-              onPaymentConfirmed={() => {
-                queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId, 'members'] });
-                queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId] });
-                toast({
-                  title: "Payment confirmed!",
-                  description: "You now have full access to trip features."
-                });
-              }}
-            />
           </CardContent>
         </Card>
       )}

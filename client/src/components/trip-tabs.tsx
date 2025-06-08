@@ -25,9 +25,9 @@ export default function TripTabs({ tripId, isConfirmedMember = true }: TripTabsP
     { name: "Polls", href: `/trips/${tripId}/polls` },
   ];
 
-  // Allow pending users to see Overview and Itinerary tabs only
+  // Allow pending users to see Overview tab only
   const tabs = isConfirmedMember ? allTabs : allTabs.filter(tab => 
-    tab.name === "Overview" || tab.name === "Itinerary"
+    tab.name === "Overview"
   );
 
   const isActive = (tab: Tab) => {
