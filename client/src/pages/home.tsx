@@ -210,12 +210,22 @@ export default function Home() {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tripsToRender.map((trip: any) => (
-          <TripCard
-            key={trip.id}
-            trip={showPendingInvitations ? trip.trip || trip : trip}
-          />
-        ))}
+        {tripsToRender.map((tripItem: any) => {
+          const trip = showPendingInvitations ? tripItem.trip || tripItem : tripItem;
+          return (
+            <TripCard
+              key={trip.id}
+              id={trip.id}
+              name={trip.name}
+              destination={trip.destination}
+              startDate={trip.startDate}
+              endDate={trip.endDate}
+              status={trip.status}
+              memberCount={trip.memberCount || 0}
+              imageUrl={trip.cover}
+            />
+          );
+        })}
       </div>
     );
   };
