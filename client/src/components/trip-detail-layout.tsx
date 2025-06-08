@@ -8,18 +8,20 @@ interface TripDetailLayoutProps {
   children: React.ReactNode;
   title?: string;
   description?: string;
+  isConfirmedMember?: boolean;
 }
 
 const TripDetailLayout: React.FC<TripDetailLayoutProps> = ({
   tripId,
   children,
   title,
-  description
+  description,
+  isConfirmedMember = true
 }) => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      <TripTabs tripId={tripId} />
+      {isConfirmedMember && <TripTabs tripId={tripId} />}
       
       {/* Set a fixed height for the main content area with pb-24 to ensure space for the mobile navigation */}
       <main className="flex-1 p-4 overflow-y-auto pb-24 md:pb-4">

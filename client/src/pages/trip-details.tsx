@@ -182,6 +182,12 @@ export default function TripDetails() {
 
   const isOrganizer = user && trip && trip.organizer === user.id;
   
+  // Get current user's membership status
+  const currentUserMembership = members.find(member => member.userId === user?.id);
+  const isConfirmedMember = currentUserMembership?.rsvpStatus === 'confirmed' || isOrganizer;
+  const isPendingMember = currentUserMembership?.rsvpStatus === 'pending';
+  const isDeclinedMember = currentUserMembership?.rsvpStatus === 'declined';
+  
   if (isLoading || !trip) {
     return (
       <TripDetailLayout tripId={tripId}>
@@ -198,6 +204,7 @@ export default function TripDetails() {
     <TripDetailLayout 
       tripId={tripId}
       title={trip.name}
+      isConfirmedMember={isConfirmedMember}
       description={`Trip to ${trip.destination}`}
     >
       {/* Trip Image Upload */}
