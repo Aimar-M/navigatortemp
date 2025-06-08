@@ -18,7 +18,6 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiRequest } from "@/lib/queryClient";
 
 export default function Home() {
   const { user, isLoading: authLoading } = useAuth();
@@ -29,34 +28,46 @@ export default function Home() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch trips
-  const { data: tripsData, isLoading } = useQuery({
-    queryKey: ["/api/trips"],
-    enabled: !!user,
+  const token = user ? localStorage.getItem('auth_token') : null;
+  
+  // Use React Query with proper dependencies to avoid setState during render
+  const { data: trips, isLoading } = useQuery({
+    queryKey: ["/api/trips", !!user, token],
+    queryFn: async () => {
+      if (!user || !token) return [];
+      
+      // Add token to authorization header
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${token}`
+      };
+      
+      const response = await fetch("/api/trips", { headers });
+      if (!response.ok) throw new Error("Failed to fetch trips");
+      return response.json();
+    },
+    enabled: !!user && !!token,
   });
-  const trips = Array.isArray(tripsData) ? tripsData : [];
-
-  // Fetch pending invitations
-  const { data: pendingInvitationsData, isLoading: pendingInvitationsLoading } = useQuery({
-    queryKey: ["/api/trips/memberships/pending"],
-    enabled: !!user,
-  });
-  const pendingInvitations = Array.isArray(pendingInvitationsData) ? pendingInvitationsData : [];
-
+  
   // Define mutations for pinning and archiving trips
   const pinTripMutation = useMutation({
     mutationFn: async (tripId: number) => {
-      if (!user) throw new Error("Not authenticated");
+      if (!token) throw new Error("Not authenticated");
       
-      const trip = trips.find((t: any) => t.id === tripId);
+      const trip = trips?.find((t: any) => t.id === tripId);
       if (!trip) throw new Error("Trip not found");
+      
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
       
       const response = await fetch(`/api/trips/${tripId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ isPinned: !trip.isPinned })
       });
-      if (!response.ok) throw new Error('Failed to update trip');
+      
+      if (!response.ok) throw new Error("Failed to update trip");
       return response.json();
     },
     onSuccess: () => {
@@ -77,17 +88,23 @@ export default function Home() {
   
   const archiveTripMutation = useMutation({
     mutationFn: async (tripId: number) => {
-      if (!user) throw new Error("Not authenticated");
+      if (!token) throw new Error("Not authenticated");
       
-      const trip = trips.find((t: any) => t.id === tripId);
+      const trip = trips?.find((t: any) => t.id === tripId);
       if (!trip) throw new Error("Trip not found");
+      
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
       
       const response = await fetch(`/api/trips/${tripId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ isArchived: !trip.isArchived })
       });
-      if (!response.ok) throw new Error('Failed to update trip');
+      
+      if (!response.ok) throw new Error("Failed to update trip");
       return response.json();
     },
     onSuccess: () => {
@@ -105,14 +122,40 @@ export default function Home() {
       });
     }
   });
+  
+  // Fetch pending invitations (trip memberships with "pending" status)
+  const { data: pendingInvitations, isLoading: pendingInvitationsLoading } = useQuery({
+    queryKey: ["/api/trips/invitations/pending", !!user, token],
+    queryFn: async () => {
+      if (!user || !token) return [];
+      
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${token}`
+      };
+      
+      // This would be the endpoint for pending invitations
+      const response = await fetch("/api/trips/memberships/pending", { headers });
+      if (!response.ok) throw new Error("Failed to fetch pending invitations");
+      
+      const data = await response.json();
+      
+      // Set notification indicator if there are pending invitations
+      if (data.length > 0) {
+        setHasNewNotifications(true);
+      }
+      
+      return data;
+    },
+    enabled: !!user && !!token,
+  });
 
   // Group trips by simplified categories (past, upcoming, and invitations)
   const currentDate = new Date();
   
   // Get pending invitation trip IDs to filter them out of other sections
-  const pendingInvitationTripIds = pendingInvitations.map((invitation: any) => 
-    invitation.membership?.tripId || invitation.tripId
-  );
+  const pendingInvitationTripIds = pendingInvitations?.map((invitation: any) => 
+    invitation.membership.tripId
+  ) || [];
   
   // Helper to sort trips by pinned status first, then by date proximity
   const sortTripsByPinnedAndProximity = (tripA: any, tripB: any) => {
@@ -127,206 +170,334 @@ export default function Home() {
     // If both are pinned or both are not pinned, sort by date proximity
     const dateA = new Date(tripA.startDate);
     const dateB = new Date(tripB.startDate);
-    const diffA = Math.abs(currentDate.getTime() - dateA.getTime());
-    const diffB = Math.abs(currentDate.getTime() - dateB.getTime());
-    return diffA - diffB;
-  };
-
-  // Filter trips based on search and exclude pending invitations
-  const filteredTrips = trips.filter((trip: any) => 
-    !pendingInvitationTripIds.includes(trip.id) &&
-    trip.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (showArchived ? trip.isArchived : !trip.isArchived)
-  );
-
-  // Categorize and sort trips
-  const upcomingTrips = filteredTrips
-    .filter((trip: any) => new Date(trip.endDate) >= currentDate)
-    .sort(sortTripsByPinnedAndProximity);
     
-  const pastTrips = filteredTrips
-    .filter((trip: any) => new Date(trip.endDate) < currentDate)
-    .sort(sortTripsByPinnedAndProximity);
+    // Calculate difference from today
+    const diffA = Math.abs(dateA.getTime() - currentDate.getTime());
+    const diffB = Math.abs(dateB.getTime() - currentDate.getTime());
+    
+    return diffA - diffB; // Closest dates first
+  };
+  
+  // Handler functions for pinning and archiving
+  const handlePinTrip = (id: number) => {
+    pinTripMutation.mutate(id);
+  };
+  
+  const handleArchiveTrip = (id: number) => {
+    archiveTripMutation.mutate(id);
+  };
+  
+  // Past trips = trips with end date before current date (excluding pending invitations)
+  const pastTrips = trips?.filter((trip: any) => {
+    const endDate = new Date(trip.endDate);
+    return endDate < currentDate && 
+      !pendingInvitationTripIds.includes(trip.id) &&
+      (showArchived ? true : !trip.isArchived) && // Only show archived if selected
+      (searchTerm === "" || 
+        trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
+  }).sort(sortTripsByPinnedAndProximity) || [];
+  
+  // Upcoming trips = trips with end date on or after current date (excluding pending invitations)
+  const upcomingTrips = trips?.filter((trip: any) => {
+    const endDate = new Date(trip.endDate);
+    return endDate >= currentDate && 
+      !pendingInvitationTripIds.includes(trip.id) &&
+      (showArchived ? true : !trip.isArchived) && // Only show archived if selected
+      (searchTerm === "" || 
+        trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
+  }).sort(sortTripsByPinnedAndProximity) || [];
+  
+  // All trips (filtered for search and archive status)
+  const filteredTrips = trips?.filter((trip: any) => {
+    return !pendingInvitationTripIds.includes(trip.id) &&
+      (showArchived ? true : !trip.isArchived) && // Only show archived if selected
+      (searchTerm === "" || 
+        trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
+  }).sort(sortTripsByPinnedAndProximity) || [];
+  
+  // Invitations are handled separately through pendingInvitations
 
-  const allTrips = filteredTrips.sort(sortTripsByPinnedAndProximity);
-
-  // Show loading skeleton while authentication is being checked
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className="h-48 w-full" />
-            ))}
-          </div>
-        </div>
-        <MobileNavigation />
+      <div className="min-h-screen flex items-center justify-center">
+        <Skeleton className="h-12 w-12 rounded-full" />
       </div>
     );
   }
 
-  // If user is not authenticated, show landing page
   if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              Navigator
-            </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              The ultimate group travel financial management platform
-            </p>
-            <div className="space-x-4">
-              <Button asChild size="lg">
-                <Link href="/login">Sign In</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link href="/register">Get Started</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    navigate("/login");
+    return null;
   }
-
-  const hasTripsToShow = filteredTrips.length > 0 || pendingInvitations.length > 0;
-
-  const renderTripGrid = (tripList: any[], showPendingInvitations = false) => {
-    const tripsToRender = showPendingInvitations ? pendingInvitations : tripList;
-    
-    if (tripsToRender.length === 0) {
-      return (
-        <div className="text-center py-8">
-          <p className="text-gray-500">
-            {showPendingInvitations ? "No pending invitations" : "No trips found"}
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tripsToRender.map((tripItem: any) => {
-          const trip = showPendingInvitations ? tripItem.trip || tripItem : tripItem;
-          return (
-            <TripCard
-              key={trip.id}
-              id={trip.id}
-              name={trip.name}
-              destination={trip.destination}
-              startDate={trip.startDate}
-              endDate={trip.endDate}
-              status={trip.status}
-              memberCount={trip.memberCount || 0}
-              imageUrl={trip.cover}
-            />
-          );
-        })}
-      </div>
-    );
-  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
       
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Welcome back, {user.name}!
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Manage your group travels and expenses
-            </p>
-          </div>
-          
-          <Button asChild className="whitespace-nowrap">
-            <Link href="/trips/new">
-              <Plus className="w-4 h-4 mr-2" />
-              New Trip
-            </Link>
-          </Button>
-        </div>
+      <main className="flex-1 flex flex-col md:flex-row overflow-hidden pb-16 md:pb-0">
+        {/* Navigation Panel */}
+        <div className="w-full md:w-80 md:min-w-[320px] bg-white border-r border-gray-200 md:h-full overflow-y-auto">
 
-        {/* Search and Filters */}
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Search trips..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
 
-        {/* Main Content */}
-        {isLoading || pendingInvitationsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className="h-48 w-full" />
-            ))}
+          {/* Search Bar */}
+          <div className="p-4 border-b border-gray-200">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Search trips or destinations..."
+                className="w-full pl-10 pr-4 py-2"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
-        ) : hasTripsToShow ? (
-          <Tabs defaultValue="upcoming" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-              <TabsTrigger value="past">Past</TabsTrigger>
-              <TabsTrigger value="all">All Trips</TabsTrigger>
-              <TabsTrigger value="invitations" className="relative">
-                Invitations
-                {pendingInvitations.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {pendingInvitations.length}
-                  </span>
-                )}
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="upcoming" className="mt-6">
-              {renderTripGrid(upcomingTrips)}
-            </TabsContent>
-            
-            <TabsContent value="past" className="mt-6">
-              {renderTripGrid(pastTrips)}
-            </TabsContent>
-            
-            <TabsContent value="all" className="mt-6">
-              {renderTripGrid(allTrips)}
-            </TabsContent>
-            
-            <TabsContent value="invitations" className="mt-6">
-              {renderTripGrid([], true)}
-            </TabsContent>
-          </Tabs>
-        ) : (
-          /* Empty State */
-          <Card className="max-w-md mx-auto">
-            <CardContent className="text-center py-12">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No trips yet
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Start planning your first group adventure!
-              </p>
-              <Button asChild>
-                <Link href="/trips/new">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Your First Trip
-                </Link>
+
+          {/* Trip List */}
+          <div className="pt-2">
+            <div className="px-4 pb-2 flex justify-between items-center">
+              <h2 className="text-sm font-medium text-gray-500 uppercase">Your Trips</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-primary-600 hover:bg-primary-50"
+                onClick={() => navigate("/create-trip")}
+              >
+                <Plus className="h-5 w-5" />
               </Button>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            </div>
 
+            {/* We've moved the invitations section to the Tabs, so this section is no longer needed */}
+            
+            {isLoading ? (
+              <div className="space-y-3 p-4">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i}>
+                    <CardContent className="p-4">
+                      <Skeleton className="h-5 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-1/2 mb-2" />
+                      <Skeleton className="h-3 w-1/3" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : trips && trips.length > 0 ? (
+              <div className="space-y-1">
+                <Tabs defaultValue="upcoming" className="w-full">
+                  <TabsList className="w-full justify-start px-4 pb-2">
+                    <TabsTrigger value="upcoming" className="text-xs">Upcoming</TabsTrigger>
+                    <TabsTrigger value="new" className="text-xs">
+                      New
+                      {pendingInvitations && pendingInvitations.length > 0 && (
+                        <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
+                          {pendingInvitations.length}
+                        </span>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="archived" className="text-xs">Archived</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="upcoming">
+                    {/* Only non-archived, upcoming trips */}
+                    {upcomingTrips.filter(trip => !trip.isArchived).length > 0 ? (
+                      upcomingTrips.filter(trip => !trip.isArchived).map((trip: any) => (
+                        <div key={trip.id} className="px-1">
+                          <EnhancedTripCard
+                            id={trip.id}
+                            name={trip.name}
+                            destination={trip.destination}
+                            startDate={trip.startDate}
+                            endDate={trip.endDate}
+                            status={trip.status}
+                            memberCount={trip.memberCount}
+                            imageUrl={trip.cover}
+                            isPinned={!!trip.isPinned}
+                            isArchived={!!trip.isArchived}
+                            onPin={handlePinTrip}
+                            onArchive={handleArchiveTrip}
+                          />
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-center text-gray-500 py-4">No upcoming trips.</p>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="new">
+                    {pendingInvitations && pendingInvitations.length > 0 ? (
+                      <div className="space-y-2 px-1">
+                        {pendingInvitations.map((invitation: any) => (
+                          <Card key={invitation.membership.tripId} className="border-orange-200 bg-orange-50">
+                            <CardContent className="p-3">
+                              <div className="flex flex-col">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <h4 className="font-medium text-gray-900">{invitation.trip?.name}</h4>
+                                    <p className="text-sm text-gray-600">
+                                      {invitation.trip?.destination} • {new Date(invitation.trip?.startDate).toLocaleDateString()} - {new Date(invitation.trip?.endDate).toLocaleDateString()}
+                                    </p>
+                                    <p className="text-xs text-gray-600 mt-1">
+                                      Invited by {invitation.organizer?.name || invitation.organizer?.username}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="space-y-2 mt-2">
+                                  <p className="text-sm font-medium text-gray-700">Will you be attending this trip?</p>
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      size="sm" 
+                                      variant="default"
+                                      className="w-full bg-green-600 hover:bg-green-700"
+                                      onClick={() => {
+                                        // Update status to confirmed
+                                        fetch(`/api/trips/${invitation.membership.tripId}/members/${user.id}`, {
+                                          method: 'PUT',
+                                          headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': `Bearer ${token}`
+                                          },
+                                          body: JSON.stringify({ status: 'confirmed' })
+                                        })
+                                        .then(response => {
+                                          if (response.ok) {
+                                            toast({
+                                              title: "Attendance confirmed!",
+                                              description: "You're now confirmed for this trip"
+                                            });
+                                            // Refresh data
+                                            queryClient.invalidateQueries({ queryKey: ['/api/trips'] });
+                                            queryClient.invalidateQueries({ queryKey: ['/api/trips/memberships/pending'] });
+                                          } else {
+                                            throw new Error("Failed to confirm attendance");
+                                          }
+                                        })
+                                        .catch(error => {
+                                          toast({
+                                            title: "Error",
+                                            description: "Failed to confirm your attendance",
+                                            variant: "destructive"
+                                          });
+                                        });
+                                      }}
+                                    >
+                                      I'll be there!
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                                      onClick={() => {
+                                        // Update status to declined
+                                        fetch(`/api/trips/${invitation.membership.tripId}/members/${user.id}`, {
+                                          method: 'PUT',
+                                          headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': `Bearer ${token}`
+                                          },
+                                          body: JSON.stringify({ status: 'declined' })
+                                        })
+                                        .then(response => {
+                                          if (response.ok) {
+                                            toast({
+                                              title: "Trip declined",
+                                              description: "You've been removed from this trip and it has been archived"
+                                            });
+                                            // Refresh data to show updated trip list and archived section
+                                            queryClient.invalidateQueries({ queryKey: ['/api/trips'] });
+                                            queryClient.invalidateQueries({ queryKey: ['/api/trips/memberships/pending'] });
+                                          } else {
+                                            throw new Error("Failed to decline invitation");
+                                          }
+                                        })
+                                        .catch(error => {
+                                          toast({
+                                            title: "Error",
+                                            description: "Failed to decline the invitation",
+                                            variant: "destructive"
+                                          });
+                                        });
+                                      }}
+                                    >
+                                      I can't attend
+                                    </Button>
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    Your response helps the organizer plan appropriately
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center text-gray-500 py-4">No new trip invitations.</p>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="archived">
+                    {/* Only archived trips */}
+                    {trips?.filter(trip => trip.isArchived).length > 0 ? (
+                      trips.filter(trip => trip.isArchived).map((trip: any) => (
+                        <div key={trip.id} className="px-1">
+                          <EnhancedTripCard
+                            id={trip.id}
+                            name={trip.name}
+                            destination={trip.destination}
+                            startDate={trip.startDate}
+                            endDate={trip.endDate}
+                            status={trip.status}
+                            memberCount={trip.memberCount}
+                            imageUrl={trip.cover}
+                            isPinned={!!trip.isPinned}
+                            isArchived={!!trip.isArchived}
+                            onPin={handlePinTrip}
+                            onArchive={handleArchiveTrip}
+                          />
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-center text-gray-500 py-4">No archived trips.</p>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
+            ) : (
+              <div className="text-center p-8">
+                <h3 className="text-lg font-semibold mb-2">No trips yet!</h3>
+                <p className="text-gray-500 mb-4">Start planning your first adventure.</p>
+                <Button onClick={() => navigate("/create-trip")}>
+                  <Plus className="h-4 w-4 mr-2" /> Create a Trip
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Welcome Content Panel if no trip is selected */}
+        <div className="flex-1 flex flex-col items-center justify-start p-4 md:p-8 text-center pt-12">
+          <img
+            src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&h=400"
+            alt="Group of friends on vacation"
+            className="rounded-lg mb-6 w-full max-w-xl object-cover shadow-md"
+          />
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Navigator!</h1>
+          <p className="text-gray-600 max-w-md mb-6">
+            Plan trips with friends, create itineraries, chat with your travel group,
+            and make your next adventure unforgettable.
+          </p>
+          <Button onClick={() => navigate("/create-trip")} className="mb-3">
+            <Plus className="h-4 w-4 mr-2" /> Create a Trip
+          </Button>
+          <p className="text-sm text-gray-500">
+            Or select a trip from the sidebar to view details.
+          </p>
+        </div>
+      </main>
+      
       <MobileNavigation />
     </div>
   );
