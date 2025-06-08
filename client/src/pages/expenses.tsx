@@ -112,6 +112,14 @@ export default function ExpensesPage() {
     queryKey: ["/api/auth/me"],
   });
 
+  // Format currency for mobile (whole numbers) vs desktop (2 decimals)
+  const formatCurrency = (amount: number, isMobile: boolean = false) => {
+    if (isMobile) {
+      return `$${Math.round(amount)}`;
+    }
+    return `$${amount.toFixed(2)}`;
+  };
+
   const handleSettleClick = () => {
     if (!currentUser) return;
     
@@ -194,10 +202,7 @@ export default function ExpensesPage() {
     );
   }
 
-  const formatCurrency = (amount: number | string) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return `$${num.toFixed(2)}`;
-  };
+
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -395,7 +400,7 @@ export default function ExpensesPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Who Owes What</CardTitle>
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                <div className={`items-center gap-1 bg-gray-100 rounded-lg p-1 ${balances.length > 5 ? 'hidden sm:flex' : 'flex'}`}>
                   <Button
                     size="sm"
                     variant={viewMode === 'cards' ? 'default' : 'ghost'}
@@ -433,16 +438,24 @@ export default function ExpensesPage() {
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between">
                           <span>Paid out:</span>
-                          <span className="font-medium">{formatCurrency(balance.totalPaid)}</span>
+                          <span className="font-medium">
+                            <span className="sm:hidden">{formatCurrency(balance.totalPaid, true)}</span>
+                            <span className="hidden sm:inline">{formatCurrency(balance.totalPaid)}</span>
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span>Owes:</span>
-                          <span className="font-medium">{formatCurrency(balance.totalOwed)}</span>
+                          <span className="font-medium">
+                            <span className="sm:hidden">{formatCurrency(balance.totalOwed, true)}</span>
+                            <span className="hidden sm:inline">{formatCurrency(balance.totalOwed)}</span>
+                          </span>
                         </div>
                         <div className="border-t pt-1 flex justify-between font-semibold">
                           <span>Net:</span>
                           <span className={balance.netBalance >= 0 ? "text-green-600" : "text-red-600"}>
-                            {balance.netBalance >= 0 ? "+" : ""}{formatCurrency(balance.netBalance)}
+                            {balance.netBalance >= 0 ? "+" : ""}
+                            <span className="sm:hidden">{formatCurrency(balance.netBalance, true)}</span>
+                            <span className="hidden sm:inline">{formatCurrency(balance.netBalance)}</span>
                           </span>
                         </div>
                       </div>
@@ -479,7 +492,7 @@ export default function ExpensesPage() {
                           hide
                         />
                         <Tooltip 
-                          formatter={(value, name) => [formatCurrency(value as number), 'Balance']}
+                          formatter={(value, name) => [formatCurrency(value as number, false), 'Balance']}
                           labelFormatter={(label) => `User: ${label}`}
                         />
                         <ReferenceLine y={0} stroke="#374151" strokeWidth={2} />
