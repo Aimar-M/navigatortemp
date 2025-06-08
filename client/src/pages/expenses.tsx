@@ -123,6 +123,12 @@ export default function ExpensesPage() {
     return `$${num.toFixed(2)}`;
   };
 
+  // Format currency for charts (rounded with thousands separators)
+  const formatChartCurrency = (amount: number) => {
+    const rounded = Math.round(amount);
+    return `$${rounded.toLocaleString()}`;
+  };
+
   const handleSettleClick = () => {
     if (!currentUser) return;
     
@@ -495,7 +501,7 @@ export default function ExpensesPage() {
                           hide
                         />
                         <Tooltip 
-                          formatter={(value, name) => [formatCurrency(value as number, false), 'Balance']}
+                          formatter={(value, name) => [formatChartCurrency(value as number), 'Balance']}
                           labelFormatter={(label) => `User: ${label}`}
                         />
                         <ReferenceLine y={0} stroke="#374151" strokeWidth={2} />
@@ -512,7 +518,7 @@ export default function ExpensesPage() {
                           <LabelList 
                             dataKey="value"
                             position="outside"
-                            formatter={(value: number) => formatCurrency(Math.abs(value), false)}
+                            formatter={(value: number) => formatChartCurrency(Math.abs(value))}
                             fontSize={12}
                             fontWeight={600}
                             fill="#374151"
