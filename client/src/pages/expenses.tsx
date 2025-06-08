@@ -42,7 +42,7 @@ interface ExpenseShare {
 }
 
 interface Expense {
-  id: number;
+  id: number | string;
   title: string;
   amount: number;
   category: string;
@@ -60,6 +60,8 @@ interface Expense {
     name: string;
   };
   shares: ExpenseShare[];
+  isSettlement?: boolean;
+  paymentMethod?: string;
 }
 
 interface Balance {
@@ -539,31 +541,46 @@ export default function ExpensesPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        {getCategoryIcon(expense.category)}
+                        {expense.isSettlement ? (
+                          <HandHeart className="h-5 w-5 text-green-600" />
+                        ) : (
+                          getCategoryIcon(expense.category)
+                        )}
                         {expense.title}
                         {expense.activity && (
                           <Badge variant="outline" className="ml-2">
                             Activity: {expense.activity.name}
                           </Badge>
                         )}
+                        {expense.isSettlement && (
+                          <Badge variant="outline" className="bg-green-100 text-green-800 ml-2">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Settlement
+                          </Badge>
+                        )}
                       </CardTitle>
                       <p className="text-sm text-gray-500 mt-1">
-                        Paid by {expense.paidByUser.name || expense.paidByUser.username || 'Unknown User'} • {new Date(expense.date).toLocaleDateString()}
+                        {expense.isSettlement ? 
+                          `Payment confirmed • ${new Date(expense.date).toLocaleDateString()}` :
+                          `Paid by ${expense.paidByUser.name || expense.paidByUser.username || 'Unknown User'} • ${new Date(expense.date).toLocaleDateString()}`
+                        }
                       </p>
                       {expense.description && (
                         <p className="text-sm text-gray-600 mt-1">{expense.description}</p>
                       )}
                     </div>
                     <div className="text-right">
-                      <div className="text-xl font-bold">{formatCurrency(expense.amount)}</div>
-                      <Badge className={getCategoryColor(expense.category)}>
-                        {expense.category}
+                      <div className={`text-xl font-bold ${expense.isSettlement ? 'text-green-600' : ''}`}>
+                        {expense.isSettlement ? '+' : ''}{formatCurrency(expense.amount)}
+                      </div>
+                      <Badge className={expense.isSettlement ? 'bg-green-100 text-green-800' : getCategoryColor(expense.category)}>
+                        {expense.isSettlement ? 'payment' : expense.category}
                       </Badge>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {expense.shares && expense.shares.length > 0 && (
+                  {!expense.isSettlement && expense.shares && expense.shares.length > 0 && (
                     <div>
                       <h4 className="font-medium mb-3">Split details:</h4>
                       <div className="space-y-2">
