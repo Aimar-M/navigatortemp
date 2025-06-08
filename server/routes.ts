@@ -1961,7 +1961,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // FLIGHT INFO ROUTES
   
   // Create new flight information
-  router.post('/trips/:id/flights', isAuthenticated, async (req: Request, res: Response) => {
+  router.post('/trips/:id/flights', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
@@ -2122,7 +2122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get all flight information for a trip
-  router.get('/trips/:id/flights', isAuthenticated, async (req: Request, res: Response) => {
+  router.get('/trips/:id/flights', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
@@ -2311,7 +2311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POLL ROUTES
   
   // Create a new poll
-  router.post('/trips/:id/polls', isAuthenticated, async (req: Request, res: Response) => {
+  router.post('/trips/:id/polls', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return;
@@ -2382,7 +2382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get all polls for a trip
-  router.get('/trips/:id/polls', isAuthenticated, async (req: Request, res: Response) => {
+  router.get('/trips/:id/polls', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return;
@@ -2442,7 +2442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Vote on a poll
-  router.post('/polls/:id/vote', isAuthenticated, async (req: Request, res: Response) => {
+  router.post('/polls/:id/vote', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return;
@@ -2948,7 +2948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Expense tracking routes - rebuilt for activity integration
-  router.post('/trips/:id/expenses', isAuthenticated, async (req: Request, res: Response) => {
+  router.post('/trips/:id/expenses', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const tripId = parseInt(req.params.id);
       const user = ensureUser(req, res);
@@ -3008,7 +3008,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  router.get('/trips/:id/expenses/balances', isAuthenticated, async (req: Request, res: Response) => {
+  router.get('/trips/:id/expenses/balances', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const tripId = parseInt(req.params.id);
       
