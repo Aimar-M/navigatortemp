@@ -21,6 +21,7 @@ import UserProfile from "@/pages/user-profile";
 import BudgetDashboard from "@/pages/budget-dashboard";
 import ActivityDetails from "@/pages/activity-details";
 import ExpenseTracker from "@/pages/expense-tracker";
+import ExpenseDetails from "@/pages/expense-details";
 
 function Router() {
   return (
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/invite/:token" component={InvitationPage} />
       <Route path="/budget-dashboard" component={BudgetDashboard} />
       <Route path="/activities/:activityId" component={ActivityDetails} />
+      <Route path="/trips/:tripId/expenses/:expenseId" component={ExpenseDetails} />
       <Route path="/profile" component={Profile} />
       <Route path="/user/:userId" component={UserProfile} />
       <Route component={NotFound} />
