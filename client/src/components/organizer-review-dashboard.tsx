@@ -62,9 +62,10 @@ export default function OrganizerReviewDashboard({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId, 'members'] });
       queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/trips'] });
       toast({
         title: "Payment confirmed",
-        description: "Member has been granted full access to trip features."
+        description: "Member's RSVP has been confirmed and they now have full access to trip features."
       });
       setProcessingUserId(null);
     },
@@ -80,15 +81,15 @@ export default function OrganizerReviewDashboard({
 
   const rejectPaymentMutation = useMutation({
     mutationFn: async (userId: number) => {
-      return apiRequest(`/api/trips/${tripId}/members/${userId}/payment`, 'POST', {
-        paymentStatus: 'rejected'
-      });
+      return apiRequest(`/api/trips/${tripId}/members/${userId}/reject-payment`, 'POST');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId, 'members'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/trips'] });
       toast({
         title: "Payment rejected",
-        description: "Member will need to resubmit payment information."
+        description: "Member's RSVP has been declined and they will be notified."
       });
       setProcessingUserId(null);
     },
