@@ -6,7 +6,8 @@ import {
   SurveyResponse, InsertSurveyResponse, Expense, InsertExpense,
   ExpenseSplit, InsertExpenseSplit, Settlement, InsertSettlement,
   users, trips, tripMembers, activities, activityRsvp, 
-  messages, surveyQuestions, surveyResponses, expenses, expenseSplits, settlements
+  messages, surveyQuestions, surveyResponses, expenses, expenseSplits, settlements,
+  polls, pollVotes
 } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 export class DatabaseStorage {
@@ -671,7 +672,11 @@ export class DatabaseStorage {
   }
 
   async getPollsByTrip(tripId: number): Promise<any[]> {
-    return [];
+    return await db
+      .select()
+      .from(polls)
+      .where(eq(polls.tripId, tripId))
+      .orderBy(desc(polls.createdAt));
   }
 
   async createInvitationLink(data: any): Promise<any> {
@@ -713,27 +718,43 @@ export class DatabaseStorage {
   }
 
   async createPoll(data: any): Promise<any> {
-    return { id: 1, ...data };
+    const [newPoll] = await db
+      .insert(polls)
+      .values(data)
+      .returning();
+    return newPoll;
   }
 
   async getPollVotes(pollId: number): Promise<any[]> {
-    return [];
+    return await db
+      .select()
+      .from(pollVotes)
+      .where(eq(pollVotes.pollId, pollId));
   }
 
   async getUserPollVotes(pollId: number, userId: number): Promise<any[]> {
-    return [];
+    return await db
+      .select()
+      .from(pollVotes)
+      .where(and(eq(pollVotes.pollId, pollId), eq(pollVotes.userId, userId)));
   }
 
   async getPoll(id: number): Promise<any> {
-    return null;
+    const [poll] = await db.select().from(polls).where(eq(polls.id, id));
+    return poll || null;
   }
 
   async deletePollVote(voteId: number): Promise<boolean> {
+    await db.delete(pollVotes).where(eq(pollVotes.id, voteId));
     return true;
   }
 
   async createPollVote(data: any): Promise<any> {
-    return { id: 1, ...data };
+    const [newVote] = await db
+      .insert(pollVotes)
+      .values(data)
+      .returning();
+    return newVote;
   }
 
   // Settlement methods
