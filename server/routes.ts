@@ -486,6 +486,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Server error' });
     }
   });
+
+  // Get pending memberships with full details (for home page pending invitations)
+  router.get('/trips/memberships/pending', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const tripMemberships = await storage.getTripMembershipsByUser(user.id);
+      
+      // Get pending memberships with full trip and organizer details
+      const pendingMemberships = await Promise.all(
+        tripMemberships
+          .filter(membership => membership.rsvpStatus === 'pending')
+          .map(async (membership) => {
+            const trip = await storage.getTrip(membership.tripId);
+            if (!trip) return null;
+            
+            // Get organizer details
+            const organizer = await storage.getUser(trip.organizer);
+            const { password: _, ...organizerWithoutPassword } = organizer || {};
+            
+            return {
+              membership: {
+                tripId: membership.tripId,
+                userId: membership.userId,
+                status: membership.status,
+                rsvpStatus: membership.rsvpStatus,
+                joinedAt: membership.joinedAt,
+                paymentStatus: membership.paymentStatus,
+                paymentAmount: membership.paymentAmount,
+                paymentMethod: membership.paymentMethod
+              },
+              trip: {
+                id: trip.id,
+                name: trip.name,
+                destination: trip.destination,
+                startDate: trip.startDate,
+                endDate: trip.endDate,
+                description: trip.description,
+                requiresDownPayment: trip.requiresDownPayment,
+                downPaymentAmount: trip.downPaymentAmount
+              },
+              organizer: organizerWithoutPassword
+            };
+          })
+      );
+      
+      res.json(pendingMemberships.filter(Boolean));
+    } catch (error) {
+      console.error('Error fetching pending memberships:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
   
   router.get('/trips/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
