@@ -508,14 +508,20 @@ export class DatabaseStorage {
         const payeeBalance = balances.find(b => b.userId === settlement.payeeId);
         const settledAmount = parseFloat(settlement.amount);
 
+        console.log(`Processing settlement: ${settlement.payerId} paid ${settledAmount} to ${settlement.payeeId}`);
+        
         if (payerBalance) {
+          console.log(`Payer balance before: ${payerBalance.netBalance}`);
           // Payer's balance improves (they paid money they owed)
           payerBalance.netBalance = Math.round((payerBalance.netBalance + settledAmount) * 100) / 100;
+          console.log(`Payer balance after: ${payerBalance.netBalance}`);
         }
 
         if (payeeBalance) {
+          console.log(`Payee balance before: ${payeeBalance.netBalance}`);
           // Payee's balance decreases (they received money they were owed)
           payeeBalance.netBalance = Math.round((payeeBalance.netBalance - settledAmount) * 100) / 100;
+          console.log(`Payee balance after: ${payeeBalance.netBalance}`);
         }
       }
 

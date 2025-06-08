@@ -48,9 +48,10 @@ export function NotificationBell() {
         description: "Payment has been marked as received.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/settlements/pending"] });
-      // Also invalidate trip expenses to update balances
+      // Also invalidate trip expenses and balances to update visuals
       pendingSettlements.forEach(settlement => {
         queryClient.invalidateQueries({ queryKey: [`/api/trips/${settlement.tripId}/expenses/balances`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/trips/${settlement.tripId}/expenses`] });
       });
     },
     onError: (error: any) => {
