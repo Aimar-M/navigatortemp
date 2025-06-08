@@ -983,6 +983,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  router.post('/trips/:tripId/members/:userId/reject-payment', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const tripId = parseInt(req.params.tripId);
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(tripId) || isNaN(userId)) {
+        return res.status(400).json({ message: 'Invalid trip ID or user ID' });
+      }
+      
+      // Only trip organizer can reject payments
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: 'Trip not found' });
+      }
+      
+      if (trip.organizer !== user.id) {
+        return res.status(403).json({ message: 'Only trip organizer can reject payments' });
+      }
+      
+      // Update payment status and RSVP status to declined
+      await storage.updateTripMemberPaymentInfo(tripId, userId, {
+        paymentStatus: 'rejected'
+      });
+      
+      await storage.updateTripMemberRSVPStatus(tripId, userId, 'declined');
+      
+      res.json({ message: 'Payment rejected successfully' });
+    } catch (error) {
+      console.error('Error rejecting payment:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   router.delete('/trips/:tripId/members/:userId', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
