@@ -5,6 +5,7 @@ import { MapPin, Calendar, Users, Info, UserPlus, Edit2, Save, X, Home, Plane } 
 import TripDetailLayout from "@/components/trip-detail-layout";
 import UserAvatar from "@/components/user-avatar";
 import RSVPPaymentWorkflow from "@/components/rsvp-payment-workflow";
+import OrganizerReviewDashboard from "@/components/organizer-review-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -285,6 +286,15 @@ export default function TripDetails() {
             />
           </CardContent>
         </Card>
+      )}
+
+      {/* Organizer Review Dashboard for pending payments */}
+      {isOrganizer && members && (
+        <OrganizerReviewDashboard
+          tripId={tripId}
+          members={members}
+          requiresDownPayment={!!trip.requiresDownPayment}
+        />
       )}
 
       {/* Trip Image Upload */}
