@@ -482,12 +482,13 @@ export class DatabaseStorage {
             return sum + (userShare ? parseFloat(userShare.amount.toString()) : 0);
           }, 0);
         
+        const netBalance = Math.round((totalPaid - totalOwed) * 100) / 100;
         balances.push({
           userId: memberId,
           name: memberUser?.name || memberUser?.username || 'Unknown',
           totalPaid: Math.round(totalPaid * 100) / 100,
           totalOwed: Math.round(totalOwed * 100) / 100,
-          netBalance: Math.round((totalPaid - totalOwed) * 100) / 100
+          netBalance: netBalance
         });
       }
 
@@ -503,21 +504,34 @@ export class DatabaseStorage {
         );
 
       // Adjust balances based on confirmed settlements
+      console.log(`Processing ${confirmedSettlements.length} settlements for trip ${tripId}`);
+      console.log('Balances before settlements:', balances.map(b => `${b.name}: ${b.netBalance}`));
+      
       for (const settlement of confirmedSettlements) {
         const payerBalance = balances.find(b => b.userId === settlement.payerId);
         const payeeBalance = balances.find(b => b.userId === settlement.payeeId);
         const settledAmount = parseFloat(settlement.amount);
         
+        console.log(`Settlement: ${settlement.payerId} paid ${settledAmount} to ${settlement.payeeId}`);
+        
         if (payerBalance) {
-          // Payer's balance improves (they paid money they owed)
+          const oldBalance = payerBalance.netBalance;
+          // Payer's debt is reduced (they paid money they owed)
+          // If they had negative balance (owed money), this moves them towards 0
           payerBalance.netBalance = Math.round((payerBalance.netBalance + settledAmount) * 100) / 100;
+          console.log(`Payer ${payerBalance.name}: ${oldBalance} → ${payerBalance.netBalance}`);
         }
 
         if (payeeBalance) {
-          // Payee's balance decreases (they received money they were owed)
+          const oldBalance = payeeBalance.netBalance;
+          // Payee's credit is reduced (they received money they were owed)
+          // If they had positive balance (were owed money), this moves them towards 0
           payeeBalance.netBalance = Math.round((payeeBalance.netBalance - settledAmount) * 100) / 100;
+          console.log(`Payee ${payeeBalance.name}: ${oldBalance} → ${payeeBalance.netBalance}`);
         }
       }
+      
+      console.log('Final balances after settlements:', balances.map(b => `${b.name}: ${b.netBalance}`));
 
       return balances;
     } catch (error) {
