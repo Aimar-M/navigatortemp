@@ -95,7 +95,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-700">RSVP Status:</span>
             <Badge className={getStatusColor()}>
-              Pending Confirmation
+              {getRSVPStatusMessage()}
             </Badge>
           </div>
           
