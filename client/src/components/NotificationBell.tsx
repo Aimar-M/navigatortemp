@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, CheckCircle, Clock, DollarSign } from "lucide-react";
+import { Bell, CheckCircle, Clock, HandHeart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -108,7 +108,7 @@ export function NotificationBell() {
         <Card className="border-0 shadow-lg">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Bell className="h-4 w-4" />
+              <HandHeart className="h-4 w-4" />
               Settlement Notifications
               {unreadCount > 0 && (
                 <Badge variant="secondary" className="ml-auto">
@@ -131,7 +131,7 @@ export function NotificationBell() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <DollarSign className="h-4 w-4 text-blue-600" />
+                            <HandHeart className="h-4 w-4 text-blue-600" />
                             <span className="font-medium text-sm">
                               Payment Confirmation Required
                             </span>
