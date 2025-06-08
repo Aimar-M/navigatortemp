@@ -21,7 +21,7 @@ const TripDetailLayout: React.FC<TripDetailLayoutProps> = ({
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      {isConfirmedMember && <TripTabs tripId={tripId} />}
+      <TripTabs tripId={tripId} isConfirmedMember={isConfirmedMember} />
       
       {/* Set a fixed height for the main content area with pb-24 to ensure space for the mobile navigation */}
       <main className="flex-1 p-4 overflow-y-auto pb-24 md:pb-4">
