@@ -509,7 +509,7 @@ export default function ExpensesPage() {
                           <LabelList 
                             dataKey="value"
                             position="outside"
-                            formatter={(value: number) => formatCurrency(Math.abs(value))}
+                            formatter={(value: number) => formatCurrency(Math.abs(value), false)}
                             fontSize={12}
                             fontWeight={600}
                             fill="#374151"
@@ -584,7 +584,7 @@ export default function ExpensesPage() {
                     </div>
                     <div className="text-right">
                       <div className={`text-xl font-bold ${expense.isSettlement ? 'text-green-600' : ''}`}>
-                        {expense.isSettlement ? '+' : ''}{formatCurrency(expense.amount)}
+                        {expense.isSettlement ? '+' : ''}{formatCurrency(expense.amount, false)}
                       </div>
                       <Badge className={expense.isSettlement ? 'bg-green-100 text-green-800' : getCategoryColor(expense.category)}>
                         {expense.isSettlement ? 'payment' : expense.category}
@@ -607,7 +607,7 @@ export default function ExpensesPage() {
                               </Avatar>
                               <div>
                                 <p className="font-medium">{share.user.name || share.user.username || 'Unknown User'}</p>
-                                <p className="text-sm text-gray-500">Owes {formatCurrency(share.amount)}</p>
+                                <p className="text-sm text-gray-500">Owes {formatCurrency(share.amount, false)}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
