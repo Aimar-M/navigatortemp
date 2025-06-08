@@ -430,7 +430,7 @@ export default function ExpensesPage() {
 
 
         {/* Balance Summary */}
-        {balances.length > 0 && (
+        {balances.length > 0 && isConfirmedMember && (
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -460,7 +460,12 @@ export default function ExpensesPage() {
             <CardContent>
               {viewMode === 'cards' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {balances.map((balance) => (
+                  {balances
+                    .filter(balance => {
+                      const member = members.find(m => m.userId === balance.userId);
+                      return member?.rsvpStatus === 'confirmed' || (member?.userId === (trip as any)?.organizer);
+                    })
+                    .map((balance) => (
                     <div key={balance.userId} className="p-4 border rounded-lg">
                       <div className="flex items-center gap-3 mb-2">
                         <Avatar className="h-8 w-8">
@@ -502,10 +507,15 @@ export default function ExpensesPage() {
                   <div className="flex-1 min-h-0">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
-                        data={balances.map(balance => ({
-                          name: balance.name,
-                          value: balance.netBalance
-                        }))}
+                        data={balances
+                          .filter(balance => {
+                            const member = members.find(m => m.userId === balance.userId);
+                            return member?.rsvpStatus === 'confirmed' || (member?.userId === (trip as any)?.organizer);
+                          })
+                          .map(balance => ({
+                            name: balance.name,
+                            value: balance.netBalance
+                          }))}
                         margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                       >
 
@@ -518,7 +528,11 @@ export default function ExpensesPage() {
                         />
                         <YAxis 
                           domain={(() => {
-                            const values = balances.map(b => b.netBalance);
+                            const confirmedBalances = balances.filter(balance => {
+                              const member = members.find(m => m.userId === balance.userId);
+                              return member?.rsvpStatus === 'confirmed' || (member?.userId === (trip as any)?.organizer);
+                            });
+                            const values = confirmedBalances.map(b => b.netBalance);
                             if (values.length === 0) return [-100, 100];
                             const maxAbs = Math.max(...values.map(v => Math.abs(v)));
                             const padding = Math.max(maxAbs * 0.2, 10);
@@ -535,7 +549,12 @@ export default function ExpensesPage() {
                           dataKey="value"
                           barSize={60}
                         >
-                          {balances.map((balance, index) => (
+                          {balances
+                            .filter(balance => {
+                              const member = members.find(m => m.userId === balance.userId);
+                              return member?.rsvpStatus === 'confirmed' || (member?.userId === (trip as any)?.organizer);
+                            })
+                            .map((balance, index) => (
                             <Cell 
                               key={`cell-${index}`} 
                               fill={balance.netBalance >= 0 ? "#16a34a" : "#dc2626"}
