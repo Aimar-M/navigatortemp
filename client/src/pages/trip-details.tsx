@@ -266,7 +266,7 @@ export default function TripDetails() {
               userId={user.id}
               trip={trip}
               member={currentUserMembership}
-              isOrganizer={isOrganizer}
+              isOrganizer={!!isOrganizer}
               onPaymentSubmitted={() => {
                 queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId, 'members'] });
                 toast({
