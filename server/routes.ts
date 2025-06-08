@@ -1030,7 +1030,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  router.delete('/activities/:id', isAuthenticated, async (req: Request, res: Response) => {
+  router.delete('/activities/:id', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
@@ -1070,7 +1070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Activity RSVP Routes
-  router.post('/activities/:id/rsvp', isAuthenticated, async (req: Request, res: Response) => {
+  router.post('/activities/:id/rsvp', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
@@ -1182,7 +1182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Message Routes
-  router.get('/trips/:id/messages', isAuthenticated, async (req: Request, res: Response) => {
+  router.get('/trips/:id/messages', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
@@ -1232,7 +1232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  router.post('/trips/:id/messages', isAuthenticated, async (req: Request, res: Response) => {
+  router.post('/trips/:id/messages', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const authUser = ensureUser(req, res);
       if (!authUser) return; // Response already sent by ensureUser
@@ -1769,7 +1769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Removed duplicate expense route - using the one at line 2860 instead
   
   // Get all expenses for a trip
-  router.get('/trips/:id/expenses', isAuthenticated, async (req: Request, res: Response) => {
+  router.get('/trips/:id/expenses', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
@@ -1821,7 +1821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get expense summary for a trip
-  router.get('/trips/:id/expenses/summary', isAuthenticated, async (req: Request, res: Response) => {
+  router.get('/trips/:id/expenses/summary', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
@@ -1878,7 +1878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update an expense
-  router.put('/expenses/:id', isAuthenticated, async (req: Request, res: Response) => {
+  router.put('/expenses/:id', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
@@ -1917,7 +1917,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Delete an expense
-  router.delete('/expenses/:id', isAuthenticated, async (req: Request, res: Response) => {
+  router.delete('/expenses/:id', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
