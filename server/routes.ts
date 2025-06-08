@@ -412,10 +412,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const trips = await storage.getTripsByUser(user.id);
       const tripMemberships = await storage.getTripMembershipsByUser(user.id);
       
-      // Filter trips to only include those where user has confirmed RSVP status
+      // Filter trips to only include those where user has confirmed RSVP status OR is the organizer
       const confirmedTrips = trips.filter(trip => {
         const membership = tripMemberships.find(m => m.tripId === trip.id);
-        return membership && membership.rsvpStatus === 'confirmed';
+        // Include if user is organizer OR has confirmed RSVP status
+        return (trip.organizer === user.id) || (membership && membership.rsvpStatus === 'confirmed');
       });
       
       // Fetch member counts and user settings for each trip
