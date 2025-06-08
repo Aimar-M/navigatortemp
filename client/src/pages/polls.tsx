@@ -51,8 +51,9 @@ export default function Polls() {
       tripId={tripId} 
       title="Polls" 
       description="Create and participate in polls for your trip"
+      isConfirmedMember={isConfirmedMember}
     >
-      <PollsSection tripId={tripId} />
+      <PollsSection tripId={tripId} isConfirmedMember={isConfirmedMember} />
     </TripDetailLayout>
   );
 }

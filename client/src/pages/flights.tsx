@@ -152,7 +152,7 @@ export default function Flights() {
   };
 
   // Check if current user already has a flight
-  const userHasExistingFlight = (flights as any[]).some((flight: any) => flight.userId === user?.id);
+  const userHasExistingFlight = (flights as any[]).some((flight: any) => flight.userId === (user as any)?.id);
 
   const handleBookingRedirect = () => {
     toast({
@@ -174,14 +174,19 @@ export default function Flights() {
   }
 
   return (
-    <TripDetailLayout tripId={parseInt(tripId)}>
+    <TripDetailLayout 
+      tripId={parseInt(tripId)}
+      title="Flights"
+      description="Coordinate flight information for your trip"
+      isConfirmedMember={isConfirmedMember}
+    >
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Flight Information</h2>
           {!userHasExistingFlight && (
             <Dialog open={showBookingQuestion} onOpenChange={setShowBookingQuestion}>
               <DialogTrigger asChild>
-                <Button>Add Flight</Button>
+                <Button disabled={!isConfirmedMember}>Add Flight</Button>
               </DialogTrigger>
             <DialogContent>
               <DialogHeader>
