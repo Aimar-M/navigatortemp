@@ -92,6 +92,12 @@ export function OptimizedSettlementWorkflow({
   // Remove the old mutation and replace with settlement workflow trigger
 
   const handleInitiateTransaction = (transaction: OptimizedTransaction) => {
+    console.log('handleInitiateTransaction called with:', {
+      transaction,
+      currentUserId,
+      isValidPayer: transaction.fromUserId === currentUserId
+    });
+    
     if (transaction.fromUserId !== currentUserId) {
       toast({
         title: "Invalid Transaction",
@@ -102,13 +108,18 @@ export function OptimizedSettlementWorkflow({
     }
     
     // Open the existing SettlementWorkflow with the transaction details
+    // Balance should be negative since current user owes money to the payee
+    const settlementBalance = {
+      userId: transaction.toUserId,
+      name: transaction.toUserName,
+      balance: -transaction.amount
+    };
+    
+    console.log('Opening SettlementWorkflow with balance:', settlementBalance);
+    
     setSettlementWorkflow({
       isOpen: true,
-      balance: {
-        userId: transaction.toUserId,
-        name: transaction.toUserName,
-        balance: transaction.amount
-      }
+      balance: settlementBalance
     });
   };
 
@@ -122,6 +133,15 @@ export function OptimizedSettlementWorkflow({
     // Use the exact same transactions from the settlement data
     const outgoing = settlementData.transactions.filter((t: OptimizedTransaction) => t.fromUserId === currentUserId);
     const incoming = settlementData.transactions.filter((t: OptimizedTransaction) => t.toUserId === currentUserId);
+    
+    // Debug logging to track payment direction
+    console.log('Payment direction debug:', {
+      currentUserId,
+      allTransactions: settlementData.transactions,
+      outgoingFiltered: outgoing,
+      incomingFiltered: incoming,
+      originalBalances: settlementData.originalBalances
+    });
     
     return { outgoing, incoming };
   };
