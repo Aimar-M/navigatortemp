@@ -66,20 +66,32 @@ export class DatabaseStorage {
   }
 
   async getTripsByUser(userId: number): Promise<Trip[]> {
+    // Get trips where user is a member
     const members = await db
       .select()
       .from(tripMembers)
       .where(eq(tripMembers.userId, userId));
     
-    if (members.length === 0) return [];
+    // Get trips where user is the organizer (in case membership wasn't added properly)
+    const organizedTrips = await db
+      .select()
+      .from(trips)
+      .where(eq(trips.organizer, userId));
     
-    const tripsResult = await Promise.all(
+    // Combine member trips and organized trips
+    const memberTrips = members.length > 0 ? await Promise.all(
       members.map(member => 
         db.select().from(trips).where(eq(trips.id, member.tripId))
       )
+    ).then(results => results.flatMap(t => t)) : [];
+    
+    // Merge and deduplicate trips
+    const allTrips = [...memberTrips, ...organizedTrips];
+    const uniqueTrips = allTrips.filter((trip, index, array) => 
+      array.findIndex(t => t.id === trip.id) === index
     );
     
-    return tripsResult.flatMap(t => t);
+    return uniqueTrips;
   }
 
   async updateTrip(id: number, tripUpdate: Partial<InsertTrip>): Promise<Trip | undefined> {
