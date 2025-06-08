@@ -2923,6 +2923,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get individual expense details
+  router.get('/expenses/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      const expenseId = parseInt(req.params.id);
+      if (isNaN(expenseId)) {
+        return res.status(400).json({ message: 'Invalid expense ID' });
+      }
+
+      const expense = await storage.getExpense(expenseId);
+      if (!expense) {
+        return res.status(404).json({ message: 'Expense not found' });
+      }
+
+      // Check if user is a member of the trip this expense belongs to
+      const members = await storage.getTripMembers(expense.tripId);
+      const isMember = members.some(member => member.userId === user.id);
+      
+      if (!isMember) {
+        return res.status(403).json({ message: 'Not a member of this trip' });
+      }
+
+      res.json(expense);
+    } catch (error) {
+      console.error('Error fetching expense details:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // TODO: Mark Paid endpoint removed - was non-functional
   // router.post('/expenses/:expenseId/shares/:shareId/mark-paid', isAuthenticated, async (req: Request, res: Response) => {
   //   try {
