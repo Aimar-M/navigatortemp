@@ -369,6 +369,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
       
+      console.log('Trip creation request body:', JSON.stringify(req.body, null, 2));
+      
       // Convert string dates to Date objects before validation
       const data = {
         ...req.body,
@@ -376,7 +378,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endDate: req.body.endDate ? new Date(req.body.endDate) : undefined
       };
       
+      console.log('Processed data for validation:', JSON.stringify(data, null, 2));
+      
       const tripData = insertTripSchema.parse(data);
+      console.log('Validated trip data:', JSON.stringify(tripData, null, 2));
       
       // Ensure the authenticated user is the organizer
       if (tripData.organizer !== user.id) {

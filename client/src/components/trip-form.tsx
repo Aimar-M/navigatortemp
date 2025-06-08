@@ -90,6 +90,12 @@ export default function TripForm({ onComplete }: TripFormProps) {
         body: JSON.stringify(tripData),
       });
       
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Trip creation failed:', errorData);
+        throw new Error(errorData.message || 'Failed to create trip');
+      }
+      
       const trip = await response.json();
       
       toast({
