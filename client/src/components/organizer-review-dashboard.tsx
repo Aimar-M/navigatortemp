@@ -57,7 +57,7 @@ export default function OrganizerReviewDashboard({
 
   const confirmPaymentMutation = useMutation({
     mutationFn: async (userId: number) => {
-      return apiRequest(`/api/trips/${tripId}/members/${userId}/confirm-payment`, 'POST');
+      return apiRequest('POST', `/api/trips/${tripId}/members/${userId}/confirm-payment`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId, 'members'] });
@@ -81,7 +81,7 @@ export default function OrganizerReviewDashboard({
 
   const rejectPaymentMutation = useMutation({
     mutationFn: async (userId: number) => {
-      return apiRequest(`/api/trips/${tripId}/members/${userId}/reject-payment`, 'POST');
+      return apiRequest('POST', `/api/trips/${tripId}/members/${userId}/reject-payment`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId, 'members'] });
