@@ -49,11 +49,12 @@ export class DatabaseStorage {
       .values(insertTrip)
       .returning();
     
-    // Automatically add the organizer as a confirmed member
+    // Automatically add the organizer as a confirmed member with confirmed RSVP status
     await this.addTripMember({
       tripId: trip.id,
       userId: insertTrip.organizer,
-      status: "confirmed"
+      status: "confirmed",
+      rsvpStatus: "confirmed"
     });
     
     return trip;

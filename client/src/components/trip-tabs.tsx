@@ -9,12 +9,13 @@ interface Tab {
 
 interface TripTabsProps {
   tripId: number;
+  isConfirmedMember?: boolean;
 }
 
-export default function TripTabs({ tripId }: TripTabsProps) {
+export default function TripTabs({ tripId, isConfirmedMember = true }: TripTabsProps) {
   const [location, navigate] = useLocation();
   
-  const tabs: Tab[] = [
+  const allTabs: Tab[] = [
     { name: "Overview", href: `/trips/${tripId}` },
     { name: "Itinerary", href: `/trips/${tripId}/itinerary` },
     { name: "Chat", href: `/trips/${tripId}/chat` },
@@ -23,6 +24,11 @@ export default function TripTabs({ tripId }: TripTabsProps) {
     { name: "Flights", href: `/trips/${tripId}/flights` },
     { name: "Polls", href: `/trips/${tripId}/polls` },
   ];
+
+  // Allow pending users to see Overview and Itinerary tabs only
+  const tabs = isConfirmedMember ? allTabs : allTabs.filter(tab => 
+    tab.name === "Overview" || tab.name === "Itinerary"
+  );
 
   const isActive = (tab: Tab) => {
     if (tab.href === `/trips/${tripId}` && location === `/trips/${tripId}`) {
