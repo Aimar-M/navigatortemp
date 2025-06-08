@@ -587,11 +587,6 @@ export default function ExpensesPage() {
                         <span className="truncate">
                           {expense.activity ? expense.activity.name : expense.title}
                         </span>
-                        {expense.isSettlement && (
-                          <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
-                            Settlement
-                          </Badge>
-                        )}
                       </CardTitle>
                       <p className="text-sm text-gray-500 mt-1">
                         {expense.isSettlement ? 
@@ -605,7 +600,7 @@ export default function ExpensesPage() {
                         {expense.isSettlement ? '+' : ''}{formatCurrency(expense.amount, isMobile)}
                       </div>
                       <Badge className={`text-xs ${expense.isSettlement ? 'bg-green-100 text-green-800' : getCategoryColor(expense.category)}`}>
-                        {expense.isSettlement ? 'payment' : expense.category}
+                        {expense.isSettlement ? 'Settlement' : expense.category}
                       </Badge>
                     </div>
                   </div>
