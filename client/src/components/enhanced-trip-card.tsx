@@ -16,6 +16,8 @@ interface EnhancedTripCardProps {
   imageUrl?: string;
   isPinned?: boolean;
   isArchived?: boolean;
+  isPending?: boolean;
+  rsvpStatus?: string;
   onPin?: (id: number) => void;
   onArchive?: (id: number) => void;
 }
@@ -32,6 +34,8 @@ export default function EnhancedTripCard({
   imageUrl,
   isPinned = false,
   isArchived = false,
+  isPending = false,
+  rsvpStatus,
   onPin,
   onArchive,
 }: EnhancedTripCardProps) {
@@ -93,6 +97,7 @@ export default function EnhancedTripCard({
               "cursor-pointer group-hover:shadow-lg transition-all duration-300 overflow-hidden",
               isActive ? "border-2 border-primary-600" : "border",
               isArchived ? "opacity-60" : "opacity-100",
+              isPending ? "opacity-75 border-orange-300 bg-orange-50/50" : "",
               isPinned ? "ring-2 ring-amber-300" : ""
             )}
           >
@@ -117,15 +122,24 @@ export default function EnhancedTripCard({
               )}
               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-transparent via-white/0 to-white/20 opacity-0 transition-all duration-700 group-hover:opacity-100 group-hover:rotate-12 pointer-events-none"></div>
               <div className="absolute inset-0 opacity-0 bg-gradient-to-r from-primary-200/20 via-primary-300/10 to-primary-200/20 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
-              <Badge
-                variant="outline"
-                className={cn(
-                  "absolute top-2 right-2 text-xs font-medium px-2.5 py-0.5 rounded-full transition-all duration-300 hover:scale-110 hover:shadow-sm",
-                  getTripStatusColor(status)
-                )}
-              >
-                {status}
-              </Badge>
+              {isPending ? (
+                <Badge
+                  variant="outline"
+                  className="absolute top-2 right-2 text-xs font-medium px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 border-orange-300"
+                >
+                  Pending
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "absolute top-2 right-2 text-xs font-medium px-2.5 py-0.5 rounded-full transition-all duration-300 hover:scale-110 hover:shadow-sm",
+                    getTripStatusColor(status)
+                  )}
+                >
+                  {status}
+                </Badge>
+              )}
             </div>
             
             <CardContent className="p-4 relative z-10 transition-all duration-300 group-hover:bg-opacity-95">

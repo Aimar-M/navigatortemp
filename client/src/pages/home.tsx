@@ -153,10 +153,11 @@ export default function Home() {
   // Group trips by simplified categories (past, upcoming, and invitations)
   const currentDate = new Date();
   
-  // Get pending invitation trip IDs to filter them out of other sections
-  const pendingInvitationTripIds = pendingInvitations?.map((invitation: any) => 
-    invitation.membership.tripId
-  ) || [];
+  // Create a map of pending invitation trips for easy lookup
+  const pendingInvitationsMap = new Map();
+  pendingInvitations?.forEach((invitation: any) => {
+    pendingInvitationsMap.set(invitation.membership.tripId, invitation);
+  });
   
   // Helper to sort trips by pinned status first, then by date proximity
   const sortTripsByPinnedAndProximity = (tripA: any, tripB: any) => {
@@ -188,35 +189,56 @@ export default function Home() {
     archiveTripMutation.mutate(id);
   };
   
-  // Past trips = trips with end date before current date (excluding pending invitations)
+  // Past trips = trips with end date before current date (including pending invitations with visual distinction)
   const pastTrips = trips?.filter((trip: any) => {
     const endDate = new Date(trip.endDate);
     return endDate < currentDate && 
-      !pendingInvitationTripIds.includes(trip.id) &&
       (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
+  }).map((trip: any) => {
+    // Add pending status if this trip is in pending invitations
+    const pendingInvitation = pendingInvitationsMap.get(trip.id);
+    return {
+      ...trip,
+      isPending: !!pendingInvitation,
+      rsvpStatus: pendingInvitation?.membership?.rsvpStatus
+    };
   }).sort(sortTripsByPinnedAndProximity) || [];
   
-  // Upcoming trips = trips with end date on or after current date (excluding pending invitations)
+  // Upcoming trips = trips with end date on or after current date (including pending invitations with visual distinction)
   const upcomingTrips = trips?.filter((trip: any) => {
     const endDate = new Date(trip.endDate);
     return endDate >= currentDate && 
-      !pendingInvitationTripIds.includes(trip.id) &&
       (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
+  }).map((trip: any) => {
+    // Add pending status if this trip is in pending invitations
+    const pendingInvitation = pendingInvitationsMap.get(trip.id);
+    return {
+      ...trip,
+      isPending: !!pendingInvitation,
+      rsvpStatus: pendingInvitation?.membership?.rsvpStatus
+    };
   }).sort(sortTripsByPinnedAndProximity) || [];
   
   // All trips (filtered for search and archive status)
   const filteredTrips = trips?.filter((trip: any) => {
-    return !pendingInvitationTripIds.includes(trip.id) &&
-      (showArchived ? true : !trip.isArchived) && // Only show archived if selected
+    return (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
+  }).map((trip: any) => {
+    // Add pending status if this trip is in pending invitations
+    const pendingInvitation = pendingInvitationsMap.get(trip.id);
+    return {
+      ...trip,
+      isPending: !!pendingInvitation,
+      rsvpStatus: pendingInvitation?.membership?.rsvpStatus
+    };
   }).sort(sortTripsByPinnedAndProximity) || [];
   
   // Invitations are handled separately through pendingInvitations
