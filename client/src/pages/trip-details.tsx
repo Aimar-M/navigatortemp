@@ -105,7 +105,12 @@ export default function TripDetails() {
       return await apiRequest("PUT", `/api/trips/${tripId}/members/${userId}/rsvp`, { rsvpStatus });
     },
     onSuccess: () => {
+      // Refresh all trip-related queries to update access immediately
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/trips/memberships/pending"] });
+      
       toast({
         title: "RSVP updated",
         description: "Your RSVP status has been updated"
