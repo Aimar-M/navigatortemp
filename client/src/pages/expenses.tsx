@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -128,6 +128,17 @@ export default function ExpensesPage() {
     const rounded = Math.round(amount);
     return `$${rounded.toLocaleString()}`;
   };
+
+  // Check if mobile viewport
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleSettleClick = () => {
     if (!currentUser) return;
@@ -561,22 +572,18 @@ export default function ExpensesPage() {
               <Card key={expense.id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="flex items-center gap-2 text-base">
                         {expense.isSettlement ? (
-                          <HandHeart className="h-5 w-5 text-green-600" />
+                          <HandHeart className="h-4 w-4 text-green-600 flex-shrink-0" />
                         ) : (
                           getCategoryIcon(expense.category)
                         )}
-                        {expense.title}
-                        {expense.activity && (
-                          <Badge variant="outline" className="ml-2">
-                            Activity: {expense.activity.name}
-                          </Badge>
-                        )}
+                        <span className="truncate">
+                          {expense.activity ? expense.activity.name : expense.title}
+                        </span>
                         {expense.isSettlement && (
-                          <Badge variant="outline" className="bg-green-100 text-green-800 ml-2">
-                            <CheckCircle className="h-3 w-3 mr-1" />
+                          <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
                             Settlement
                           </Badge>
                         )}
@@ -587,57 +594,57 @@ export default function ExpensesPage() {
                           `Paid by ${expense.paidByUser.name || expense.paidByUser.username || 'Unknown User'} • ${new Date(expense.date).toLocaleDateString()}`
                         }
                       </p>
-                      {expense.description && (
-                        <p className="text-sm text-gray-600 mt-1">{expense.description}</p>
-                      )}
                     </div>
-                    <div className="text-right">
-                      <div className={`text-xl font-bold ${expense.isSettlement ? 'text-green-600' : ''}`}>
-                        {expense.isSettlement ? '+' : ''}{formatCurrency(expense.amount, false)}
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <div className={`text-lg font-bold ${expense.isSettlement ? 'text-green-600' : ''}`}>
+                        {expense.isSettlement ? '+' : ''}{formatCurrency(expense.amount, isMobile)}
                       </div>
-                      <Badge className={expense.isSettlement ? 'bg-green-100 text-green-800' : getCategoryColor(expense.category)}>
+                      <Badge className={`text-xs ${expense.isSettlement ? 'bg-green-100 text-green-800' : getCategoryColor(expense.category)}`}>
                         {expense.isSettlement ? 'payment' : expense.category}
                       </Badge>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  {!expense.isSettlement && expense.shares && expense.shares.length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-3">Split details:</h4>
-                      <div className="space-y-2">
-                        {expense.shares.map((share) => (
-                          <div key={share.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback>
-                                  {(share.user.name || share.user.username || 'U').charAt(0).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">{share.user.name || share.user.username || 'Unknown User'}</p>
-                                <p className="text-sm text-gray-500">Owes {formatCurrency(share.amount, false)}</p>
+                {/* Hide split details on mobile, show only on desktop */}
+                {!isMobile && (
+                  <CardContent>
+                    {!expense.isSettlement && expense.shares && expense.shares.length > 0 && (
+                      <div>
+                        <h4 className="font-medium mb-3">Split details:</h4>
+                        <div className="space-y-2">
+                          {expense.shares.map((share) => (
+                            <div key={share.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarFallback>
+                                    {(share.user.name || share.user.username || 'U').charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium">{share.user.name || share.user.username || 'Unknown User'}</p>
+                                  <p className="text-sm text-gray-500">Owes {formatCurrency(share.amount, false)}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {share.isPaid ? (
+                                  <Badge variant="outline" className="bg-green-100 text-green-800">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Paid
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-red-100 text-red-800">
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                    Unpaid
+                                  </Badge>
+                                )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              {share.isPaid ? (
-                                <Badge variant="outline" className="bg-green-100 text-green-800">
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  Paid
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-red-100 text-red-800">
-                                  <XCircle className="h-3 w-3 mr-1" />
-                                  Unpaid
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </CardContent>
+                    )}
+                  </CardContent>
+                )}
               </Card>
             ))
           )}
