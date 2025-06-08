@@ -233,20 +233,12 @@ export default function ExpensesPage() {
     <TripDetailLayout tripId={parseInt(tripId!)}>
       <div className="p-4 space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <h1 className="text-2xl font-bold">Group Expenses</h1>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline"
-              onClick={handleSettleClick}
-              className="flex items-center gap-2"
-            >
-              <DollarSign className="h-4 w-4" />
-              Settle Up
-            </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Expense
                 </Button>
@@ -383,7 +375,15 @@ export default function ExpensesPage() {
                 </Button>
               </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+            <Button 
+              variant="outline"
+              onClick={handleSettleClick}
+              className="flex items-center gap-2 w-full sm:w-auto"
+            >
+              <DollarSign className="h-4 w-4" />
+              Settle Up
+            </Button>
           </div>
         </div>
 
