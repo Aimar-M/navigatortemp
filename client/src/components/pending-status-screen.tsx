@@ -6,6 +6,10 @@ import { Separator } from "@/components/ui/separator";
 interface PendingStatusScreenProps {
   trip: {
     name: string;
+    destination?: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
     requiresDownPayment?: boolean;
     downPaymentAmount?: string;
   };
@@ -82,7 +86,46 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         <p className="text-gray-600">
           Your RSVP for <span className="font-semibold">{trip.name}</span> is awaiting confirmation
         </p>
+        {trip.destination && (
+          <p className="text-sm text-gray-500 mt-1">{trip.destination}</p>
+        )}
+        {trip.startDate && trip.endDate && (
+          <p className="text-sm text-gray-500">
+            {new Date(trip.startDate).toLocaleDateString()} - {new Date(trip.endDate).toLocaleDateString()}
+          </p>
+        )}
       </div>
+
+      {/* Trip Details Card */}
+      {(trip.description || trip.destination) && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Trip Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {trip.description && (
+              <div>
+                <h4 className="font-medium text-gray-900 mb-1">Description</h4>
+                <p className="text-sm text-gray-600">{trip.description}</p>
+              </div>
+            )}
+            {trip.destination && trip.startDate && trip.endDate && (
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500">Destination:</span>
+                  <p className="font-medium">{trip.destination}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Duration:</span>
+                  <p className="font-medium">
+                    {Math.ceil((new Date(trip.endDate).getTime() - new Date(trip.startDate).getTime()) / (1000 * 60 * 60 * 24))} days
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mb-6">
         <CardHeader>

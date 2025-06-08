@@ -312,21 +312,13 @@ export default function Home() {
                 <Tabs defaultValue="upcoming" className="w-full">
                   <TabsList className="w-full justify-start px-4 pb-2">
                     <TabsTrigger value="upcoming" className="text-xs">Upcoming</TabsTrigger>
-                    <TabsTrigger value="new" className="text-xs">
-                      New
-                      {pendingInvitations && pendingInvitations.length > 0 && (
-                        <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
-                          {pendingInvitations.length}
-                        </span>
-                      )}
-                    </TabsTrigger>
                     <TabsTrigger value="archived" className="text-xs">Archived</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="upcoming">
                     {/* Only non-archived, upcoming trips */}
-                    {upcomingTrips.filter(trip => !trip.isArchived).length > 0 ? (
-                      upcomingTrips.filter(trip => !trip.isArchived).map((trip: any) => (
+                    {upcomingTrips.filter((trip: any) => !trip.isArchived).length > 0 ? (
+                      upcomingTrips.filter((trip: any) => !trip.isArchived).map((trip: any) => (
                         <div key={trip.id} className="px-1">
                           <EnhancedTripCard
                             id={trip.id}
@@ -339,6 +331,8 @@ export default function Home() {
                             imageUrl={trip.cover}
                             isPinned={!!trip.isPinned}
                             isArchived={!!trip.isArchived}
+                            isPending={!!trip.isPending}
+                            rsvpStatus={trip.rsvpStatus}
                             onPin={handlePinTrip}
                             onArchive={handleArchiveTrip}
                           />
@@ -463,8 +457,8 @@ export default function Home() {
                   
                   <TabsContent value="archived">
                     {/* Only archived trips */}
-                    {trips?.filter(trip => trip.isArchived).length > 0 ? (
-                      trips.filter(trip => trip.isArchived).map((trip: any) => (
+                    {filteredTrips.filter((trip: any) => trip.isArchived).length > 0 ? (
+                      filteredTrips.filter((trip: any) => trip.isArchived).map((trip: any) => (
                         <div key={trip.id} className="px-1">
                           <EnhancedTripCard
                             id={trip.id}
@@ -477,6 +471,8 @@ export default function Home() {
                             imageUrl={trip.cover}
                             isPinned={!!trip.isPinned}
                             isArchived={!!trip.isArchived}
+                            isPending={!!trip.isPending}
+                            rsvpStatus={trip.rsvpStatus}
                             onPin={handlePinTrip}
                             onArchive={handleArchiveTrip}
                           />
