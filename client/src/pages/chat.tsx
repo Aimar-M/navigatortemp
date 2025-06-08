@@ -83,6 +83,12 @@ export default function Chat() {
     enabled: !!tripId && !!user,
   });
   
+  // Fetch trip members to check RSVP status
+  const { data: members = [] } = useQuery({
+    queryKey: [`/api/trips/${tripId}/members`],
+    enabled: !!tripId && !!user,
+  });
+
   // Fetch polls for this trip to display in chat
   const { data: polls = [] } = useQuery({
     queryKey: [`/api/trips/${tripId}/polls`],
@@ -101,6 +107,13 @@ export default function Chat() {
     },
     enabled: !!tripId && !!user, // Fetch polls regardless of navigation path
   });
+
+  // Check user's RSVP status
+  const isOrganizer = user && trip && trip.organizer === user.id;
+  const currentUserMembership = (members as any[]).find((member: any) => member.userId === user?.id);
+  const isConfirmedMember = currentUserMembership?.rsvpStatus === 'confirmed' || isOrganizer;
+  const isPendingMember = currentUserMembership?.rsvpStatus === 'pending';
+  const isDeclinedMember = currentUserMembership?.rsvpStatus === 'declined';
 
   // Combine polls and messages into a single chronological timeline
   useEffect(() => {
@@ -189,6 +202,11 @@ export default function Chat() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || isSubmitting) return;
+
+    // Block message sending for non-confirmed users
+    if (!isConfirmedMember) {
+      return;
+    }
 
     setIsSubmitting(true);
     try {
