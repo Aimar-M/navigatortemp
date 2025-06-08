@@ -195,7 +195,7 @@ export default function ExpenseDetails() {
               <div>
                 <p className="text-sm text-gray-500">Paid by</p>
                 <p className="font-medium">
-                  {displayExpense.paidByUser.name || displayExpense.paidByUser.username || 'Unknown User'}
+                  {displayExpense.paidByUser?.name || displayExpense.paidByUser?.username || 'Unknown User'}
                 </p>
               </div>
             </div>
@@ -221,7 +221,7 @@ export default function ExpenseDetails() {
                 <Activity className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-sm text-gray-500">Related Activity</p>
-                  <p className="font-medium">{displayExpense.activity.name}</p>
+                  <p className="font-medium">{displayExpense.activity?.name || 'Activity'}</p>
                 </div>
               </div>
             )}
@@ -245,12 +245,12 @@ export default function ExpenseDetails() {
                   <div className="flex items-center gap-4">
                     <Avatar className="h-10 w-10">
                       <AvatarFallback>
-                        {(split.user.name || split.user.username || 'U').charAt(0).toUpperCase()}
+                        {(split.user?.name || split.user?.username || 'U').charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-medium text-gray-900">
-                        {split.user.name || split.user.username || 'Unknown User'}
+                        {split.user?.name || split.user?.username || 'Unknown User'}
                       </p>
                       <p className="text-sm text-gray-500">
                         Owes {formatCurrency(split.amount)}
