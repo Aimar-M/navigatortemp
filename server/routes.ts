@@ -1668,11 +1668,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(410).json({ message: 'This invitation link has expired' });
       }
       
-      // Add user to trip members with confirmed status
+      // Add user to trip members with confirmed invitation status and confirmed RSVP status
       const tripMember = await storage.addTripMember({
         tripId: invitation.tripId,
         userId: user.id,
-        status: "confirmed" // Auto-confirm since they accepted the invitation
+        status: "confirmed", // Auto-confirm since they accepted the invitation
+        rsvpStatus: "confirmed", // User confirmed by accepting invitation
+        rsvpDate: new Date()
       });
       
       res.status(201).json({ 
