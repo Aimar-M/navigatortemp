@@ -118,7 +118,7 @@ export default function ExpensesPage() {
     queryKey: [`/api/trips/${tripId}`],
   });
   
-  const isOrganizer = currentUser && trip && trip.organizer === currentUser.id;
+  const isOrganizer = currentUser && trip && (trip as any).organizer === (currentUser as any).id;
   const currentUserMembership = members.find((member: any) => member.userId === currentUser?.id);
   const isConfirmedMember = currentUserMembership?.rsvpStatus === 'confirmed' || isOrganizer;
 
