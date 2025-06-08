@@ -20,11 +20,12 @@ async function migrateRSVPStatus() {
         .where(and(eq(messages.tripId, tripId), eq(messages.userId, userId)));
       
       // Check if user has expense splits (indicating participation in expenses)
-      const expenseSplitsCount = await db
-        .select({ count: sql<number>`count(DISTINCT es.expense_id)::int` })
+      const expenseSplitsResult = await db
+        .select()
         .from(expenseSplits)
         .innerJoin(expenses, eq(expenseSplits.expenseId, expenses.id))
-        .where(and(eq(expenses.tripId, tripId), eq(expenseSplits.userId, userId)));
+        .where(and(eq(expenses.tripId, tripId), eq(expenseSplits.userId, userId)))
+        .limit(1);
       
       const rsvpCount = await db
         .select({ count: sql<number>`count(*)::int` })
@@ -36,7 +37,7 @@ async function migrateRSVPStatus() {
       let rsvpDate: Date | null = null;
       
       const hasActivity = messagesCount[0]?.count > 0 || 
-                         expenseSplitsCount[0]?.count > 0 || 
+                         expenseSplitsResult.length > 0 || 
                          rsvpCount[0]?.count > 0;
       
       if (hasActivity) {
