@@ -76,7 +76,7 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
 
   const initiateMutation = useMutation({
     mutationFn: async (data: { payeeId: number; amount: number; paymentMethod: string; notes: string }) => {
-      return await apiRequest(`/api/trips/${tripId}/settlements/initiate`, 'POST', data);
+      return await apiRequest('POST', `/api/trips/${tripId}/settlements/initiate`, data);
     },
     onSuccess: () => {
       toast({
@@ -397,8 +397,44 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
             </>
           )}
 
+          {/* Confirmation screen after payment link redirect */}
+          {showConfirmation && hasRedirected && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium text-blue-800">Payment Link Opened</span>
+                </div>
+                <p className="text-sm text-blue-700">
+                  If you completed the payment through {selectedMethod === 'venmo' ? 'Venmo' : 'PayPal'}, 
+                  click "Mark as Sent" below to notify {balance.name}.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <Button 
+                  onClick={() => {
+                    setShowConfirmation(false);
+                    setHasRedirected(false);
+                  }} 
+                  variant="outline" 
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleMarkAsSent}
+                  disabled={isInitiating}
+                  className="flex-1"
+                >
+                  {isInitiating ? "Marking as Sent..." : "Mark as Sent"}
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* If user is owed money, show different UI */}
-          {isOwed && (
+          {isOwed && !showConfirmation && (
             <div className="text-center py-4">
               <p className="text-gray-600 mb-4">
                 You are owed money by {balance.name}. They will need to initiate the settlement process.
