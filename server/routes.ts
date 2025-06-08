@@ -2908,40 +2908,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tripId = parseInt(req.params.id);
       
-      // Get all trip members
-      const tripMembers = await storage.getTripMembers(tripId);
-      const memberIds = tripMembers.map(m => m.userId);
-
-      // Get all expenses for the trip
-      const tripExpenses = await storage.getExpensesByTrip(tripId);
+      // Use the storage method that includes settlement adjustments
+      const balances = await storage.calculateExpenseBalances(tripId);
       
-      // Calculate balances based on actual expense splits
-      const balances = [];
+      // Add cache control headers to prevent caching
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
       
-      for (const memberId of memberIds) {
-        const memberUser = await storage.getUser(memberId);
-        
-        // Amount they paid out (expenses they covered)
-        const totalPaid = tripExpenses
-          .filter(e => e.paidBy === memberId)
-          .reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0);
-        
-        // Amount they owe (their share of all expenses)
-        const totalOwed = tripExpenses
-          .reduce((sum, expense) => {
-            const userShare = expense.shares?.find((s: any) => s.userId === memberId);
-            return sum + (userShare ? parseFloat(userShare.amount.toString()) : 0);
-          }, 0);
-        
-        balances.push({
-          userId: memberId,
-          name: memberUser?.name || memberUser?.username || 'Unknown',
-          totalPaid: Math.round(totalPaid * 100) / 100,
-          totalOwed: Math.round(totalOwed * 100) / 100,
-          netBalance: Math.round((totalPaid - totalOwed) * 100) / 100
-        });
-      }
-
       res.json(balances);
     } catch (error) {
       console.error("Error calculating balances:", error);
