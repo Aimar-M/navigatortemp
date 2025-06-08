@@ -32,18 +32,13 @@ export async function apiRequest<T = any>(
   url: string,
   data?: unknown | undefined,
 ): Promise<T> {
-  // Set up headers with authentication token
+  // Set up headers
   const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
-  
-  // Add auth token if available
-  const token = localStorage.getItem('auth_token');
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   const res = await fetch(url, {
     method,
     headers,
+    credentials: 'include', // Include cookies for session auth
     body: data ? JSON.stringify(data) : undefined,
   });
 
@@ -57,17 +52,9 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // Set up headers with authentication token
-    const headers: Record<string, string> = {};
-    
-    // Add auth token if available
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
+    // Use session cookies for authentication
     const res = await fetch(queryKey[0] as string, {
-      headers,
+      credentials: 'include', // Include cookies for session auth
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
