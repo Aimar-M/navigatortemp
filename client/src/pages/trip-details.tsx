@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { MapPin, Calendar, Users, Info, UserPlus, Edit2, Save, X, Home, Plane } from "lucide-react";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import UserAvatar from "@/components/user-avatar";
+import RSVPPaymentWorkflow from "@/components/rsvp-payment-workflow";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,8 @@ export default function TripDetails() {
     cover?: string;
     accommodationLink?: string;
     airportGateway?: string;
+    requiresDownPayment?: boolean;
+    downPaymentAmount?: string;
   }
 
   interface TripMember {
@@ -55,6 +58,11 @@ export default function TripDetails() {
     status: string;
     rsvpStatus?: string;
     rsvpDate?: string;
+    paymentMethod?: string;
+    paymentStatus?: string;
+    paymentAmount?: string;
+    paymentSubmittedAt?: string;
+    paymentConfirmedAt?: string;
     isOrganizer: boolean;
     user: {
       id: number;
