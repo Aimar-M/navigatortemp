@@ -3008,6 +3008,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
       
+      // Get trip members and validate that all expense participants have confirmed RSVP status
+      const tripMembers = await storage.getTripMembers(tripId);
+      const confirmedMemberIds = tripMembers
+        .filter(member => member.rsvpStatus === 'confirmed')
+        .map(member => member.userId);
+      
+      // Validate that payer has confirmed RSVP status
+      if (!confirmedMemberIds.includes(parseInt(paidBy))) {
+        return res.status(400).json({ message: "Expense payer must have confirmed RSVP status" });
+      }
+      
+      // Filter splitWith to only include confirmed RSVP users
+      const validSplitWith = splitWith.filter((userId: string) => 
+        confirmedMemberIds.includes(parseInt(userId))
+      );
+      
+      if (validSplitWith.length === 0) {
+        return res.status(400).json({ message: "No confirmed members found for expense split" });
+      }
+      
       // Create the expense
       const expense = await storage.createExpense({
         tripId,
@@ -3020,11 +3040,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         date: new Date(),
       });
 
-      // Create expense splits for each person
-      if (splitWith && splitWith.length > 0) {
-        const amountPerPerson = parseFloat(amount) / splitWith.length;
+      // Create expense splits for each confirmed person
+      if (validSplitWith && validSplitWith.length > 0) {
+        const amountPerPerson = parseFloat(amount) / validSplitWith.length;
         
-        for (const userId of splitWith) {
+        for (const userId of validSplitWith) {
           await db.insert(expenseSplits).values({
             expenseId: expense.id,
             userId: parseInt(userId),

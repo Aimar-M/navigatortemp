@@ -348,7 +348,7 @@ export default function ExpensesPage() {
                       <SelectValue placeholder="Select who paid" />
                     </SelectTrigger>
                     <SelectContent>
-                      {members.map((member: any) => (
+                      {members.filter((member: any) => member.rsvpStatus === 'confirmed').map((member: any) => (
                         <SelectItem key={member.userId} value={member.userId.toString()}>
                           {member.user?.name || member.user?.username || member.name || member.username || 'Unknown User'}
                         </SelectItem>
@@ -360,7 +360,7 @@ export default function ExpensesPage() {
                 <div>
                   <Label>Split with:</Label>
                   <div className="mt-2 space-y-2 max-h-32 overflow-y-auto border rounded p-2">
-                    {members.map((member: any) => (
+                    {members.filter((member: any) => member.rsvpStatus === 'confirmed').map((member: any) => (
                       <label key={member.userId} className="flex items-center space-x-2">
                         <input
                           type="checkbox"
@@ -390,7 +390,7 @@ export default function ExpensesPage() {
                       size="sm"
                       onClick={() => setNewExpense({
                         ...newExpense,
-                        splitWith: members.map((m: any) => m.userId.toString())
+                        splitWith: members.filter((m: any) => m.rsvpStatus === 'confirmed').map((m: any) => m.userId.toString())
                       })}
                     >
                       Select All
