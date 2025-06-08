@@ -3,10 +3,11 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     let errorText;
+    let errorData;
     try {
       // Try to parse as JSON first
-      const errorJson = await res.json();
-      errorText = errorJson.message || JSON.stringify(errorJson);
+      errorData = await res.json();
+      errorText = errorData.message || JSON.stringify(errorData);
     } catch (e) {
       // If not JSON, get as text
       try {
@@ -15,7 +16,14 @@ async function throwIfResNotOk(res: Response) {
         errorText = res.statusText;
       }
     }
-    throw new Error(`${res.status}: ${errorText}`);
+    
+    // Create error with additional data for RSVP handling
+    const error = new Error(`${res.status}: ${errorText}`);
+    if (errorData?.requiresRSVP) {
+      (error as any).requiresRSVP = true;
+      (error as any).rsvpStatus = errorData.rsvpStatus;
+    }
+    throw error;
   }
 }
 
