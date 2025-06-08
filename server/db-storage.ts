@@ -461,8 +461,23 @@ export class DatabaseStorage {
       const tripMembers = await this.getTripMembers(tripId);
       const memberIds = tripMembers.map(m => m.userId);
 
-      // Get all expenses for the trip
-      const tripExpenses = await this.getExpensesByTrip(tripId);
+      // Get only real expenses from database (excludes settlement transactions)
+      const realExpenses = await db
+        .select()
+        .from(expenses)
+        .where(eq(expenses.tripId, tripId));
+
+      // Get all expense splits for these real expenses
+      const allSplits = await db
+        .select()
+        .from(expenseSplits);
+
+      // Filter splits to only those belonging to real expenses
+      const relevantSplits = allSplits.filter(split => 
+        realExpenses.some(expense => expense.id === split.expenseId)
+      );
+
+      console.log(`Found ${realExpenses.length} real expenses and ${relevantSplits.length} splits`);
       
       // Calculate balances based on actual expense splits
       const balances = [];
@@ -470,19 +485,19 @@ export class DatabaseStorage {
       for (const memberId of memberIds) {
         const memberUser = await this.getUser(memberId);
         
-        // Amount they paid out (expenses they covered)
-        const totalPaid = tripExpenses
+        // Amount they paid out (only real expenses they covered)
+        const totalPaid = realExpenses
           .filter(e => e.paidBy === memberId)
           .reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0);
         
-        // Amount they owe (their share of all expenses)
-        const totalOwed = tripExpenses
-          .reduce((sum, expense) => {
-            const userShare = expense.shares?.find((s: any) => s.userId === memberId);
-            return sum + (userShare ? parseFloat(userShare.amount.toString()) : 0);
-          }, 0);
+        // Amount they owe (their share of all real expenses)
+        const totalOwed = relevantSplits
+          .filter(split => split.userId === memberId)
+          .reduce((sum, split) => sum + parseFloat(split.amount.toString()), 0);
         
         const netBalance = Math.round((totalPaid - totalOwed) * 100) / 100;
+        console.log(`${memberUser?.name}: paid ${totalPaid}, owes ${totalOwed}, net ${netBalance}`);
+        
         balances.push({
           userId: memberId,
           name: memberUser?.name || memberUser?.username || 'Unknown',
