@@ -28,42 +28,25 @@ export default function Home() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const token = user ? localStorage.getItem('auth_token') : null;
-  
   // Use React Query with proper dependencies to avoid setState during render
   const { data: trips, isLoading } = useQuery({
-    queryKey: ["/api/trips", !!user, token],
-    queryFn: async () => {
-      if (!user || !token) return [];
-      
-      // Add token to authorization header
-      const headers: Record<string, string> = {
-        'Authorization': `Bearer ${token}`
-      };
-      
-      const response = await fetch("/api/trips", { headers });
-      if (!response.ok) throw new Error("Failed to fetch trips");
-      return response.json();
-    },
-    enabled: !!user && !!token,
+    queryKey: ["/api/trips"],
+    enabled: !!user,
   });
   
   // Define mutations for pinning and archiving trips
   const pinTripMutation = useMutation({
     mutationFn: async (tripId: number) => {
-      if (!token) throw new Error("Not authenticated");
+      if (!user) throw new Error("Not authenticated");
       
       const trip = trips?.find((t: any) => t.id === tripId);
       if (!trip) throw new Error("Trip not found");
       
-      const headers: Record<string, string> = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-      
       const response = await fetch(`/api/trips/${tripId}`, {
         method: 'PUT',
-        headers,
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ isPinned: !trip.isPinned })
       });
       
@@ -88,19 +71,16 @@ export default function Home() {
   
   const archiveTripMutation = useMutation({
     mutationFn: async (tripId: number) => {
-      if (!token) throw new Error("Not authenticated");
+      if (!user) throw new Error("Not authenticated");
       
       const trip = trips?.find((t: any) => t.id === tripId);
       if (!trip) throw new Error("Trip not found");
       
-      const headers: Record<string, string> = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-      
       const response = await fetch(`/api/trips/${tripId}`, {
         method: 'PUT',
-        headers,
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ isArchived: !trip.isArchived })
       });
       

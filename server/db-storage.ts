@@ -6,7 +6,8 @@ import {
   SurveyResponse, InsertSurveyResponse, Expense, InsertExpense,
   ExpenseSplit, InsertExpenseSplit, Settlement, InsertSettlement,
   users, trips, tripMembers, activities, activityRsvp, 
-  messages, surveyQuestions, surveyResponses, expenses, expenseSplits, settlements
+  messages, surveyQuestions, surveyResponses, expenses, expenseSplits, settlements,
+  flightInfo
 } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 export class DatabaseStorage {
@@ -689,22 +690,101 @@ export class DatabaseStorage {
 
 
   async createFlightInfo(data: any): Promise<any> {
-    return { id: 1, ...data };
+    const [newFlight] = await db
+      .insert(flightInfo)
+      .values(data)
+      .returning();
+    return newFlight;
   }
 
   async getFlightInfoByTrip(tripId: number): Promise<any[]> {
-    return [];
+    const flights = await db
+      .select({
+        id: flightInfo.id,
+        tripId: flightInfo.tripId,
+        userId: flightInfo.userId,
+        airline: flightInfo.airline,
+        flightNumber: flightInfo.flightNumber,
+        departureAirport: flightInfo.departureAirport,
+        departureCity: flightInfo.departureCity,
+        departureTime: flightInfo.departureTime,
+        arrivalAirport: flightInfo.arrivalAirport,
+        arrivalCity: flightInfo.arrivalCity,
+        arrivalTime: flightInfo.arrivalTime,
+        price: flightInfo.price,
+        currency: flightInfo.currency,
+        bookingReference: flightInfo.bookingReference,
+        bookingStatus: flightInfo.bookingStatus,
+        seatNumber: flightInfo.seatNumber,
+        notes: flightInfo.notes,
+        flightDetails: flightInfo.flightDetails,
+        createdAt: flightInfo.createdAt,
+        updatedAt: flightInfo.updatedAt,
+        user: {
+          id: users.id,
+          name: users.name,
+          username: users.username,
+          email: users.email
+        }
+      })
+      .from(flightInfo)
+      .leftJoin(users, eq(flightInfo.userId, users.id))
+      .where(eq(flightInfo.tripId, tripId))
+      .orderBy(desc(flightInfo.departureTime));
+    
+    return flights;
   }
 
   async getFlightInfo(id: number): Promise<any> {
-    return null;
+    const [flight] = await db
+      .select({
+        id: flightInfo.id,
+        tripId: flightInfo.tripId,
+        userId: flightInfo.userId,
+        airline: flightInfo.airline,
+        flightNumber: flightInfo.flightNumber,
+        departureAirport: flightInfo.departureAirport,
+        departureCity: flightInfo.departureCity,
+        departureTime: flightInfo.departureTime,
+        arrivalAirport: flightInfo.arrivalAirport,
+        arrivalCity: flightInfo.arrivalCity,
+        arrivalTime: flightInfo.arrivalTime,
+        price: flightInfo.price,
+        currency: flightInfo.currency,
+        bookingReference: flightInfo.bookingReference,
+        bookingStatus: flightInfo.bookingStatus,
+        seatNumber: flightInfo.seatNumber,
+        notes: flightInfo.notes,
+        flightDetails: flightInfo.flightDetails,
+        createdAt: flightInfo.createdAt,
+        updatedAt: flightInfo.updatedAt,
+        user: {
+          id: users.id,
+          name: users.name,
+          username: users.username,
+          email: users.email
+        }
+      })
+      .from(flightInfo)
+      .leftJoin(users, eq(flightInfo.userId, users.id))
+      .where(eq(flightInfo.id, id));
+    
+    return flight || null;
   }
 
   async updateFlightInfo(id: number, data: any): Promise<any> {
-    return null;
+    const [updatedFlight] = await db
+      .update(flightInfo)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(flightInfo.id, id))
+      .returning();
+    return updatedFlight || null;
   }
 
   async deleteFlightInfo(id: number): Promise<boolean> {
+    await db
+      .delete(flightInfo)
+      .where(eq(flightInfo.id, id));
     return true;
   }
 
