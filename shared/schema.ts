@@ -130,7 +130,10 @@ export const insertUserTripSettingsSchema = createInsertSchema(userTripSettings)
 export const tripMembers = pgTable("trip_members", {
   tripId: integer("trip_id").notNull().references(() => trips.id),
   userId: integer("user_id").notNull().references(() => users.id),
-  status: text("status").notNull().default("pending"), // pending, confirmed, declined
+  status: text("status").notNull().default("pending"), // pending, confirmed, declined (invitation status)
+  rsvpStatus: text("rsvp_status").notNull().default("pending"), // pending, confirmed, declined (RSVP status)
+  joinedAt: timestamp("joined_at").defaultNow(),
+  rsvpDate: timestamp("rsvp_date"),
 }, (t) => ({
   pk: primaryKey({ columns: [t.tripId, t.userId] }),
 }));
@@ -146,7 +149,14 @@ export const tripMembersRelations = relations(tripMembers, ({ one }) => ({
   }),
 }));
 
-export const insertTripMemberSchema = createInsertSchema(tripMembers);
+export const insertTripMemberSchema = createInsertSchema(tripMembers).pick({
+  tripId: true,
+  userId: true,
+  status: true,
+  rsvpStatus: true,
+  joinedAt: true,
+  rsvpDate: true,
+});
 
 // Activities schema
 export const activities = pgTable("activities", {
