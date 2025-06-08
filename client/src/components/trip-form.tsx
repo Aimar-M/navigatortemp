@@ -32,8 +32,11 @@ export default function TripForm({ onComplete }: TripFormProps) {
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target as HTMLInputElement;
+    setFormData((prev) => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
   };
 
   const nextStep = () => {
@@ -73,6 +76,7 @@ export default function TripForm({ onComplete }: TripFormProps) {
         status: "planning",
         startDate,
         endDate,
+        downPaymentAmount: formData.requiresDownPayment ? parseFloat(formData.downPaymentAmount) : null,
       };
       
       // Use fetch directly with authentication token
@@ -176,18 +180,61 @@ export default function TripForm({ onComplete }: TripFormProps) {
         );
       case 2:
         return (
-          <div className="mb-4">
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Trip Description
-            </label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="What's this trip about? Add details to help your friends understand what to expect."
-              rows={5}
-            />
+          <div className="space-y-4">
+            <div className="mb-4">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                Trip Description
+              </label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                placeholder="What's this trip about? Add details to help your friends understand what to expect."
+                rows={5}
+              />
+            </div>
+            
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Payment Options</h3>
+              
+              <div className="mb-4">
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    name="requiresDownPayment"
+                    checked={formData.requiresDownPayment}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Require down payment before RSVP confirmation
+                  </span>
+                </label>
+                <p className="text-sm text-gray-500 mt-1 ml-7">
+                  Members must submit payment before their RSVP is confirmed and they gain full access to trip features.
+                </p>
+              </div>
+              
+              {formData.requiresDownPayment && (
+                <div className="ml-7">
+                  <label htmlFor="downPaymentAmount" className="block text-sm font-medium text-gray-700 mb-1">
+                    Down Payment Amount ($)
+                  </label>
+                  <Input
+                    type="number"
+                    id="downPaymentAmount"
+                    name="downPaymentAmount"
+                    value={formData.downPaymentAmount}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    className="w-full max-w-xs"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         );
       case 3:
@@ -210,6 +257,15 @@ export default function TripForm({ onComplete }: TripFormProps) {
                 <>
                   <p className="text-sm font-medium text-gray-700">Description:</p>
                   <p className="text-sm text-gray-900 mb-2">{formData.description}</p>
+                </>
+              )}
+              
+              {formData.requiresDownPayment && (
+                <>
+                  <p className="text-sm font-medium text-gray-700">Down Payment:</p>
+                  <p className="text-sm text-gray-900 mb-2">
+                    ${formData.downPaymentAmount} required before RSVP confirmation
+                  </p>
                 </>
               )}
             </div>
@@ -235,8 +291,8 @@ export default function TripForm({ onComplete }: TripFormProps) {
           formData.endDate !== ""
         );
       case 2:
-        // Description is optional
-        return true;
+        // Description is optional, but down payment amount is required if down payment is enabled
+        return !formData.requiresDownPayment || (formData.downPaymentAmount.trim() !== "" && parseFloat(formData.downPaymentAmount) > 0);
       case 3:
         return true;
       default:

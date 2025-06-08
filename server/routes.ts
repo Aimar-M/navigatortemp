@@ -876,6 +876,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // RSVP Payment Routes
+  router.post('/trips/:tripId/members/:userId/payment', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const tripId = parseInt(req.params.tripId);
+      const userId = parseInt(req.params.userId);
+      const { paymentMethod } = req.body;
+      
+      if (isNaN(tripId) || isNaN(userId)) {
+        return res.status(400).json({ message: 'Invalid trip ID or user ID' });
+      }
+      
+      // Only the user themselves can submit payment
+      if (userId !== user.id) {
+        return res.status(403).json({ message: 'You can only submit payment for yourself' });
+      }
+      
+      if (!['venmo', 'paypal', 'cash'].includes(paymentMethod)) {
+        return res.status(400).json({ message: 'Invalid payment method' });
+      }
+      
+      // Get trip details to check payment requirements
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: 'Trip not found' });
+      }
+      
+      if (!trip.requiresDownPayment) {
+        return res.status(400).json({ message: 'This trip does not require down payment' });
+      }
+      
+      // Update member with payment info
+      const updatedMember = await storage.updateTripMemberPaymentInfo(tripId, userId, {
+        paymentMethod,
+        paymentStatus: paymentMethod === 'cash' ? 'pending' : 'confirmed',
+        paymentAmount: trip.downPaymentAmount?.toString(),
+        paymentSubmittedAt: new Date(),
+        paymentConfirmedAt: paymentMethod !== 'cash' ? new Date() : undefined
+      });
+      
+      // Update RSVP status based on payment method
+      const newRsvpStatus = paymentMethod === 'cash' ? 'awaiting_payment' : 'confirmed';
+      await storage.updateTripMemberRSVPStatus(tripId, userId, newRsvpStatus);
+      
+      res.json({ message: 'Payment submitted successfully', member: updatedMember });
+    } catch (error) {
+      console.error('Error submitting payment:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  router.post('/trips/:tripId/members/:userId/confirm-payment', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const tripId = parseInt(req.params.tripId);
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(tripId) || isNaN(userId)) {
+        return res.status(400).json({ message: 'Invalid trip ID or user ID' });
+      }
+      
+      // Only trip organizer can confirm payments
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: 'Trip not found' });
+      }
+      
+      if (trip.organizer !== user.id) {
+        return res.status(403).json({ message: 'Only trip organizer can confirm payments' });
+      }
+      
+      // Update payment status and RSVP status
+      await storage.updateTripMemberPaymentInfo(tripId, userId, {
+        paymentStatus: 'confirmed',
+        paymentConfirmedAt: new Date()
+      });
+      
+      await storage.updateTripMemberRSVPStatus(tripId, userId, 'confirmed');
+      
+      res.json({ message: 'Payment confirmed successfully' });
+    } catch (error) {
+      console.error('Error confirming payment:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   router.delete('/trips/:tripId/members/:userId', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
