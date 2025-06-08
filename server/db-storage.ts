@@ -502,6 +502,8 @@ export class DatabaseStorage {
           )
         );
 
+      console.log(`Found ${confirmedSettlements.length} confirmed settlements for trip ${tripId}`);
+
       // Adjust balances based on confirmed settlements
       for (const settlement of confirmedSettlements) {
         const payerBalance = balances.find(b => b.userId === settlement.payerId);
