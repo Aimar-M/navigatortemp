@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Users, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 
 interface PendingTrip {
@@ -21,16 +22,19 @@ interface PendingTrip {
 
 export default function RSVPNotification() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Fetch pending RSVP trips
   const { data: pendingTrips = [], isLoading } = useQuery<PendingTrip[]>({
     queryKey: ["/api/trips/rsvp/pending"],
+    enabled: !!user
   });
 
   // RSVP status update mutation
   const updateRSVPMutation = useMutation({
     mutationFn: async ({ tripId, rsvpStatus }: { tripId: number; rsvpStatus: string }) => {
-      return await apiRequest("PUT", `/api/trips/${tripId}/members/${getCurrentUserId()}/rsvp`, { rsvpStatus });
+      if (!user) throw new Error("User not authenticated");
+      return await apiRequest("PUT", `/api/trips/${tripId}/members/${user.id}/rsvp`, { rsvpStatus });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/trips/rsvp/pending"] });
@@ -48,13 +52,6 @@ export default function RSVPNotification() {
       });
     }
   });
-
-  // Helper to get current user ID (you may need to implement this based on your auth system)
-  const getCurrentUserId = () => {
-    // This should return the current user's ID from your auth system
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    return user.id;
-  };
 
   const handleRSVP = (tripId: number, rsvpStatus: string) => {
     updateRSVPMutation.mutate({ tripId, rsvpStatus });
