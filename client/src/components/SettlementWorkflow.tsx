@@ -42,19 +42,30 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
   const isOwed = balance.balance > 0; // User is owed money
   const owes = balance.balance < 0; // User owes money
 
+  // Get settlement options for the payee
+  const { data: settlementOptions = [], isLoading: optionsLoading, error: optionsError } = useQuery<SettlementOption[]>({
+    queryKey: [`/api/trips/${tripId}/settlement-options/${balance.userId}`, amount],
+    queryFn: async () => {
+      const response = await fetch(`/api/trips/${tripId}/settlement-options/${balance.userId}?amount=${amount}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch settlement options: ${response.statusText}`);
+      }
+      return response.json();
+    },
+    enabled: isOpen && owes, // Only fetch if user owes money
+  });
+
   // Debug logging for balance calculation
   console.log('SettlementWorkflow balance debug:', {
     balanceObject: balance,
     amount,
     isOwed,
     owes,
-    rawBalance: balance.balance
-  });
-
-  // Get settlement options for the payee
-  const { data: settlementOptions = [] } = useQuery<SettlementOption[]>({
-    queryKey: [`/api/trips/${tripId}/settlement-options/${balance.userId}`, { amount }],
-    enabled: isOpen && owes, // Only fetch if user owes money
+    rawBalance: balance.balance,
+    settlementOptions: settlementOptions,
+    settlementOptionsEnabled: isOpen && owes,
+    optionsLoading,
+    optionsError: optionsError?.message
   });
 
   // Get existing settlements for this trip
@@ -269,7 +280,30 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
               <div className="space-y-3">
                 <Label className="text-base font-medium">Choose Payment Method</Label>
                 
-                {settlementOptions.map((option) => (
+                {optionsLoading && (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-gray-600">Loading payment options...</span>
+                  </div>
+                )}
+                
+                {optionsError && (
+                  <div className="bg-red-50 border border-red-200 p-3 rounded-lg">
+                    <p className="text-sm text-red-700">
+                      Failed to load payment options. Please try again.
+                    </p>
+                  </div>
+                )}
+                
+                {!optionsLoading && !optionsError && settlementOptions.length === 0 && (
+                  <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
+                    <p className="text-sm text-yellow-700">
+                      No payment methods available. Please contact {balance.name} to set up payment preferences.
+                    </p>
+                  </div>
+                )}
+                
+                {!optionsLoading && !optionsError && settlementOptions.map((option) => (
                   <div
                     key={option.method}
                     className={`border rounded-lg p-4 cursor-pointer transition-colors ${
