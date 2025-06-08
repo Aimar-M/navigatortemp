@@ -42,6 +42,15 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
   const isOwed = balance.balance > 0; // User is owed money
   const owes = balance.balance < 0; // User owes money
 
+  // Debug logging for balance calculation
+  console.log('SettlementWorkflow balance debug:', {
+    balanceObject: balance,
+    amount,
+    isOwed,
+    owes,
+    rawBalance: balance.balance
+  });
+
   // Get settlement options for the payee
   const { data: settlementOptions = [] } = useQuery<SettlementOption[]>({
     queryKey: [`/api/trips/${tripId}/settlement-options/${balance.userId}`, { amount }],
