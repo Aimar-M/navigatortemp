@@ -384,6 +384,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const trip = await storage.createTrip(tripData);
+      
+      // Automatically add the organizer as a confirmed member with full access
+      await storage.addTripMember({
+        tripId: trip.id,
+        userId: user.id,
+        status: 'confirmed',
+        rsvpStatus: 'confirmed',
+        paymentStatus: 'not_required', // Organizers never need to pay
+        paymentAmount: null
+      });
+      
       res.status(201).json(trip);
     } catch (error) {
       if (error instanceof z.ZodError) {
