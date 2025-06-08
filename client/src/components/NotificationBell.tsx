@@ -52,6 +52,9 @@ export function NotificationBell() {
       pendingSettlements.forEach(settlement => {
         queryClient.invalidateQueries({ queryKey: [`/api/trips/${settlement.tripId}/expenses/balances`] });
         queryClient.invalidateQueries({ queryKey: [`/api/trips/${settlement.tripId}/expenses`] });
+        // Force refetch instead of using cache
+        queryClient.refetchQueries({ queryKey: [`/api/trips/${settlement.tripId}/expenses/balances`] });
+        queryClient.refetchQueries({ queryKey: [`/api/trips/${settlement.tripId}/expenses`] });
       });
     },
     onError: (error: any) => {
