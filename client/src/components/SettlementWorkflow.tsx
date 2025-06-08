@@ -149,10 +149,11 @@ export function SettlementWorkflow({ tripId, balance, isOpen, onClose }: Settlem
   };
 
   // Check if there's already a pending settlement
+  // When user owes money (negative balance), they are the payer
+  // When user is owed money (positive balance), they are the payee
   const existingSettlement = existingSettlements.find((s: any) => 
-    s.payerId === (owes ? undefined : balance.userId) && 
-    s.payeeId === (owes ? balance.userId : undefined) && 
-    s.status === 'pending'
+    (owes && s.payeeId === balance.userId && s.status === 'pending') ||
+    (isOwed && s.payerId === balance.userId && s.status === 'pending')
   );
 
   if (balance.balance === 0) {
