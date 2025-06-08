@@ -113,11 +113,14 @@ export default function ExpensesPage() {
   });
 
   // Format currency for mobile (whole numbers) vs desktop (2 decimals)
-  const formatCurrency = (amount: number, isMobile: boolean = false) => {
+  const formatCurrency = (amount: number | string, isMobile: boolean = false) => {
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(num)) return '$0';
+    
     if (isMobile) {
-      return `$${Math.round(amount)}`;
+      return `$${Math.round(num)}`;
     }
-    return `$${amount.toFixed(2)}`;
+    return `$${num.toFixed(2)}`;
   };
 
   const handleSettleClick = () => {
