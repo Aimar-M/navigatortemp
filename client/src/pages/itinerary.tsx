@@ -65,7 +65,7 @@ export default function Itinerary() {
 
   // Generate trip days for the date selector
   const generateTripDays = () => {
-    if (!trip?.startDate || !trip?.endDate) return [];
+    if (!(trip as any)?.startDate || !(trip as any)?.endDate) return [];
     
     const startDate = new Date((trip as any).startDate);
     const endDate = new Date((trip as any).endDate);
@@ -182,6 +182,7 @@ export default function Itinerary() {
       tripId={tripId}
       title="Itinerary"
       description={`Plan your activities for ${(trip as any)?.name || 'this trip'}`}
+      isConfirmedMember={isConfirmedMember}
     >
       <div className="space-y-6">
         {/* Activities Section */}
@@ -191,7 +192,10 @@ export default function Itinerary() {
               <h2 className="text-xl font-semibold">Trip Activities</h2>
               <p className="text-muted-foreground">Plan and organize your trip activities</p>
             </div>
-            <Button onClick={() => setIsAddActivityModalOpen(true)}>
+            <Button 
+              onClick={() => setIsAddActivityModalOpen(true)}
+              disabled={!isConfirmedMember}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Activity
             </Button>
