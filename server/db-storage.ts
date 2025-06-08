@@ -573,10 +573,69 @@ export class DatabaseStorage {
 
   async getExpense(id: number): Promise<any> {
     const [expense] = await db
-      .select()
+      .select({
+        id: expenses.id,
+        tripId: expenses.tripId,
+        title: expenses.title,
+        amount: expenses.amount,
+        currency: expenses.currency,
+        category: expenses.category,
+        date: expenses.date,
+        description: expenses.description,
+        paidBy: expenses.paidBy,
+        activityId: expenses.activityId,
+        isSettled: expenses.isSettled,
+        receiptUrl: expenses.receiptUrl,
+        createdAt: expenses.createdAt,
+        updatedAt: expenses.updatedAt,
+        paidByUser: {
+          id: users.id,
+          name: users.name,
+          username: users.username,
+          email: users.email
+        }
+      })
       .from(expenses)
+      .leftJoin(users, eq(expenses.paidBy, users.id))
       .where(eq(expenses.id, id));
-    return expense;
+    
+    if (!expense) return null;
+
+    // Get expense splits with user details
+    const splits = await db
+      .select({
+        id: expenseSplits.id,
+        userId: expenseSplits.userId,
+        amount: expenseSplits.amount,
+        isPaid: expenseSplits.isPaid,
+        paidAt: expenseSplits.paidAt,
+        user: {
+          id: users.id,
+          name: users.name,
+          username: users.username,
+          email: users.email
+        }
+      })
+      .from(expenseSplits)
+      .leftJoin(users, eq(expenseSplits.userId, users.id))
+      .where(eq(expenseSplits.expenseId, id));
+
+    // Get activity details if linked
+    let activity = null;
+    if (expense.activityId) {
+      const [activityResult] = await db
+        .select()
+        .from(activities)
+        .where(eq(activities.id, expense.activityId));
+      activity = activityResult;
+    }
+
+    return {
+      ...expense,
+      shares: splits,
+      splits: splits,
+      activity
+    };
   }
 
   async updateExpense(id: number, data: any): Promise<any> {
