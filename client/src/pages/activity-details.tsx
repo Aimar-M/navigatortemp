@@ -159,11 +159,11 @@ export default function ActivityDetails() {
         <Button 
           variant="ghost" 
           size="sm"
-          onClick={() => setLocation(`/trips/${activity.tripId}`)}
+          onClick={() => setLocation(`/trips/${activity.tripId}/itinerary`)}
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Trip
+          Back to Itinerary
         </Button>
         
         {/* Delete button - only show for activity creator */}
