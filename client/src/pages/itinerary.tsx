@@ -182,7 +182,7 @@ export default function Itinerary() {
       tripId={tripId}
       title="Itinerary"
       description={`Plan your activities for ${(trip as any)?.name || 'this trip'}`}
-      isConfirmedMember={isConfirmedMember}
+      isConfirmedMember={isConfirmedMember as boolean}
     >
       <div className="space-y-6">
         {/* Activities Section */}

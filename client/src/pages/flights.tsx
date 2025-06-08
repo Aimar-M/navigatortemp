@@ -178,7 +178,7 @@ export default function Flights() {
       tripId={parseInt(tripId)}
       title="Flights"
       description="Coordinate flight information for your trip"
-      isConfirmedMember={isConfirmedMember}
+      isConfirmedMember={isConfirmedMember as boolean}
     >
       <div className="space-y-6">
         <div className="flex items-center justify-between">

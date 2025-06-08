@@ -265,7 +265,12 @@ export default function ExpensesPage() {
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   return (
-    <TripDetailLayout tripId={parseInt(tripId!)}>
+    <TripDetailLayout 
+      tripId={parseInt(tripId!)}
+      title="Expenses"
+      description="Track and split expenses for your trip"
+      isConfirmedMember={isConfirmedMember as boolean}
+    >
       <div className="p-4 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -273,7 +278,7 @@ export default function ExpensesPage() {
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full sm:w-auto">
+                <Button className="w-full sm:w-auto" disabled={!isConfirmedMember}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Expense
                 </Button>
