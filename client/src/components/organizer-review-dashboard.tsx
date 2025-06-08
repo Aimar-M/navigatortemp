@@ -50,8 +50,21 @@ export default function OrganizerReviewDashboard({
   const pendingReviewMembers = members.filter(member => 
     !member.isOrganizer && 
     member.rsvpStatus === 'pending' && 
-    member.paymentStatus === 'submitted'
+    (member.paymentStatus === 'submitted' || member.paymentStatus === 'pending')
   );
+
+  // Debug logging
+  console.log('Dashboard Debug:', {
+    requiresDownPayment,
+    totalMembers: members.length,
+    pendingReviewMembers: pendingReviewMembers.length,
+    allMemberStatuses: members.map(m => ({
+      id: m.userId,
+      isOrganizer: m.isOrganizer,
+      rsvpStatus: m.rsvpStatus,
+      paymentStatus: m.paymentStatus
+    }))
+  });
 
   const confirmPaymentMutation = useMutation({
     mutationFn: async (userId: number) => {
