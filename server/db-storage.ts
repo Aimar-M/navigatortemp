@@ -8,7 +8,7 @@ import {
   users, trips, tripMembers, activities, activityRsvp, 
   messages, surveyQuestions, surveyResponses, expenses, expenseSplits, settlements
 } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 export class DatabaseStorage {
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -411,10 +411,49 @@ export class DatabaseStorage {
       })
     );
 
-    return expensesWithSplits;
+    // Add confirmed settlements as settlement transactions
+    const confirmedSettlements = await db
+      .select()
+      .from(settlements)
+      .where(
+        and(
+          eq(settlements.tripId, tripId),
+          eq(settlements.status, 'confirmed')
+        )
+      )
+      .orderBy(desc(settlements.confirmedAt));
+
+    // Convert settlements to expense-like format with user details
+    const settlementTransactions = await Promise.all(
+      confirmedSettlements.map(async (settlement) => {
+        const payer = await this.getUser(settlement.payerId);
+        const payee = await this.getUser(settlement.payeeId);
+        
+        return {
+          id: `settlement-${settlement.id}`,
+          title: `Payment: ${payer?.name || 'Unknown'} → ${payee?.name || 'Unknown'}`,
+          amount: parseFloat(settlement.amount),
+          category: 'settlement',
+          date: settlement.confirmedAt?.toISOString() || new Date().toISOString(),
+          description: settlement.notes || `${settlement.paymentMethod ? settlement.paymentMethod.charAt(0).toUpperCase() + settlement.paymentMethod.slice(1) : 'Cash'} payment settlement`,
+          paidBy: settlement.payerId,
+          paidByUser: payer,
+          activityId: null,
+          isSettlement: true,
+          paymentMethod: settlement.paymentMethod,
+          shares: []
+        };
+      })
+    );
+
+    // Combine expenses and settlements
+    const allTransactions = [...expensesWithSplits, ...settlementTransactions];
+    
+    // Sort by date (newest first)
+    allTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return allTransactions;
   }
-
-
 
   async calculateExpenseBalances(tripId: number): Promise<any[]> {
     try {
@@ -450,6 +489,34 @@ export class DatabaseStorage {
           totalOwed: Math.round(totalOwed * 100) / 100,
           netBalance: Math.round((totalPaid - totalOwed) * 100) / 100
         });
+      }
+
+      // Account for confirmed settlements
+      const confirmedSettlements = await db
+        .select()
+        .from(settlements)
+        .where(
+          and(
+            eq(settlements.tripId, tripId),
+            eq(settlements.status, 'confirmed')
+          )
+        );
+
+      // Adjust balances based on confirmed settlements
+      for (const settlement of confirmedSettlements) {
+        const payerBalance = balances.find(b => b.userId === settlement.payerId);
+        const payeeBalance = balances.find(b => b.userId === settlement.payeeId);
+        const settledAmount = parseFloat(settlement.amount);
+
+        if (payerBalance) {
+          // Payer's balance improves (they paid money they owed)
+          payerBalance.netBalance = Math.round((payerBalance.netBalance + settledAmount) * 100) / 100;
+        }
+
+        if (payeeBalance) {
+          // Payee's balance decreases (they received money they were owed)
+          payeeBalance.netBalance = Math.round((payeeBalance.netBalance - settledAmount) * 100) / 100;
+        }
       }
 
       return balances;
