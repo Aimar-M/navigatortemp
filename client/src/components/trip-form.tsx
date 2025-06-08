@@ -76,7 +76,7 @@ export default function TripForm({ onComplete }: TripFormProps) {
         status: "planning",
         startDate,
         endDate,
-        downPaymentAmount: formData.requiresDownPayment ? parseFloat(formData.downPaymentAmount) : null,
+        downPaymentAmount: formData.requiresDownPayment ? formData.downPaymentAmount : null,
       };
       
       // Use fetch directly with authentication token
