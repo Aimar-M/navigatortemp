@@ -146,7 +146,9 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
       case 'rejected':
         return "Payment rejected - please resubmit";
       case 'not_required':
-        return "No payment required";
+        // For trips that require down payment but member status is "not_required", 
+        // this means they haven't submitted payment yet
+        return trip.requiresDownPayment ? "Payment required - not yet submitted" : "No payment required";
       case null:
       case undefined:
       case '':
@@ -172,7 +174,8 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
       case 'rejected':
         return "Payment rejected - please resubmit";
       case 'not_required':
-        return "Awaiting organizer approval";
+        // For trips requiring payment, this means payment hasn't been submitted yet
+        return trip.requiresDownPayment ? "Payment required to proceed" : "Awaiting organizer approval";
       case null:
       case undefined:
       case '':
