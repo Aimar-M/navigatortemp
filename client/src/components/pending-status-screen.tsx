@@ -547,7 +547,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
       )}
 
       {/* Payment Submission Interface for trips requiring payment */}
-      {trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected') && (
+      {trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === '' || member.paymentStatus === 'not_required') && (
         <Card className="mb-6 border-orange-200 bg-orange-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
