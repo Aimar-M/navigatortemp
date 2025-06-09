@@ -990,15 +990,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update member with payment info
       const updatedMember = await storage.updateTripMemberPaymentInfo(tripId, userId, {
         paymentMethod,
-        paymentStatus: paymentMethod === 'cash' ? 'pending' : 'confirmed',
+        paymentStatus: 'pending',  // Always set to pending until organizer confirms
         paymentAmount: trip.downPaymentAmount?.toString(),
-        paymentSubmittedAt: new Date(),
-        paymentConfirmedAt: paymentMethod !== 'cash' ? new Date() : undefined
+        paymentSubmittedAt: new Date()
       });
       
-      // Update RSVP status based on payment method
-      const newRsvpStatus = paymentMethod === 'cash' ? 'awaiting_payment' : 'confirmed';
-      await storage.updateTripMemberRSVPStatus(tripId, userId, newRsvpStatus);
+      // Update RSVP status to pending until organizer confirms payment
+      await storage.updateTripMemberRSVPStatus(tripId, userId, 'pending');
       
       res.json({ message: 'Payment submitted successfully', member: updatedMember });
     } catch (error) {
@@ -3488,8 +3486,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const payeeId = parseInt(req.params.payeeId);
       const { amount } = req.query;
 
-      console.log('Settlement options request:', { tripId, payeeId, amount });
-
       if (isNaN(tripId) || isNaN(payeeId) || !amount) {
         return res.status(400).json({ message: "Missing required parameters" });
       }
@@ -3497,21 +3493,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const payee = await storage.getUser(payeeId);
       const trip = await storage.getTrip(tripId);
 
-      console.log('Payee data:', { 
-        id: payee?.id, 
-        username: payee?.username, 
-        venmoUsername: payee?.venmoUsername, 
-        paypalEmail: payee?.paypalEmail 
-      });
-
       if (!payee || !trip) {
         return res.status(404).json({ message: "Payee or trip not found" });
       }
 
       const { getSettlementOptions } = await import('./settlement-utils');
       const options = getSettlementOptions(payee, parseFloat(amount as string), user.name, trip.name);
-
-      console.log('Generated settlement options:', options);
 
       res.json(options);
     } catch (error) {
