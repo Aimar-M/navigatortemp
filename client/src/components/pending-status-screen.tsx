@@ -1,9 +1,10 @@
-import { Clock, CreditCard, AlertCircle, Bell, MapPin, Calendar, Users, DollarSign, Activity, Check } from "lucide-react";
+import { Clock, CreditCard, AlertCircle, Bell, MapPin, Calendar, Users, DollarSign, Activity, Check, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -30,11 +31,20 @@ interface PendingStatusScreenProps {
   };
 }
 
+interface SettlementOption {
+  method: 'venmo' | 'paypal' | 'cash';
+  displayName: string;
+  paymentLink?: string;
+  available: boolean;
+}
+
 export default function PendingStatusScreen({ trip, member }: PendingStatusScreenProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
+  const [selectedMethod, setSelectedMethod] = useState<string>('');
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   // Confirm attendance mutation (for trips without payment requirement)
   const confirmAttendanceMutation = useMutation({
