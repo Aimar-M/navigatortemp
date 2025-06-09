@@ -3488,6 +3488,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const payeeId = parseInt(req.params.payeeId);
       const { amount } = req.query;
 
+      console.log('Settlement options request:', { tripId, payeeId, amount });
+
       if (isNaN(tripId) || isNaN(payeeId) || !amount) {
         return res.status(400).json({ message: "Missing required parameters" });
       }
@@ -3495,12 +3497,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const payee = await storage.getUser(payeeId);
       const trip = await storage.getTrip(tripId);
 
+      console.log('Payee data:', { 
+        id: payee?.id, 
+        username: payee?.username, 
+        venmoUsername: payee?.venmoUsername, 
+        paypalEmail: payee?.paypalEmail 
+      });
+
       if (!payee || !trip) {
         return res.status(404).json({ message: "Payee or trip not found" });
       }
 
       const { getSettlementOptions } = await import('./settlement-utils');
       const options = getSettlementOptions(payee, parseFloat(amount as string), user.name, trip.name);
+
+      console.log('Generated settlement options:', options);
 
       res.json(options);
     } catch (error) {
