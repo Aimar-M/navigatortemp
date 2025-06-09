@@ -514,99 +514,65 @@ export default function TripDetails() {
                           <span className="text-xs text-blue-600 ml-1">(Organizer)</span>
                         )}
                         <div className={`text-xs ${
-                          member.status === 'confirmed' ? 'text-green-600' :
-                          member.status === 'declined' ? 'text-red-600' :
+                          member.rsvpStatus === 'confirmed' ? 'text-green-600' :
+                          member.rsvpStatus === 'declined' ? 'text-red-600' :
                           'text-orange-500'
                         }`}>
-                          {member.status === 'confirmed' ? '✓ Attending' :
-                           member.status === 'declined' ? '✕ Not attending' :
+                          {member.rsvpStatus === 'confirmed' ? '✓ Attending' :
+                           member.rsvpStatus === 'declined' ? '✕ Not attending' :
                            '? Awaiting confirmation'}
                         </div>
                       </div>
                     </div>
                     
-                    {/* Show attend/decline buttons if this is the current user and status is pending */}
-                    {user?.id === member.userId && member.status === 'pending' && (
+                    {/* Show attend/decline buttons if this is the current user and RSVP status is pending */}
+                    {user?.id === member.userId && member.rsvpStatus === 'pending' && (
                       <div className="flex space-x-2">
                         <Button 
                           size="sm" 
                           variant="outline" 
                           className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                          onClick={() => {
-                            const token = localStorage.getItem('auth_token');
-                            toast({
-                              title: "Confirming attendance...",
-                              description: "Processing your confirmation"
-                            });
-                            
-                            fetch(`/api/trips/${tripId}/members/${user.id}`, {
-                              method: 'PUT',
-                              headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                              },
-                              body: JSON.stringify({ status: 'confirmed' })
-                            })
-                            .then(response => {
-                              if (response.ok) {
-                                toast({
-                                  title: "Attendance confirmed!",
-                                  description: "You're now confirmed for this trip"
-                                });
-                                // Refresh members data
-                                window.location.reload();
-                              }
-                            })
-                            .catch(error => {
-                              toast({
-                                title: "Error",
-                                description: "Failed to confirm attendance",
-                                variant: "destructive"
-                              });
-                            });
-                          }}
+                          onClick={() => updateRSVPMutation.mutate({ userId: user.id, rsvpStatus: 'confirmed' })}
+                          disabled={updateRSVPMutation.isPending}
                         >
-                          I'll Attend
+                          {updateRSVPMutation.isPending ? 'Confirming...' : "I'll Attend"}
                         </Button>
                         <Button 
                           size="sm" 
                           variant="outline"
                           className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
-                          onClick={() => {
-                            const token = localStorage.getItem('auth_token');
-                            toast({
-                              title: "Processing response...",
-                              description: "Recording your decision"
-                            });
-                            
-                            fetch(`/api/trips/${tripId}/members/${user.id}`, {
-                              method: 'PUT',
-                              headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                              },
-                              body: JSON.stringify({ status: 'declined' })
-                            })
-                            .then(response => {
-                              if (response.ok) {
-                                toast({
-                                  title: "Response recorded",
-                                  description: "You've been removed from this trip and it has been archived"
-                                });
-                                // Navigate to home page since they're no longer a member
-                                window.location.href = '/';
-                              }
-                            })
-                            .catch(error => {
-                              toast({
-                                title: "Error",
-                                description: "Failed to update your response",
-                                variant: "destructive"
-                              });
-                            });
-                          }}
+                          onClick={() => updateRSVPMutation.mutate({ userId: user.id, rsvpStatus: 'declined' })}
+                          disabled={updateRSVPMutation.isPending}
                         >
-                          Can't Attend
+                          {updateRSVPMutation.isPending ? 'Processing...' : "Can't Attend"}
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Show confirmed status for users who have already confirmed */}
+                    {user?.id === member.userId && member.rsvpStatus === 'confirmed' && (
+                      <div className="flex items-center text-green-600">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="bg-green-100 text-green-700 border-green-300 cursor-default"
+                          disabled
+                        >
+                          ✓ Attending
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Show declined status for users who have declined */}
+                    {user?.id === member.userId && member.rsvpStatus === 'declined' && (
+                      <div className="flex items-center text-red-600">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="bg-red-100 text-red-700 border-red-300 cursor-default"
+                          disabled
+                        >
+                          ✕ Not Attending
                         </Button>
                       </div>
                     )}
