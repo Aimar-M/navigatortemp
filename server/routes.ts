@@ -733,7 +733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Initialize payment status based on trip requirements
-      const paymentStatus = trip.requiresDownPayment ? 'pending' : 'not_required';
+      const paymentStatus = trip.requiresDownPayment ? 'not_required' : 'not_required';
       
       const member = await storage.addTripMember({
         tripId,
