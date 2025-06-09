@@ -105,7 +105,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   });
 
   // Find the organizer to get their payment options
-  const organizer = tripMembers?.find((member: any) => member.isOrganizer);
+  const organizer = tripMembers?.find((member: any) => member.userId === trip.organizer);
   
   // Fetch settlement options from organizer (payment methods)
   const { data: settlementOptions = [], isLoading: optionsLoading, error: optionsError } = useQuery({
