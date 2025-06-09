@@ -525,14 +525,18 @@ export default function TripDetails() {
                       </div>
                     </div>
                     
-                    {/* Show attend/decline buttons if this is the current user and status is pending */}
-                    {user?.id === member.userId && member.status === 'pending' && (
+                    {/* Show attend/decline buttons if this is the current user */}
+                    {user?.id === member.userId && (member.status === 'pending' || member.status === 'confirmed') && (
                       <div className="flex space-x-2">
                         <Button 
                           size="sm" 
-                          variant="outline" 
-                          className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                          onClick={() => {
+                          variant={member.status === 'confirmed' ? "default" : "outline"}
+                          className={member.status === 'confirmed' 
+                            ? "bg-green-600 text-white border-green-600 cursor-default" 
+                            : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                          }
+                          disabled={member.status === 'confirmed'}
+                          onClick={member.status === 'pending' ? () => {
                             const token = localStorage.getItem('auth_token');
                             toast({
                               title: "Confirming attendance...",
@@ -564,50 +568,52 @@ export default function TripDetails() {
                                 variant: "destructive"
                               });
                             });
-                          }}
+                          } : undefined}
                         >
                           I'll Attend
                         </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
-                          onClick={() => {
-                            const token = localStorage.getItem('auth_token');
-                            toast({
-                              title: "Processing response...",
-                              description: "Recording your decision"
-                            });
-                            
-                            fetch(`/api/trips/${tripId}/members/${user.id}`, {
-                              method: 'PUT',
-                              headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                              },
-                              body: JSON.stringify({ status: 'declined' })
-                            })
-                            .then(response => {
-                              if (response.ok) {
-                                toast({
-                                  title: "Response recorded",
-                                  description: "You've been removed from this trip and it has been archived"
-                                });
-                                // Navigate to home page since they're no longer a member
-                                window.location.href = '/';
-                              }
-                            })
-                            .catch(error => {
+                        {member.status === 'pending' && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                            onClick={() => {
+                              const token = localStorage.getItem('auth_token');
                               toast({
-                                title: "Error",
-                                description: "Failed to update your response",
-                                variant: "destructive"
+                                title: "Processing response...",
+                                description: "Recording your decision"
                               });
-                            });
-                          }}
-                        >
-                          Can't Attend
-                        </Button>
+                              
+                              fetch(`/api/trips/${tripId}/members/${user.id}`, {
+                                method: 'PUT',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({ status: 'declined' })
+                              })
+                              .then(response => {
+                                if (response.ok) {
+                                  toast({
+                                    title: "Response recorded",
+                                    description: "You've been removed from this trip and it has been archived"
+                                  });
+                                  // Navigate to home page since they're no longer a member
+                                  window.location.href = '/';
+                                }
+                              })
+                              .catch(error => {
+                                toast({
+                                  title: "Error",
+                                  description: "Failed to update your response",
+                                  variant: "destructive"
+                                });
+                              });
+                            }}
+                          >
+                            Can't Attend
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
