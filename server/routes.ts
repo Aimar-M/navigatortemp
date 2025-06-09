@@ -2,6 +2,8 @@ import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
 import { storage } from "./db-storage";
 import { db } from "./db";
 import { expenseSplits } from "@shared/schema";
@@ -28,8 +30,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const router = express.Router();
   const httpServer = createServer(app);
   
-  // Configure session middleware
+  // Configure session middleware with PostgreSQL store
+  const PgSession = connectPgSimple(session);
   app.use(session({
+    store: new PgSession({
+      pool: pool,
+      tableName: 'sessions',
+      createTableIfMissing: false
+    }),
     secret: process.env.SESSION_SECRET || 'dev-secret-key',
     resave: false,
     saveUninitialized: false,

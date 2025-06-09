@@ -1,7 +1,18 @@
-import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, foreignKey, uuid, decimal, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, foreignKey, uuid, decimal, jsonb, uniqueIndex, varchar, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
+
+// Session storage table for express-session
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
 
 // User schema
 export const users = pgTable("users", {
