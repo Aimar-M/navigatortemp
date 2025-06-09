@@ -104,6 +104,21 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
     enabled: !!trip.id
   });
 
+  // Find the organizer to get their payment options
+  const organizer = tripMembers?.find((member: any) => member.isOrganizer);
+  
+  // Fetch settlement options from organizer (payment methods)
+  const { data: settlementOptions = [], isLoading: optionsLoading, error: optionsError } = useQuery({
+    queryKey: [`/api/trips/${trip.id}/settlement-options/${organizer?.userId}`, trip.downPaymentAmount],
+    queryFn: async () => {
+      if (!organizer?.userId || !trip.downPaymentAmount) return [];
+      const response = await fetch(`/api/trips/${trip.id}/settlement-options/${organizer.userId}?amount=${trip.downPaymentAmount}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!organizer?.userId && !!trip.downPaymentAmount && trip.requiresDownPayment
+  });
+
   const formatPaymentMethod = (method: string) => {
     switch (method?.toLowerCase()) {
       case 'venmo':
@@ -556,36 +571,167 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Payment Method
                   </label>
-                  <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="venmo">Venmo</SelectItem>
-                      <SelectItem value="paypal">PayPal</SelectItem>
-                      <SelectItem value="cash">Cash</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {optionsLoading && (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
+                      <span className="ml-2 text-gray-600">Loading payment options...</span>
+                    </div>
+                  )}
+                  
+                  {optionsError && (
+                    <div className="bg-red-50 border border-red-200 p-3 rounded-lg">
+                      <p className="text-sm text-red-700">
+                        Failed to load payment options. Please try again.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {!optionsLoading && !optionsError && settlementOptions.length === 0 && (
+                    <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
+                      <p className="text-sm text-yellow-700">
+                        No payment methods available. Please contact the organizer to set up payment preferences.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {!optionsLoading && !optionsError && settlementOptions.map((option: SettlementOption) => (
+                    <div
+                      key={option.method}
+                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                        selectedMethod === option.method
+                          ? 'border-orange-500 bg-orange-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setSelectedMethod(option.method)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-4 h-4 rounded-full border-2 ${
+                            selectedMethod === option.method
+                              ? 'border-orange-500 bg-orange-500'
+                              : 'border-gray-300'
+                          }`}>
+                            {selectedMethod === option.method && (
+                              <div className="w-full h-full rounded-full bg-white transform scale-50" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-medium">{option.displayName}</div>
+                            {option.method === 'cash' && (
+                              <div className="text-sm text-gray-600">
+                                Both parties must confirm completion
+                              </div>
+                            )}
+                            {option.paymentLink && (
+                              <div className="text-sm text-orange-600">
+                                One-click payment link available
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {option.method === 'venmo' && <CreditCard className="h-5 w-5 text-purple-600" />}
+                        {option.method === 'paypal' && <CreditCard className="h-5 w-5 text-blue-600" />}
+                        {option.method === 'cash' && <DollarSign className="h-5 w-5 text-green-600" />}
+                      </div>
+                      
+                      {selectedMethod === option.method && option.paymentLink && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(option.paymentLink!, '_blank', 'noopener,noreferrer');
+                              setHasRedirected(true);
+                              setShowConfirmation(true);
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                          >
+                            Open {option.method === 'venmo' ? 'Venmo' : 'PayPal'}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
 
-                <Button 
-                  onClick={() => {
-                    if (!selectedPaymentMethod) {
-                      toast({
-                        title: "Please select a payment method",
-                        variant: "destructive"
-                      });
-                      return;
-                    }
-                    submitPaymentMutation.mutate({
-                      paymentMethod: selectedPaymentMethod
-                    });
-                  }}
-                  disabled={!selectedPaymentMethod || submitPaymentMutation.isPending}
-                  className="w-full bg-orange-600 hover:bg-orange-700"
-                >
-                  {submitPaymentMutation.isPending ? 'Submitting...' : 'Submit Payment'}
-                </Button>
+                {/* Confirmation Screen */}
+                {showConfirmation && selectedMethod !== 'cash' && (
+                  <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg mt-4">
+                    <div className="text-center space-y-3">
+                      <CheckCircle className="h-8 w-8 text-orange-600 mx-auto" />
+                      <div>
+                        <h3 className="font-medium text-orange-900">Payment App Opened</h3>
+                        <p className="text-sm text-orange-700 mt-1">
+                          We opened {selectedMethod === 'venmo' ? 'Venmo' : 'PayPal'} for you to send ${trip.downPaymentAmount} to the organizer.
+                        </p>
+                      </div>
+                      
+                      <div className="bg-white p-3 rounded border">
+                        <p className="text-sm text-gray-600 mb-3">
+                          After completing the payment in the app, click the button below to notify the organizer.
+                        </p>
+                        
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => {
+                              setShowConfirmation(false);
+                              setHasRedirected(false);
+                              setSelectedMethod('');
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                          >
+                            Go Back
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              submitPaymentMutation.mutate({
+                                paymentMethod: selectedMethod
+                              });
+                            }}
+                            disabled={submitPaymentMutation.isPending}
+                            size="sm"
+                            className="flex-1"
+                          >
+                            {submitPaymentMutation.isPending ? "Confirming..." : "Mark as Sent"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!showConfirmation && (
+                  <Button 
+                    onClick={() => {
+                      if (!selectedMethod) {
+                        toast({
+                          title: "Payment Method Required",
+                          description: "Please select a payment method.",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+
+                      // For cash payments, proceed directly to payment submission
+                      if (selectedMethod === 'cash') {
+                        submitPaymentMutation.mutate({
+                          paymentMethod: selectedMethod
+                        });
+                      } else {
+                        // For Venmo/PayPal, show confirmation screen first
+                        setShowConfirmation(true);
+                      }
+                    }}
+                    disabled={!selectedMethod || submitPaymentMutation.isPending}
+                    className="w-full bg-orange-600 hover:bg-orange-700"
+                  >
+                    {submitPaymentMutation.isPending ? 'Submitting...' : 'Submit Payment'}
+                  </Button>
+                )}
                 
                 <p className="text-xs text-gray-600 text-center">
                   After submitting, the organizer will review and confirm your payment
