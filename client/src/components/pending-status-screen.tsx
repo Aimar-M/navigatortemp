@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
-import { HandHeart, CreditCard, Clock, CheckCircle, AlertCircle, Bell, Timer, DollarSign, Check, ArrowRight, Lock, Heart } from "lucide-react";
+import { HandHeart, CreditCard, Clock, CheckCircle, AlertCircle, Bell, Timer, DollarSign, Check, ArrowRight, Lock, Heart, Plane, MapPin, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
+import Lottie from "lottie-react";
 
 interface PendingStatusScreenProps {
   trip: {
@@ -37,6 +38,91 @@ interface SettlementOption {
   paymentLink?: string;
   available: boolean;
 }
+
+// Simple travel-themed Lottie animation data
+const travelAnimation = {
+  "v": "5.5.7",
+  "fr": 60,
+  "ip": 0,
+  "op": 180,
+  "w": 200,
+  "h": 200,
+  "nm": "Travel Adventure",
+  "ddd": 0,
+  "assets": [],
+  "layers": [
+    {
+      "ddd": 0,
+      "ind": 1,
+      "ty": 4,
+      "nm": "Plane",
+      "sr": 1,
+      "ks": {
+        "o": {"a": 0, "k": 100, "ix": 11},
+        "r": {"a": 1, "k": [
+          {"i": {"x": [0.833], "y": [0.833]}, "o": {"x": [0.167], "y": [0.167]}, "t": 0, "s": [0]},
+          {"i": {"x": [0.833], "y": [0.833]}, "o": {"x": [0.167], "y": [0.167]}, "t": 90, "s": [5]},
+          {"t": 180, "s": [0]}
+        ], "ix": 10},
+        "p": {"a": 1, "k": [
+          {"i": {"x": 0.833, "y": 0.833}, "o": {"x": 0.167, "y": 0.167}, "t": 0, "s": [50, 100, 0]},
+          {"i": {"x": 0.833, "y": 0.833}, "o": {"x": 0.167, "y": 0.167}, "t": 90, "s": [150, 80, 0]},
+          {"t": 180, "s": [250, 100, 0]}
+        ], "ix": 2},
+        "a": {"a": 0, "k": [0, 0, 0], "ix": 1},
+        "s": {"a": 0, "k": [100, 100, 100], "ix": 6}
+      },
+      "ao": 0,
+      "shapes": [
+        {
+          "ty": "gr",
+          "it": [
+            {
+              "ind": 0,
+              "ty": "sh",
+              "ix": 1,
+              "ks": {
+                "a": 0,
+                "k": {
+                  "i": [[0,0],[0,0],[0,0],[0,0]],
+                  "o": [[0,0],[0,0],[0,0],[0,0]],
+                  "v": [[-15,-5],[15,-5],[10,5],[-10,5]],
+                  "c": true
+                },
+                "ix": 2
+              },
+              "nm": "Path 1",
+              "mn": "ADBE Vector Shape - Group",
+              "hd": false
+            },
+            {
+              "ty": "fl",
+              "c": {"a": 0, "k": [0, 0.4, 1, 1], "ix": 4},
+              "o": {"a": 0, "k": 100, "ix": 5},
+              "r": 1,
+              "bm": 0,
+              "nm": "Fill 1",
+              "mn": "ADBE Vector Graphic - Fill",
+              "hd": false
+            }
+          ],
+          "nm": "Plane Body",
+          "np": 2,
+          "cix": 2,
+          "bm": 0,
+          "ix": 1,
+          "mn": "ADBE Vector Group",
+          "hd": false
+        }
+      ],
+      "ip": 0,
+      "op": 180,
+      "st": 0,
+      "bm": 0
+    }
+  ],
+  "markers": []
+};
 
 export default function PendingStatusScreen({ trip, member }: PendingStatusScreenProps) {
   const { toast } = useToast();
@@ -154,140 +240,186 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="max-w-4xl mx-auto p-6 space-y-8">
-        {/* Header Section */}
-        <div className="text-center py-8">
-          <div className="flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mx-auto mb-6 shadow-xl">
-            <HandHeart className="h-10 w-10 text-white" />
+    <div className="min-h-screen relative overflow-hidden" style={{
+      background: 'linear-gradient(135deg, #0000FF 0%, #1e40af 25%, #3b82f6 50%, #60a5fa 75%, #93c5fd 100%)'
+    }}>
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Ccircle cx='15' cy='15' r='1'/%3E%3Ccircle cx='45' cy='45' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundSize: '60px 60px'
+        }}></div>
+      </div>
+
+      <div className="relative z-10 max-w-5xl mx-auto p-6 space-y-10">
+        {/* Hero Section */}
+        <div className="text-center py-12 relative">
+          {/* Subtle Lottie Animation */}
+          <div className="absolute top-0 right-8 opacity-30">
+            <Lottie 
+              animationData={travelAnimation} 
+              className="w-32 h-32"
+              loop={true}
+              autoplay={true}
+            />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            {trip.name}
-          </h1>
-          {trip.destination && (
-            <p className="text-xl text-gray-600 mb-2">📍 {trip.destination}</p>
-          )}
-          {(trip.startDate || trip.endDate) && (
-            <p className="text-lg text-gray-500">
-              {trip.startDate && new Date(trip.startDate).toLocaleDateString()}
-              {trip.startDate && trip.endDate && ' - '}
-              {trip.endDate && new Date(trip.endDate).toLocaleDateString()}
+          
+          <div className="relative z-20">
+            <div className="flex items-center justify-center w-24 h-24 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-8 shadow-2xl border border-white/30">
+              <HandHeart className="h-12 w-12 text-white" />
+            </div>
+            
+            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight">
+              {trip.name}
+            </h1>
+            
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-4">
+              {trip.destination && (
+                <div className="flex items-center gap-2 text-white/90 text-xl">
+                  <MapPin className="h-6 w-6" />
+                  <span className="font-medium">{trip.destination}</span>
+                </div>
+              )}
+              {(trip.startDate || trip.endDate) && (
+                <div className="flex items-center gap-2 text-white/80 text-lg">
+                  <Calendar className="h-5 w-5" />
+                  <span>
+                    {trip.startDate && new Date(trip.startDate).toLocaleDateString()}
+                    {trip.startDate && trip.endDate && ' - '}
+                    {trip.endDate && new Date(trip.endDate).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            <p className="text-white/70 text-lg max-w-2xl mx-auto leading-relaxed">
+              Your adventure awaits. Complete your RSVP to unlock the full travel experience.
             </p>
-          )}
+          </div>
         </div>
 
-        {/* Trip Details */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          {trip.description && (
-            <Card className="md:col-span-2 hover:shadow-lg transition-shadow duration-300">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold text-gray-900">About This Trip</CardTitle>
+        {/* Trip Details Card with Glassmorphism */}
+        {trip.description && (
+          <div className="mb-10">
+            <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/15">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
+                  <Plane className="h-7 w-7 text-blue-200" />
+                  About This Adventure
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700 leading-relaxed">{trip.description}</p>
+                <p className="text-white/90 text-lg leading-relaxed font-medium">{trip.description}</p>
               </CardContent>
             </Card>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* RSVP Action Section */}
-        <div className="mb-8">
-          <Card className="border-2 border-dashed border-gray-200 hover:border-blue-300 transition-colors duration-300">
-            <CardHeader className="text-center pb-4">
-              <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mx-auto mb-4 shadow-lg">
-                <HandHeart className="h-8 w-8 text-white" />
+        {/* Main RSVP Action Section with Glassmorphism */}
+        <div className="mb-10">
+          <Card className="bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-white/5 to-white/10 p-8 text-center border-b border-white/20">
+              <div className="flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-6 shadow-xl border border-white/30">
+                <HandHeart className="h-10 w-10 text-white" />
               </div>
-              <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
                 {trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') 
                   ? 'Complete Your RSVP' 
                   : 'RSVP Status'}
-              </CardTitle>
-              <p className="text-gray-600 max-w-md mx-auto">
+              </h2>
+              <p className="text-white/80 text-lg max-w-lg mx-auto leading-relaxed">
                 {trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required')
-                  ? `Submit your $${trip.downPaymentAmount} down payment to secure your spot on this amazing adventure.`
+                  ? `Secure your spot with a $${trip.downPaymentAmount} down payment and join this incredible journey.`
                   : 'Your RSVP is being reviewed by the trip organizer.'
                 }
               </p>
-            </CardHeader>
+            </div>
 
-            <CardContent className="space-y-6">
-              {/* Current Status Display */}
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
-                <div className="grid md:grid-cols-2 gap-4">
+            <CardContent className="p-8 space-y-8">
+              {/* Current Status Display with Blue Theme */}
+              <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 backdrop-blur-sm rounded-2xl p-8 border border-blue-300/30">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div className="text-center">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <Timer className="h-5 w-5 text-blue-600" />
-                      <span className="font-semibold text-gray-700">RSVP Status</span>
+                    <div className="flex items-center justify-center gap-3 mb-4">
+                      <Timer className="h-6 w-6 text-blue-200" />
+                      <span className="font-bold text-white text-lg">RSVP Status</span>
                     </div>
-                    <Badge className={`${getStatusColor()} text-sm px-4 py-2`}>
+                    <Badge className={`${getStatusColor()} text-base px-6 py-3 rounded-full font-semibold`}>
                       {getRSVPStatusMessage()}
                     </Badge>
                   </div>
                   
                   <div className="text-center">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <CreditCard className="h-5 w-5 text-green-600" />
-                      <span className="font-semibold text-gray-700">Payment Status</span>
+                    <div className="flex items-center justify-center gap-3 mb-4">
+                      <CreditCard className="h-6 w-6 text-green-300" />
+                      <span className="font-bold text-white text-lg">Payment Status</span>
                     </div>
-                    <div className="text-sm font-medium text-gray-900 bg-white px-4 py-2 rounded-full border border-gray-200">
+                    <div className="text-base font-bold text-white bg-white/20 backdrop-blur-sm px-6 py-3 rounded-full border border-white/30">
                       {getPaymentStatusMessage()}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Payment Information */}
+              {/* Payment Information with Enhanced Blue Styling */}
               {trip.requiresDownPayment && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 justify-center">
-                    <DollarSign className="h-5 w-5 text-green-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">Down Payment Required</h3>
-                  </div>
-                  
-                  <div className="text-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-                    <div className="text-3xl font-bold text-green-600 mb-1">${trip.downPaymentAmount}</div>
-                    <div className="text-sm text-green-700">Required to confirm your spot</div>
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <div className="flex items-center gap-3 justify-center mb-4">
+                      <DollarSign className="h-7 w-7 text-blue-200" />
+                      <h3 className="text-2xl font-bold text-white">Down Payment Required</h3>
+                    </div>
+                    
+                    <div className="relative p-8 bg-gradient-to-br from-blue-500/30 to-indigo-600/30 backdrop-blur-md rounded-3xl border border-blue-300/40 shadow-2xl">
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-3xl"></div>
+                      <div className="relative z-10">
+                        <div className="text-5xl font-bold text-white mb-2">${trip.downPaymentAmount}</div>
+                        <div className="text-blue-100 text-lg font-medium">Investment in your adventure</div>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Payment Submission Form */}
+                  {/* Enhanced Payment Submission Form */}
                   {(!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
-                    <div className="space-y-4">
-                      <Separator />
+                    <div className="space-y-6">
+                      <div className="h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
                       
-                      <div className="space-y-4">
-                        <Label className="text-lg font-semibold flex items-center gap-2">
-                          <CreditCard className="h-5 w-5 text-blue-600" />
-                          Choose Payment Method
-                        </Label>
+                      <div className="space-y-6">
+                        <div className="text-center">
+                          <div className="flex items-center gap-3 justify-center mb-4">
+                            <CreditCard className="h-6 w-6 text-blue-200" />
+                            <h4 className="text-xl font-bold text-white">Choose Payment Method</h4>
+                          </div>
+                        </div>
                         
                         {optionsLoading && (
-                          <div className="flex items-center justify-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                            <span className="ml-3 text-gray-600">Loading payment options...</span>
+                          <div className="flex flex-col items-center justify-center py-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-300 border-t-white mb-4"></div>
+                            <span className="text-white/80 text-lg font-medium">Loading payment options...</span>
                           </div>
                         )}
                         
                         {optionsError && (
-                          <div className="bg-red-50 border border-red-200 p-4 rounded-xl">
-                            <div className="flex items-center gap-2 mb-2">
-                              <AlertCircle className="h-5 w-5 text-red-500" />
-                              <span className="font-medium text-red-700">Failed to load payment options</span>
+                          <div className="bg-red-500/20 backdrop-blur-sm border border-red-300/30 p-6 rounded-2xl">
+                            <div className="flex items-center gap-3 mb-3">
+                              <AlertCircle className="h-6 w-6 text-red-300" />
+                              <span className="font-bold text-red-100 text-lg">Failed to load payment options</span>
                             </div>
-                            <p className="text-sm text-red-600">Please try again or contact the organizer.</p>
+                            <p className="text-red-200">Please try again or contact the organizer for assistance.</p>
                           </div>
                         )}
                         
-                        {!optionsLoading && !optionsError && settlementOptions.length === 0 && (
-                          <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl">
-                            <div className="flex items-center gap-2 mb-2">
-                              <AlertCircle className="h-5 w-5 text-yellow-500" />
-                              <span className="font-medium text-yellow-700">No payment methods available</span>
+                        {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).length === 0 && (
+                          <div className="bg-yellow-500/20 backdrop-blur-sm border border-yellow-300/30 p-6 rounded-2xl">
+                            <div className="flex items-center gap-3 mb-3">
+                              <AlertCircle className="h-6 w-6 text-yellow-300" />
+                              <span className="font-bold text-yellow-100 text-lg">No payment methods available</span>
                             </div>
-                            <p className="text-sm text-yellow-600">Please contact the organizer to set up payment preferences.</p>
+                            <p className="text-yellow-200">Please contact the organizer to set up payment preferences.</p>
                           </div>
                         )}
                         
-                        {!optionsLoading && !optionsError && settlementOptions.map((option: SettlementOption) => (
+                        {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).map((option: SettlementOption) => (
                           <div
                             key={option.method}
                             className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 hover:shadow-lg ${
