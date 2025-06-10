@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
-import { HandHeart, CreditCard, Clock, CheckCircle, AlertCircle, Bell, Timer, DollarSign, Check, ArrowRight, Lock, Heart, Plane, MapPin, Calendar } from "lucide-react";
+import { CreditCard, Clock, CheckCircle, AlertCircle, Bell, Timer, DollarSign, Check, ArrowRight, Lock, Heart, Plane, MapPin, Calendar, CalendarDays } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -136,6 +136,12 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
     enabled: !!trip.requiresDownPayment && !!trip.organizer,
   });
 
+  // Fetch activities for itinerary preview
+  const { data: activities = [] } = useQuery({
+    queryKey: [`/api/trips/${trip.id}/activities`],
+    enabled: !!trip.id,
+  });
+
   // Submit payment mutation
   const submitPaymentMutation = useMutation({
     mutationFn: async (data: { paymentMethod: string }) => {
@@ -261,7 +267,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           
           <div className="relative z-20">
             <div className="flex items-center justify-center w-24 h-24 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-8 shadow-2xl border border-white/30">
-              <HandHeart className="h-12 w-12 text-white" />
+              <Plane className="h-12 w-12 text-white" />
             </div>
             
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight">
@@ -310,12 +316,86 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           </div>
         )}
 
+        {/* Itinerary Preview Section */}
+        {activities && activities.length > 0 && (
+          <div className="mb-10">
+            <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/15">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
+                  <CalendarDays className="h-7 w-7 text-blue-200" />
+                  Planned Itinerary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(activities as any[])
+                  .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                  .slice(0, 6) // Show first 6 activities
+                  .map((activity: any) => (
+                    <div key={activity.id} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="text-white font-semibold text-lg mb-2">{activity.name}</h4>
+                          {activity.description && (
+                            <p className="text-white/70 text-sm mb-3 leading-relaxed">{activity.description}</p>
+                          )}
+                          <div className="flex flex-wrap gap-3 text-sm">
+                            <div className="flex items-center gap-2 text-blue-200">
+                              <Calendar className="h-4 w-4" />
+                              <span>{new Date(activity.date).toLocaleDateString('en-US', { 
+                                weekday: 'short', 
+                                month: 'short', 
+                                day: 'numeric' 
+                              })}</span>
+                            </div>
+                            {activity.location && (
+                              <div className="flex items-center gap-2 text-blue-200">
+                                <MapPin className="h-4 w-4" />
+                                <span>{activity.location}</span>
+                              </div>
+                            )}
+                            {activity.duration && (
+                              <div className="flex items-center gap-2 text-blue-200">
+                                <Clock className="h-4 w-4" />
+                                <span>{activity.duration}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {activity.cost && parseFloat(activity.cost) > 0 && (
+                          <div className="bg-green-500/20 backdrop-blur-sm px-3 py-2 rounded-full border border-green-400/30">
+                            <span className="text-green-300 font-semibold">${parseFloat(activity.cost).toFixed(2)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                
+                {activities.length > 6 && (
+                  <div className="text-center pt-4">
+                    <div className="text-white/60 text-sm">
+                      And {activities.length - 6} more activities planned...
+                    </div>
+                  </div>
+                )}
+                
+                {activities.length === 0 && (
+                  <div className="text-center py-8">
+                    <div className="text-white/60 text-lg">
+                      No activities planned yet. The organizer will add exciting activities soon!
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Main RSVP Action Section with Glassmorphism */}
         <div className="mb-10">
           <Card className="bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl overflow-hidden">
             <div className="bg-gradient-to-r from-white/5 to-white/10 p-8 text-center border-b border-white/20">
               <div className="flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-6 shadow-xl border border-white/30">
-                <HandHeart className="h-10 w-10 text-white" />
+                <CheckCircle className="h-10 w-10 text-white" />
               </div>
               <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
                 {trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') 
