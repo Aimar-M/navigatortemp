@@ -139,10 +139,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   // Submit payment mutation
   const submitPaymentMutation = useMutation({
     mutationFn: async (data: { paymentMethod: string }) => {
-      return await apiRequest(`/api/trips/${trip.id}/submit-payment`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      return await apiRequest(`/api/trips/${trip.id}/submit-payment`, 'POST', data);
     },
     onSuccess: () => {
       toast({
@@ -163,9 +160,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   // Confirm attendance mutation (for trips without payment)
   const confirmAttendanceMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/trips/${trip.id}/confirm-rsvp`, {
-        method: 'POST',
-      });
+      return await apiRequest(`/api/trips/${trip.id}/confirm-rsvp`, 'POST');
     },
     onSuccess: () => {
       toast({
@@ -422,35 +417,35 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                         {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).map((option: SettlementOption) => (
                           <div
                             key={option.method}
-                            className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 hover:shadow-lg ${
+                            className={`border-2 rounded-2xl p-6 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:scale-105 ${
                               selectedMethod === option.method
-                                ? 'border-blue-500 bg-blue-50 shadow-md'
-                                : 'border-gray-200 hover:border-blue-300'
+                                ? 'border-blue-400 bg-blue-500/20 backdrop-blur-sm shadow-xl'
+                                : 'border-white/30 bg-white/10 backdrop-blur-sm hover:border-blue-400/50'
                             }`}
                             onClick={() => setSelectedMethod(option.method)}
                           >
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                              <div className="flex items-center gap-4">
+                                <div className={`w-8 h-8 rounded-full border-3 flex items-center justify-center transition-all duration-300 ${
                                   selectedMethod === option.method
-                                    ? 'border-blue-500 bg-blue-500'
-                                    : 'border-gray-300'
+                                    ? 'border-blue-400 bg-blue-500 shadow-lg'
+                                    : 'border-white/50'
                                 }`}>
                                   {selectedMethod === option.method && (
-                                    <Check className="h-4 w-4 text-white" />
+                                    <Check className="h-5 w-5 text-white font-bold" />
                                   )}
                                 </div>
                                 <div>
-                                  <div className="font-semibold text-gray-900">{option.displayName}</div>
+                                  <div className="font-bold text-white text-lg">{option.displayName}</div>
                                   {option.method === 'cash' && (
-                                    <div className="text-sm text-gray-600">
+                                    <div className="text-blue-200 text-sm">
                                       Settle in person with organizer
                                     </div>
                                   )}
                                 </div>
                               </div>
                               {option.method !== 'cash' && (
-                                <ArrowRight className="h-5 w-5 text-gray-400" />
+                                <ArrowRight className="h-6 w-6 text-blue-200" />
                               )}
                             </div>
                           </div>
@@ -462,16 +457,16 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                               submitPaymentMutation.mutate({ paymentMethod: selectedMethod });
                             }}
                             disabled={submitPaymentMutation.isPending}
-                            className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
+                            className="w-full py-8 text-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-500 shadow-2xl rounded-2xl border border-blue-400/30"
                           >
                             {submitPaymentMutation.isPending ? (
-                              <div className="flex items-center gap-2">
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                              <div className="flex items-center gap-3">
+                                <div className="animate-spin rounded-full h-6 w-6 border-3 border-white border-t-transparent"></div>
                                 Submitting Payment...
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2">
-                                <CreditCard className="h-5 w-5" />
+                              <div className="flex items-center gap-3">
+                                <CreditCard className="h-6 w-6" />
                                 Submit Payment via {formatPaymentMethod(selectedMethod)}
                               </div>
                             )}
@@ -481,38 +476,38 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                     </div>
                   )}
 
-                  {/* Payment Status Messages */}
+                  {/* Enhanced Payment Status Messages */}
                   {(member.paymentStatus === 'submitted' || member.paymentStatus === 'pending') && (
-                    <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="h-5 w-5 text-yellow-600" />
-                        <span className="font-medium text-yellow-700">Payment Submitted</span>
+                    <div className="bg-amber-500/20 backdrop-blur-sm border border-amber-300/30 p-6 rounded-2xl">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Clock className="h-6 w-6 text-amber-300" />
+                        <span className="font-bold text-amber-100 text-lg">Payment Submitted</span>
                       </div>
-                      <p className="text-sm text-yellow-600">
+                      <p className="text-amber-200 leading-relaxed">
                         Your payment has been submitted and is awaiting organizer confirmation.
-                        <br /><strong>Payment Submitted:</strong> The organizer needs to confirm your payment before you can access trip features.
+                        <br /><strong>Next Step:</strong> The organizer needs to confirm your payment before you can access trip features.
                       </p>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Simple RSVP Confirmation for trips without payment */}
+              {/* Enhanced RSVP Confirmation for trips without payment */}
               {!trip.requiresDownPayment && (
                 <div className="text-center">
                   <Button 
                     onClick={() => confirmAttendanceMutation.mutate()}
                     disabled={confirmAttendanceMutation.isPending}
-                    className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
+                    className="w-full py-8 text-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-500 shadow-2xl rounded-2xl border border-blue-400/30"
                   >
                     {confirmAttendanceMutation.isPending ? (
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <div className="flex items-center gap-3">
+                        <div className="animate-spin rounded-full h-6 w-6 border-3 border-white border-t-transparent"></div>
                         Confirming Attendance...
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5" />
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="h-6 w-6" />
                         Confirm Attendance
                       </div>
                     )}
@@ -523,51 +518,51 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           </Card>
         </div>
 
-        {/* What Happens Next Section */}
-        <Card className="mb-8 hover:shadow-lg transition-shadow duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
+        {/* Enhanced What Happens Next Section */}
+        <Card className="mb-10 bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500">
+          <CardContent className="p-8">
+            <div className="flex items-start gap-6">
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                  <Bell className="h-6 w-6 text-white" />
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-xl border border-white/30">
+                  <Bell className="h-8 w-8 text-white" />
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-gray-900 mb-3">What happens next?</h3>
-                <p className="text-gray-700 mb-4 leading-relaxed">
+                <h3 className="text-3xl font-bold text-white mb-4 tracking-tight">What happens next?</h3>
+                <p className="text-white/80 text-lg mb-6 leading-relaxed">
                   You'll receive a notification once your RSVP is confirmed by the organizer. 
                   This exciting adventure is just getting started!
                 </p>
                 
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
-                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <Lock className="h-5 w-5 text-blue-600" />
+                <div className="bg-gradient-to-br from-blue-500/20 to-indigo-600/20 backdrop-blur-sm rounded-2xl p-6 border border-blue-300/30">
+                  <h4 className="font-bold text-white text-xl mb-4 flex items-center gap-3">
+                    <Lock className="h-6 w-6 text-blue-300" />
                     Once confirmed, you'll unlock:
                   </h4>
-                  <div className="grid sm:grid-cols-2 gap-2 text-sm text-gray-700">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>Trip chat and messaging</span>
+                  <div className="grid sm:grid-cols-2 gap-3 text-white/90">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+                      <span className="font-medium">Trip chat and messaging</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>Expense tracking and splitting</span>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+                      <span className="font-medium">Expense tracking and splitting</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>Activity planning and polls</span>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+                      <span className="font-medium">Activity planning and polls</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>Flight coordination</span>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+                      <span className="font-medium">Flight coordination</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>All trip management features</span>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+                      <span className="font-medium">All trip management features</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>Real-time updates and notifications</span>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+                      <span className="font-medium">Real-time updates and notifications</span>
                     </div>
                   </div>
                 </div>
@@ -576,11 +571,11 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           </CardContent>
         </Card>
 
-        {/* Footer */}
-        <div className="text-center py-8">
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-white rounded-full shadow-lg border border-gray-200">
-            <Heart className="h-5 w-5 text-red-500" />
-            <span className="text-gray-700 font-medium">Questions? Contact the trip organizer for assistance.</span>
+        {/* Premium Footer */}
+        <div className="text-center py-12">
+          <div className="inline-flex items-center gap-3 px-8 py-4 bg-white/15 backdrop-blur-md rounded-full shadow-2xl border border-white/30 hover:bg-white/20 transition-all duration-300">
+            <Heart className="h-6 w-6 text-red-400" />
+            <span className="text-white font-bold text-lg">Questions? Contact the trip organizer for assistance.</span>
           </div>
         </div>
       </div>
