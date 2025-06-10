@@ -131,8 +131,8 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
 
   // Fetch payment options
-  const { data: settlementOptions = [], isLoading: optionsLoading, error: optionsError } = useQuery({
-    queryKey: ['/api/trips', trip.id, 'payment-options'],
+  const { data: settlementOptions = [], isLoading: optionsLoading, error: optionsError } = useQuery<SettlementOption[]>({
+    queryKey: [`/api/trips/${trip.id}/settlement-options/${trip.organizer}?amount=${trip.downPaymentAmount || 0}`],
     enabled: !!trip.requiresDownPayment && !!trip.organizer,
   });
 
@@ -494,9 +494,9 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                           </div>
                         )}
                         
-                        {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).map((option: SettlementOption) => (
+                        {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).map((option: SettlementOption, index: number) => (
                           <div
-                            key={option.method}
+                            key={`${option.method}-${index}`}
                             className={`border-2 rounded-2xl p-6 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:scale-105 ${
                               selectedMethod === option.method
                                 ? 'border-blue-400 bg-blue-500/20 backdrop-blur-sm shadow-xl'
