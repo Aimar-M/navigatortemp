@@ -40,7 +40,7 @@ interface SettlementOption {
 }
 
 // Simple travel-themed Lottie animation data
-const travelAnimation = {
+const travelAnimation: any = {
   "v": "5.5.7",
   "fr": 60,
   "ip": 0,
@@ -137,7 +137,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   });
 
   // Fetch activities for itinerary preview
-  const { data: activities = [] } = useQuery({
+  const { data: activities = [] } = useQuery<any[]>({
     queryKey: [`/api/trips/${trip.id}/activities`],
     enabled: !!trip.id,
   });
@@ -145,7 +145,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   // Submit payment mutation
   const submitPaymentMutation = useMutation({
     mutationFn: async (data: { paymentMethod: string }) => {
-      return await apiRequest(`/api/trips/${trip.id}/submit-payment`, 'POST', data);
+      return await apiRequest(`/api/trips/${trip.id}/members/${user?.id}/payment`, 'POST', data);
     },
     onSuccess: () => {
       toast({
