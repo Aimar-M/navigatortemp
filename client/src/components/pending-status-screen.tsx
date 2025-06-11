@@ -415,58 +415,6 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           </div>
         )}
 
-        {/* Confirmed Attendees */}
-        <div className="mb-10">
-          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/15">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
-                <CheckCircle className="h-7 w-7 text-blue-200" />
-                Confirmed Attendees
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {members && members.length > 0 ? (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {(members as any[])
-                    .filter((member: any) => member.status === 'confirmed' || member.userId === trip.organizer)
-                    .map((member: any) => (
-                      <div key={member.userId} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-lg border border-white/30">
-                            <span className="text-white font-bold text-sm">
-                              {member.user?.name ? member.user.name.charAt(0).toUpperCase() : member.user?.username?.charAt(0).toUpperCase() || '?'}
-                            </span>
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-white font-semibold">
-                              {member.user?.name || member.user?.username || 'Anonymous'}
-                              {member.userId === trip.organizer && (
-                                <Badge className="ml-2 bg-amber-500/20 text-amber-300 border-amber-400/30 text-xs px-2 py-1">
-                                  Organizer
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="text-white/60 text-sm">
-                              {member.status === 'confirmed' ? 'Confirmed' : 'Organizer'}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-white/60 text-lg">
-                    No confirmed attendees yet. Be the first to join!
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-
-
         {/* Main RSVP Action Section with Glassmorphism */}
         <div className="mb-10">
           <Card className="bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl overflow-hidden">
@@ -712,6 +660,56 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                       </div>
                     )}
                   </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Confirmed Attendees */}
+        <div className="mb-10">
+          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/15">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
+                <CheckCircle className="h-7 w-7 text-blue-200" />
+                Confirmed Attendees
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {members && members.length > 0 ? (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(members as any[])
+                    .filter((member: any) => member.status === 'confirmed' || member.userId === trip.organizer)
+                    .map((member: any) => (
+                      <div key={member.userId} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-lg border border-white/30">
+                            <span className="text-white font-bold text-sm">
+                              {member.user?.name ? member.user.name.charAt(0).toUpperCase() : member.user?.username?.charAt(0).toUpperCase() || '?'}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-white font-semibold">
+                              {member.user?.name || member.user?.username || 'Anonymous'}
+                              {member.userId === trip.organizer && (
+                                <Badge className="ml-2 bg-amber-500/20 text-amber-300 border-amber-400/30 text-xs px-2 py-1">
+                                  Organizer
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-white/60 text-sm">
+                              {member.status === 'confirmed' ? 'Confirmed' : 'Organizer'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-white/60 text-lg">
+                    No confirmed attendees yet. Be the first to join!
+                  </div>
                 </div>
               )}
             </CardContent>
