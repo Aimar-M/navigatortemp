@@ -526,7 +526,8 @@ export default function TripDetails() {
                     </div>
                     
                     {/* Show attend/decline buttons if this is the current user */}
-                    {user?.id === member.userId && (member.status === 'pending' || member.status === 'confirmed') && (
+                    {user?.id === member.userId && (member.status === 'pending' || member.status === 'confirmed') && 
+                     !(trip?.requiresDownPayment === false && member.rsvpStatus === 'confirmed') && (
                       <div className="flex space-x-2">
                         <Button 
                           size="sm" 
