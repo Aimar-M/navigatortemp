@@ -56,17 +56,11 @@ export default function InvitationPage() {
   const [, setLocation] = useLocation();
 
   const { data: invitationData, isLoading, error } = useQuery<InvitationData>({
-    queryKey: ["/api/invite", token],
+    queryKey: [`/api/invite/${token}`],
     enabled: !!token,
   });
 
-  // Debug logging
-  console.log('Invitation Debug:', {
-    token,
-    isLoading,
-    error: error?.message,
-    data: invitationData
-  });
+
 
   const handleSignUpRedirect = () => {
     // Store the invitation token for after authentication
