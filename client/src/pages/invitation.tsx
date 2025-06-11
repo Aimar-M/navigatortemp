@@ -61,6 +61,11 @@ export default function InvitationPage() {
     enabled: !!token,
   });
 
+  // Fetch activities preview for the trip
+  const { data: activityPreview = [] } = useQuery<any[]>({
+    queryKey: [`/api/trips/${invitationData?.trip.id}/activities/preview`],
+    enabled: !!invitationData?.trip.id,
+  });
 
 
   const handleSignUpRedirect = () => {
@@ -203,7 +208,7 @@ export default function InvitationPage() {
                         <div className="text-center sm:text-left">
                           <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
                             <Calendar className="h-4 w-4 text-blue-100" />
-                            <span className="font-semibold text-white text-sm">{activity.title}</span>
+                            <span className="font-semibold text-white text-sm">{activity.name}</span>
                           </div>
                           {activity.description && (
                             <p className="text-white/70 text-xs mb-3 leading-relaxed">{activity.description}</p>
