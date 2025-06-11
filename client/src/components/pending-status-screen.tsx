@@ -365,38 +365,52 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                   .slice(0, 3) // Show first 3 activities for preview
                   .map((activity: any) => (
                     <div key={activity.id} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-col lg:flex-row gap-4">
+                        {/* Activity Details Section */}
                         <div className="flex-1">
-                          <h4 className="text-white font-semibold text-lg mb-2">{activity.name}</h4>
-                          {activity.description && (
-                            <p className="text-white/70 text-sm mb-3 leading-relaxed">{activity.description}</p>
-                          )}
-                          <div className="flex flex-wrap gap-3 text-sm">
-                            <div className="flex items-center gap-2 text-blue-200">
-                              <Calendar className="h-4 w-4" />
-                              <span>{new Date(activity.date).toLocaleDateString('en-US', { 
-                                weekday: 'short', 
-                                month: 'short', 
-                                day: 'numeric' 
-                              })}</span>
+                          <div className="text-center sm:text-left">
+                            <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
+                              <CalendarDays className="h-4 w-4 text-blue-100" />
+                              <span className="font-semibold text-white text-sm">{activity.name}</span>
                             </div>
-                            {activity.location && (
-                              <div className="flex items-center gap-2 text-blue-200">
-                                <MapPin className="h-4 w-4" />
-                                <span>{activity.location}</span>
-                              </div>
+                            {activity.description && (
+                              <p className="text-white/70 text-xs mb-3 leading-relaxed">{activity.description}</p>
                             )}
-                            {activity.duration && (
+                            <div className="flex flex-wrap gap-3 text-xs">
                               <div className="flex items-center gap-2 text-blue-200">
-                                <Clock className="h-4 w-4" />
-                                <span>{activity.duration}</span>
+                                <Calendar className="h-3 w-3" />
+                                <span>{new Date(activity.date).toLocaleDateString('en-US', { 
+                                  weekday: 'short', 
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                })}</span>
                               </div>
-                            )}
+                              {activity.location && (
+                                <div className="flex items-center gap-2 text-blue-200">
+                                  <MapPin className="h-3 w-3" />
+                                  <span>{activity.location}</span>
+                                </div>
+                              )}
+                              {activity.duration && (
+                                <div className="flex items-center gap-2 text-blue-200">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{activity.duration}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
+
+                        {/* Activity Cost Section - Only show when cost exists */}
                         {activity.cost && parseFloat(activity.cost) > 0 && (
-                          <div className="bg-green-500/20 backdrop-blur-sm px-3 py-2 rounded-full border border-green-400/30">
-                            <span className="text-green-300 font-semibold">${parseFloat(activity.cost).toFixed(2)}</span>
+                          <div className="lg:flex-shrink-0 lg:border-l lg:border-white/20 lg:pl-4">
+                            <div className="text-center lg:text-right">
+                              <div className="flex items-center justify-center lg:justify-end gap-2 mb-2">
+                                <DollarSign className="h-4 w-4 text-blue-200" />
+                                <span className="font-semibold text-white text-sm">Activity Cost</span>
+                              </div>
+                              <div className="text-2xl font-bold text-white">${parseFloat(activity.cost).toFixed(2)}</div>
+                            </div>
                           </div>
                         )}
                       </div>
