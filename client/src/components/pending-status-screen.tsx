@@ -288,7 +288,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
       <div className="relative z-10 max-w-5xl mx-auto p-6 space-y-10">
         {/* Hero Section */}
-        <div className="text-center py-8 relative overflow-hidden rounded-3xl">
+        <div className="text-center py-8 relative overflow-hidden">
           {/* Trip Photo Background */}
           {(trip as any).cover && (
             <div className="absolute inset-0 z-0">
@@ -299,14 +299,20 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
               />
               {/* Dark overlay for better text readability */}
               <div className="absolute inset-0 bg-black/40"></div>
+              {/* Gradient fade edges for soft transition */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-transparent 
+                            before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:via-transparent before:to-black/30
+                            after:absolute after:inset-0 after:bg-gradient-to-b after:from-transparent after:via-transparent after:to-black/30"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/30"></div>
             </div>
           )}
           
           {/* Subtle Lottie Animation */}
-          <div className="absolute top-0 right-8 opacity-30 z-10">
+          <div className="absolute top-0 right-2 sm:right-4 md:right-8 opacity-30 z-10">
             <Lottie 
               animationData={travelAnimation} 
-              className="w-32 h-32"
+              className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32"
               loop={true}
               autoplay={true}
             />
@@ -314,8 +320,8 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           
           <div className="relative z-20">
             {/* Translucent backdrop behind content for readability */}
-            <div className="bg-black/20 backdrop-blur-sm rounded-2xl p-8 mx-4 border border-white/20 shadow-2xl">
-              <div className="flex items-center justify-center w-24 h-24 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-8 shadow-2xl border border-white/30 overflow-hidden">
+            <div className="bg-black/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 mx-2 sm:mx-4 border border-white/20 shadow-2xl">
+              <div className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-4 sm:mb-6 md:mb-8 shadow-2xl border border-white/30 overflow-hidden">
                 {(trip as any).cover ? (
                   <img 
                     src={(trip as any).cover} 
@@ -327,20 +333,20 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                 )}
               </div>
               
-              <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight drop-shadow-lg">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 tracking-tight drop-shadow-lg">
                 {trip.name}
               </h1>
               
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-4">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4">
                 {trip.destination && (
-                  <div className="flex items-center gap-2 text-white/90 text-xl">
-                    <MapPin className="h-6 w-6 drop-shadow-md" />
+                  <div className="flex items-center gap-2 text-white/90 text-sm sm:text-base md:text-lg lg:text-xl">
+                    <MapPin className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 drop-shadow-md" />
                     <span className="font-medium drop-shadow-md">{trip.destination}</span>
                   </div>
                 )}
                 {(trip.startDate || trip.endDate) && (
-                  <div className="flex items-center gap-2 text-white/80 text-lg">
-                    <Calendar className="h-5 w-5 drop-shadow-md" />
+                  <div className="flex items-center gap-2 text-white/80 text-xs sm:text-sm md:text-base lg:text-lg">
+                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 drop-shadow-md" />
                     <span className="drop-shadow-md">
                       {trip.startDate && new Date(trip.startDate).toLocaleDateString()}
                       {trip.startDate && trip.endDate && ' - '}
@@ -350,7 +356,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                 )}
               </div>
               
-              <p className="text-white/70 text-lg max-w-2xl mx-auto leading-relaxed drop-shadow-md">
+              <p className="text-white/70 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed drop-shadow-md">
                 Your adventure awaits.
               </p>
             </div>
