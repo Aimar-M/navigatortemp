@@ -1948,7 +1948,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get trip organizer details
       const organizer = await storage.getUser(trip.organizer);
       
-      // Return limited trip details for the invitation page
+      // Get trip activities (public information for invitation)
+      const activities = await storage.getActivitiesByTrip(invitation.tripId);
+      
+      // Get trip members (public information for invitation)
+      const members = await storage.getTripMembers(invitation.tripId);
+      
+      // Get user details for each member
+      const membersWithUser = await Promise.all(
+        members.map(async (member) => {
+          const user = await storage.getUser(member.userId);
+          return {
+            userId: member.userId,
+            status: member.status,
+            user: user ? {
+              id: user.id,
+              name: user.name || user.username,
+              username: user.username
+            } : null
+          };
+        })
+      );
+      
+      // Return comprehensive trip details for the invitation page
       res.json({
         invitation: {
           id: invitation.id,
@@ -1961,11 +1983,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           destination: trip.destination,
           startDate: trip.startDate,
           endDate: trip.endDate,
+          description: trip.description,
+          requiresDownPayment: trip.requiresDownPayment,
+          downPaymentAmount: trip.downPaymentAmount,
           organizer: organizer ? {
             id: organizer.id,
-            name: organizer.name
+            name: organizer.name || organizer.username,
+            username: organizer.username
           } : null
-        }
+        },
+        activities: activities.map(activity => ({
+          id: activity.id,
+          title: activity.name,
+          description: activity.description || '',
+          date: activity.date.toISOString().split('T')[0],
+          time: activity.date.toISOString().split('T')[1].substring(0, 5),
+          location: activity.location || ''
+        })),
+        members: membersWithUser.filter(member => member.user !== null)
       });
     } catch (error) {
       console.error('Error processing invitation:', error);

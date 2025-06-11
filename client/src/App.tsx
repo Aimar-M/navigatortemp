@@ -15,7 +15,7 @@ import Flights from "@/pages/flights";
 import TripBudget from "@/pages/trip-budget";
 import TripExpenses from "@/pages/expenses";
 import Polls from "@/pages/polls";
-import InvitationPage from "@/pages/invite";
+import InvitationPage from "@/pages/invitation";
 import Profile from "@/pages/profile";
 import UserProfile from "@/pages/user-profile";
 import BudgetDashboard from "@/pages/budget-dashboard";
