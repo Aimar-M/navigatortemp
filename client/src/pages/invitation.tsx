@@ -197,30 +197,47 @@ export default function InvitationPage() {
               <div className="space-y-4">
                 {activities.map((activity) => (
                   <div key={activity.id} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex flex-col lg:flex-row gap-4">
+                      {/* Activity Details Section */}
                       <div className="flex-1">
-                        <h4 className="text-white font-semibold text-lg">{activity.title}</h4>
-                        {activity.description && (
-                          <p className="text-white/70 text-sm mt-1">{activity.description}</p>
-                        )}
-                      </div>
-                      <div className="text-white/60 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {format(new Date(activity.date), 'MMM d')}
+                        <div className="text-center sm:text-left">
+                          <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
+                            <Calendar className="h-4 w-4 text-blue-100" />
+                            <span className="font-semibold text-white text-sm">{activity.title}</span>
+                          </div>
+                          {activity.description && (
+                            <p className="text-white/70 text-xs mb-3 leading-relaxed">{activity.description}</p>
+                          )}
+                          <div className="flex flex-wrap gap-3 text-xs">
+                            <div className="flex items-center gap-2 text-blue-200">
+                              <Calendar className="h-3 w-3" />
+                              <span>{format(new Date(activity.date), 'MMM d')}</span>
+                            </div>
+                            {activity.time && (
+                              <div className="flex items-center gap-2 text-blue-200">
+                                <Clock className="h-3 w-3" />
+                                <span>{activity.time}</span>
+                              </div>
+                            )}
+                            {activity.location && (
+                              <div className="flex items-center gap-2 text-blue-200">
+                                <MapPin className="h-3 w-3" />
+                                <span>{activity.location}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        {activity.time && (
-                          <div className="flex items-center gap-2 mt-1">
-                            <Clock className="h-4 w-4" />
-                            {activity.time}
+                      </div>
+
+                      {/* Activity Details Section - Right side with border */}
+                      <div className="lg:flex-shrink-0 lg:border-l lg:border-white/20 lg:pl-4">
+                        <div className="text-center lg:text-right">
+                          <div className="flex items-center justify-center lg:justify-end gap-2 mb-2">
+                            <Clock className="h-4 w-4 text-blue-200" />
+                            <span className="font-semibold text-white text-sm">Activity Details</span>
                           </div>
-                        )}
-                        {activity.location && (
-                          <div className="flex items-center gap-2 mt-1">
-                            <MapPin className="h-4 w-4" />
-                            {activity.location}
-                          </div>
-                        )}
+                          <div className="text-sm font-bold text-white">{format(new Date(activity.date), 'EEEE, MMM d')}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
