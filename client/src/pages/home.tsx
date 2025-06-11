@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
@@ -30,6 +30,42 @@ export default function Home() {
   const queryClient = useQueryClient();
 
   const token = user ? localStorage.getItem('auth_token') : null;
+  
+  // Handle pending invitation acceptance after authentication
+  useEffect(() => {
+    const handlePendingInvitation = async () => {
+      const pendingInvitation = localStorage.getItem('pendingInvitation');
+      if (pendingInvitation && user) {
+        try {
+          // Accept the invitation
+          const response = await fetch(`/api/invite/${pendingInvitation}/accept`, {
+            method: 'POST',
+            credentials: 'include',
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            toast({
+              title: "Welcome to the trip!",
+              description: "You've successfully joined the trip. You can now access all trip features.",
+            });
+            
+            // Refresh trips data to show the newly joined trip
+            queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
+          } else {
+            console.error('Failed to accept invitation:', response.statusText);
+          }
+        } catch (error) {
+          console.error('Error accepting invitation:', error);
+        } finally {
+          // Always clear the pending invitation
+          localStorage.removeItem('pendingInvitation');
+        }
+      }
+    };
+
+    handlePendingInvitation();
+  }, [user, toast, queryClient]);
   
   // Use React Query with proper dependencies to avoid setState during render
   const { data: trips, isLoading } = useQuery({
