@@ -376,7 +376,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                             {activity.description && (
                               <p className="text-white/70 text-xs mb-3 leading-relaxed">{activity.description}</p>
                             )}
-                            <div className="flex flex-wrap gap-3 text-xs">
+                            <div className="flex flex-wrap gap-3 text-xs justify-center sm:justify-start">
                               <div className="flex items-center gap-2 text-blue-200">
                                 <Calendar className="h-3 w-3" />
                                 <span>{new Date(activity.date).toLocaleDateString('en-US', { 
