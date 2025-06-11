@@ -124,7 +124,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Connect WebSocket after registration
       wsClient.connect(newUser.id, []);
       
-      // Always redirect to home page - let home page handle pending invitations
+      // Handle pending invitation after registration
+      const pendingInvitation = getPendingInvitation();
+      if (pendingInvitation) {
+        try {
+          // Accept the invitation automatically for new users
+          const response = await fetch(`/api/invite/${pendingInvitation}/accept`, {
+            method: 'POST',
+            credentials: 'include',
+          });
+          
+          if (response.ok) {
+            toast({
+              title: "Welcome to the trip!",
+              description: "You've successfully joined the trip.",
+            });
+          }
+        } catch (error) {
+          console.error('Error accepting invitation after registration:', error);
+        } finally {
+          // Clear the pending invitation
+          removePendingInvitation();
+        }
+      }
+      
+      // Always redirect to home page
       navigate("/");
     } catch (error) {
       toast({
