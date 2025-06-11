@@ -113,7 +113,7 @@ export default function InvitationPage() {
     );
   }
 
-  const { trip, activities, members } = invitationData;
+  const { trip, members } = invitationData;
   const confirmedMembers = members?.filter(member => 
     member.status === 'confirmed' || member.userId === trip.organizer.id
   ) || [];
@@ -190,7 +190,7 @@ export default function InvitationPage() {
         </Card>
 
         {/* Activities */}
-        {activities && activities.length > 0 && (
+        {activityPreview && activityPreview.length > 0 && (
           <Card className="mb-8 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
@@ -200,7 +200,7 @@ export default function InvitationPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {activities.map((activity) => (
+                {activityPreview.map((activity) => (
                   <div key={activity.id} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
                     <div className="flex flex-col lg:flex-row gap-4">
                       {/* Activity Details Section */}
@@ -218,10 +218,10 @@ export default function InvitationPage() {
                               <Calendar className="h-3 w-3" />
                               <span>{format(new Date(activity.date), 'MMM d')}</span>
                             </div>
-                            {activity.time && (
+                            {activity.duration && (
                               <div className="flex items-center gap-2 text-blue-200">
                                 <Clock className="h-3 w-3" />
-                                <span>{activity.time}</span>
+                                <span>{activity.duration}</span>
                               </div>
                             )}
                             {activity.location && (
