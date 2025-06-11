@@ -31,26 +31,21 @@ export default function Home() {
 
   const token = user ? localStorage.getItem('auth_token') : null;
   
-  // Handle pending invitation acceptance after authentication
+  // Handle pending invitation by ensuring it gets processed through proper RSVP workflow
   useEffect(() => {
     const handlePendingInvitation = async () => {
       const pendingInvitation = localStorage.getItem('pendingInvitation');
       if (pendingInvitation && user) {
         try {
-          // Accept the invitation
+          // Accept the invitation to add user to trip membership (but with pending RSVP status)
           const response = await fetch(`/api/invite/${pendingInvitation}/accept`, {
             method: 'POST',
             credentials: 'include',
           });
           
           if (response.ok) {
-            const data = await response.json();
-            toast({
-              title: "Welcome to the trip!",
-              description: "You've successfully joined the trip. You can now access all trip features.",
-            });
-            
-            // Refresh trips data to show the newly joined trip
+            // Refresh data to show the pending trip card
+            queryClient.invalidateQueries({ queryKey: ["/api/trips/memberships/pending"] });
             queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
           } else {
             console.error('Failed to accept invitation:', response.statusText);
@@ -58,14 +53,14 @@ export default function Home() {
         } catch (error) {
           console.error('Error accepting invitation:', error);
         } finally {
-          // Always clear the pending invitation
+          // Always clear the pending invitation from localStorage
           localStorage.removeItem('pendingInvitation');
         }
       }
     };
 
     handlePendingInvitation();
-  }, [user, toast, queryClient]);
+  }, [user, queryClient]);
   
   // Use React Query with proper dependencies to avoid setState during render
   const { data: trips, isLoading } = useQuery({
