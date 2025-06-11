@@ -465,18 +465,23 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
               {/* Payment Information with Enhanced Blue Styling */}
               {trip.requiresDownPayment && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-center gap-3 mb-2">
-                    <DollarSign className="h-6 w-6 text-blue-200" />
-                    <h3 className="text-xl font-bold text-white">Down Payment Required</h3>
-                  </div>
-                  
-                  <div className="relative p-6 bg-gradient-to-br from-blue-500/30 to-indigo-600/30 backdrop-blur-md rounded-2xl border border-blue-300/40 shadow-xl">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-2xl"></div>
-                    <div className="relative z-10 text-center">
-                      <div className="text-4xl font-bold text-white mb-1">${trip.downPaymentAmount}</div>
-                      <div className="text-blue-100 font-medium">Investment in your adventure</div>
-                    </div>
-                  </div>
+                  {/* Hide payment amount display after submission */}
+                  {(!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
+                    <>
+                      <div className="flex items-center justify-center gap-3 mb-2">
+                        <DollarSign className="h-6 w-6 text-blue-200" />
+                        <h3 className="text-xl font-bold text-white">Down Payment Required</h3>
+                      </div>
+                      
+                      <div className="relative p-6 bg-gradient-to-br from-blue-500/30 to-indigo-600/30 backdrop-blur-md rounded-2xl border border-blue-300/40 shadow-xl">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-2xl"></div>
+                        <div className="relative z-10 text-center">
+                          <div className="text-4xl font-bold text-white mb-1">${trip.downPaymentAmount}</div>
+                          <div className="text-blue-100 font-medium">Investment in your adventure</div>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   {/* Enhanced Payment Submission Form */}
                   {(!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
