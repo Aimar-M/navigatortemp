@@ -138,9 +138,9 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
     enabled: !!trip.requiresDownPayment && !!trip.organizer,
   });
 
-  // Fetch activities for itinerary preview
+  // Fetch activities for itinerary preview (no auth required - preview only)
   const { data: activities = [] } = useQuery<any[]>({
-    queryKey: [`/api/trips/${trip.id}/activities`],
+    queryKey: [`/api/trips/${trip.id}/activities/preview`],
     enabled: !!trip.id,
   });
 

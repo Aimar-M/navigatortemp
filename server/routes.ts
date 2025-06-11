@@ -1132,6 +1132,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Activity Routes
+  
+  // Preview endpoint for activities (no authentication required - limited data only)
+  router.get('/trips/:id/activities/preview', async (req: Request, res: Response) => {
+    try {
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: 'Invalid trip ID' });
+      }
+      
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: 'Trip not found' });
+      }
+      
+      const activities = await storage.getActivitiesByTrip(tripId);
+      
+      // Return limited preview data only (no sensitive information)
+      const previewActivities = activities.slice(0, 3).map(activity => ({
+        id: activity.id,
+        name: activity.name,
+        description: activity.description,
+        date: activity.date,
+        location: activity.location,
+        duration: activity.duration,
+        cost: activity.cost
+      }));
+      
+      res.json(previewActivities);
+    } catch (error) {
+      console.error('Error fetching activity preview:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   router.post('/trips/:id/activities', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
     try {
       console.log('Activity creation request received:', req.body);
