@@ -299,8 +299,16 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           </div>
           
           <div className="relative z-20">
-            <div className="flex items-center justify-center w-24 h-24 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-8 shadow-2xl border border-white/30">
-              <Plane className="h-12 w-12 text-white" />
+            <div className="flex items-center justify-center w-24 h-24 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-8 shadow-2xl border border-white/30 overflow-hidden">
+              {trip.cover ? (
+                <img 
+                  src={trip.cover} 
+                  alt={`${trip.name} cover`} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Plane className="h-12 w-12 text-white" />
+              )}
             </div>
             
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight">
