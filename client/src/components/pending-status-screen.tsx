@@ -188,7 +188,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   // Confirm attendance mutation (for trips without payment)
   const confirmAttendanceMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/trips/${trip.id}/confirm-rsvp`, 'POST');
+      return await apiRequest('PUT', `/api/trips/${trip.id}/members/${user?.id}/rsvp`, { rsvpStatus: 'confirmed' });
     },
     onSuccess: () => {
       toast({
@@ -196,6 +196,8 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         description: "Your attendance has been confirmed!",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/trips', trip.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/trips', trip.id, 'members'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/trips'] });
     },
     onError: (error: any) => {
       toast({
