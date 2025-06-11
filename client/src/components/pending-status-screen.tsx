@@ -418,22 +418,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         {/* Main RSVP Action Section with Glassmorphism */}
         <div className="mb-10">
           <Card className="bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-white/5 to-white/10 p-8 text-center border-b border-white/20">
-              <div className="flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-6 shadow-xl border border-white/30">
-                <CheckCircle className="h-10 w-10 text-white" />
-              </div>
-              <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
-                {trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') 
-                  ? 'Complete Your RSVP' 
-                  : 'RSVP Status'}
-              </h2>
-              <p className="text-white/80 text-lg max-w-lg mx-auto leading-relaxed">
-                {trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required')
-                  ? `Secure your spot with a $${trip.downPaymentAmount} down payment and join this incredible journey.`
-                  : 'Your RSVP is being reviewed by the trip organizer.'
-                }
-              </p>
-            </div>
+
 
             <CardContent className="p-6 space-y-6">
               {/* Current Status Display with Enhanced Contrast */}
