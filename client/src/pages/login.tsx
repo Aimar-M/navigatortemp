@@ -77,8 +77,8 @@ export default function Login() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Welcome Back</CardTitle>
-            <CardDescription>Log in to your account to continue</CardDescription>
+            <CardTitle className="text-center">Welcome to Navigator</CardTitle>
+            <CardDescription className="text-center">Log in to your account to continue</CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
