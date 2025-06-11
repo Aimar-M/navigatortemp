@@ -144,6 +144,12 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
     enabled: !!trip.id,
   });
 
+  // Fetch trip members for confirmed attendees list
+  const { data: members = [] } = useQuery<any[]>({
+    queryKey: [`/api/trips/${trip.id}/members`],
+    enabled: !!trip.id,
+  });
+
   // Handle initial payment submission (opens link and shows confirmation)
   const handlePaymentSubmit = (paymentMethod: string) => {
     const selectedOption = settlementOptions.find(opt => opt.method === paymentMethod);
@@ -342,79 +348,131 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           </div>
         )}
 
-        {/* Itinerary Preview Section */}
-        {activities && activities.length > 0 && (
-          <div className="mb-10">
-            <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/15">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
-                  <CalendarDays className="h-7 w-7 text-blue-200" />
-                  Planned Itinerary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {(activities as any[])
-                  .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                  .slice(0, 6) // Show first 6 activities
-                  .map((activity: any) => (
-                    <div key={activity.id} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="text-white font-semibold text-lg mb-2">{activity.name}</h4>
-                          {activity.description && (
-                            <p className="text-white/70 text-sm mb-3 leading-relaxed">{activity.description}</p>
-                          )}
-                          <div className="flex flex-wrap gap-3 text-sm">
-                            <div className="flex items-center gap-2 text-blue-200">
-                              <Calendar className="h-4 w-4" />
-                              <span>{new Date(activity.date).toLocaleDateString('en-US', { 
-                                weekday: 'short', 
-                                month: 'short', 
-                                day: 'numeric' 
-                              })}</span>
+        {/* Trip Itinerary Preview */}
+        <div className="mb-10">
+          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/15">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
+                <CalendarDays className="h-7 w-7 text-blue-200" />
+                Trip Itinerary Preview
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {activities && activities.length > 0 ? (
+                <>
+                  {(activities as any[])
+                    .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                    .slice(0, 3) // Show first 3 activities for preview
+                    .map((activity: any) => (
+                      <div key={activity.id} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="text-white font-semibold text-lg mb-2">{activity.name}</h4>
+                            {activity.description && (
+                              <p className="text-white/70 text-sm mb-3 leading-relaxed">{activity.description}</p>
+                            )}
+                            <div className="flex flex-wrap gap-3 text-sm">
+                              <div className="flex items-center gap-2 text-blue-200">
+                                <Calendar className="h-4 w-4" />
+                                <span>{new Date(activity.date).toLocaleDateString('en-US', { 
+                                  weekday: 'short', 
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                })}</span>
+                              </div>
+                              {activity.location && (
+                                <div className="flex items-center gap-2 text-blue-200">
+                                  <MapPin className="h-4 w-4" />
+                                  <span>{activity.location}</span>
+                                </div>
+                              )}
+                              {activity.duration && (
+                                <div className="flex items-center gap-2 text-blue-200">
+                                  <Clock className="h-4 w-4" />
+                                  <span>{activity.duration}</span>
+                                </div>
+                              )}
                             </div>
-                            {activity.location && (
-                              <div className="flex items-center gap-2 text-blue-200">
-                                <MapPin className="h-4 w-4" />
-                                <span>{activity.location}</span>
-                              </div>
-                            )}
-                            {activity.duration && (
-                              <div className="flex items-center gap-2 text-blue-200">
-                                <Clock className="h-4 w-4" />
-                                <span>{activity.duration}</span>
-                              </div>
-                            )}
                           </div>
+                          {activity.cost && parseFloat(activity.cost) > 0 && (
+                            <div className="bg-green-500/20 backdrop-blur-sm px-3 py-2 rounded-full border border-green-400/30">
+                              <span className="text-green-300 font-semibold">${parseFloat(activity.cost).toFixed(2)}</span>
+                            </div>
+                          )}
                         </div>
-                        {activity.cost && parseFloat(activity.cost) > 0 && (
-                          <div className="bg-green-500/20 backdrop-blur-sm px-3 py-2 rounded-full border border-green-400/30">
-                            <span className="text-green-300 font-semibold">${parseFloat(activity.cost).toFixed(2)}</span>
-                          </div>
-                        )}
+                      </div>
+                    ))}
+                  
+                  {activities.length > 3 && (
+                    <div className="text-center pt-4">
+                      <div className="text-white/60 text-sm">
+                        And {activities.length - 3} more activities planned...
                       </div>
                     </div>
-                  ))}
-                
-                {activities.length > 6 && (
-                  <div className="text-center pt-4">
-                    <div className="text-white/60 text-sm">
-                      And {activities.length - 6} more activities planned...
-                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-white/60 text-lg">
+                    No activities planned yet. The organizer will add exciting activities soon!
                   </div>
-                )}
-                
-                {activities.length === 0 && (
-                  <div className="text-center py-8">
-                    <div className="text-white/60 text-lg">
-                      No activities planned yet. The organizer will add exciting activities soon!
-                    </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Confirmed Attendees */}
+        <div className="mb-10">
+          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/15">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
+                <CheckCircle className="h-7 w-7 text-blue-200" />
+                Confirmed Attendees
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {members && members.length > 0 ? (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(members as any[])
+                    .filter((member: any) => member.status === 'confirmed' || member.userId === trip.organizer)
+                    .map((member: any) => (
+                      <div key={member.userId} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-lg border border-white/30">
+                            <span className="text-white font-bold text-sm">
+                              {member.name ? member.name.charAt(0).toUpperCase() : member.username?.charAt(0).toUpperCase() || '?'}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-white font-semibold">
+                              {member.name || member.username || 'Anonymous'}
+                              {member.userId === trip.organizer && (
+                                <Badge className="ml-2 bg-amber-500/20 text-amber-300 border-amber-400/30 text-xs px-2 py-1">
+                                  Organizer
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-white/60 text-sm">
+                              {member.status === 'confirmed' ? 'Confirmed' : 'Organizer'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-white/60 text-lg">
+                    No confirmed attendees yet. Be the first to join!
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+
 
         {/* Main RSVP Action Section with Glassmorphism */}
         <div className="mb-10">
