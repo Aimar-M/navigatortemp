@@ -284,22 +284,37 @@ export default function InvitationPage() {
           <Card className="mb-8 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
-                <DollarSign className="h-7 w-7 text-green-300" />
+                <DollarSign className="h-7 w-7 text-blue-200" />
                 Payment Required
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-center">
-                <div className="relative p-6 bg-gradient-to-br from-green-500/30 to-emerald-600/30 backdrop-blur-md rounded-2xl border border-green-300/40 shadow-xl mb-4">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-2xl"></div>
-                  <div className="relative z-10">
-                    <div className="text-4xl font-bold text-white mb-1">${trip.downPaymentAmount}</div>
-                    <div className="text-green-100 font-medium">Down payment required</div>
+            <CardContent className="p-4">
+              <div className="bg-gradient-to-r from-blue-600/30 to-indigo-600/30 backdrop-blur-md rounded-xl p-4 border border-blue-300/50 shadow-lg">
+                <div className="flex flex-col lg:flex-row gap-4">
+                  {/* Payment Info Section */}
+                  <div className="flex-1">
+                    <div className="text-center sm:text-left">
+                      <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
+                        <DollarSign className="h-4 w-4 text-blue-100" />
+                        <span className="font-semibold text-white text-sm">Down Payment Required</span>
+                      </div>
+                      <p className="text-white/70 text-xs mb-3 leading-relaxed">
+                        A down payment is required to secure your spot on this trip.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Payment Amount Section */}
+                  <div className="lg:flex-shrink-0 lg:border-l lg:border-white/20 lg:pl-4">
+                    <div className="text-center lg:text-right">
+                      <div className="flex items-center justify-center lg:justify-end gap-2 mb-2">
+                        <DollarSign className="h-4 w-4 text-blue-200" />
+                        <span className="font-semibold text-white text-sm">Amount Due</span>
+                      </div>
+                      <div className="text-2xl font-bold text-white">${trip.downPaymentAmount}</div>
+                    </div>
                   </div>
                 </div>
-                <p className="text-white/70">
-                  A down payment is required to secure your spot on this trip.
-                </p>
               </div>
             </CardContent>
           </Card>
