@@ -22,6 +22,7 @@ interface PendingStatusScreenProps {
     requiresDownPayment?: boolean;
     downPaymentAmount?: string;
     organizer?: number;
+    cover?: string;
   };
   member: {
     userId?: number;
@@ -287,9 +288,22 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
       <div className="relative z-10 max-w-5xl mx-auto p-6 space-y-10">
         {/* Hero Section */}
-        <div className="text-center py-8 relative">
+        <div className="text-center py-8 relative overflow-hidden rounded-3xl">
+          {/* Trip Photo Background */}
+          {(trip as any).cover && (
+            <div className="absolute inset-0 z-0">
+              <img 
+                src={(trip as any).cover} 
+                alt={`${trip.name} cover`} 
+                className="w-full h-full object-cover"
+              />
+              {/* Dark overlay for better text readability */}
+              <div className="absolute inset-0 bg-black/40"></div>
+            </div>
+          )}
+          
           {/* Subtle Lottie Animation */}
-          <div className="absolute top-0 right-8 opacity-30">
+          <div className="absolute top-0 right-8 opacity-30 z-10">
             <Lottie 
               animationData={travelAnimation} 
               className="w-32 h-32"
@@ -299,44 +313,47 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           </div>
           
           <div className="relative z-20">
-            <div className="flex items-center justify-center w-24 h-24 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-8 shadow-2xl border border-white/30 overflow-hidden">
-              {trip.cover ? (
-                <img 
-                  src={trip.cover} 
-                  alt={`${trip.name} cover`} 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Plane className="h-12 w-12 text-white" />
-              )}
+            {/* Translucent backdrop behind content for readability */}
+            <div className="bg-black/20 backdrop-blur-sm rounded-2xl p-8 mx-4 border border-white/20 shadow-2xl">
+              <div className="flex items-center justify-center w-24 h-24 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-8 shadow-2xl border border-white/30 overflow-hidden">
+                {(trip as any).cover ? (
+                  <img 
+                    src={(trip as any).cover} 
+                    alt={`${trip.name} cover`} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Plane className="h-12 w-12 text-white" />
+                )}
+              </div>
+              
+              <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight drop-shadow-lg">
+                {trip.name}
+              </h1>
+              
+              <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-4">
+                {trip.destination && (
+                  <div className="flex items-center gap-2 text-white/90 text-xl">
+                    <MapPin className="h-6 w-6 drop-shadow-md" />
+                    <span className="font-medium drop-shadow-md">{trip.destination}</span>
+                  </div>
+                )}
+                {(trip.startDate || trip.endDate) && (
+                  <div className="flex items-center gap-2 text-white/80 text-lg">
+                    <Calendar className="h-5 w-5 drop-shadow-md" />
+                    <span className="drop-shadow-md">
+                      {trip.startDate && new Date(trip.startDate).toLocaleDateString()}
+                      {trip.startDate && trip.endDate && ' - '}
+                      {trip.endDate && new Date(trip.endDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              <p className="text-white/70 text-lg max-w-2xl mx-auto leading-relaxed drop-shadow-md">
+                Your adventure awaits.
+              </p>
             </div>
-            
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight">
-              {trip.name}
-            </h1>
-            
-            <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-4">
-              {trip.destination && (
-                <div className="flex items-center gap-2 text-white/90 text-xl">
-                  <MapPin className="h-6 w-6" />
-                  <span className="font-medium">{trip.destination}</span>
-                </div>
-              )}
-              {(trip.startDate || trip.endDate) && (
-                <div className="flex items-center gap-2 text-white/80 text-lg">
-                  <Calendar className="h-5 w-5" />
-                  <span>
-                    {trip.startDate && new Date(trip.startDate).toLocaleDateString()}
-                    {trip.startDate && trip.endDate && ' - '}
-                    {trip.endDate && new Date(trip.endDate).toLocaleDateString()}
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            <p className="text-white/70 text-lg max-w-2xl mx-auto leading-relaxed">
-              Your adventure awaits.
-            </p>
           </div>
         </div>
 
