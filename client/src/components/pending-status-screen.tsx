@@ -420,7 +420,222 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           <Card className="bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl overflow-hidden">
 
 
-            
+            <CardContent className="p-6 space-y-6">
+              {/* Current Status Display with Enhanced Contrast */}
+              <div className="bg-gradient-to-r from-blue-600/30 to-indigo-600/30 backdrop-blur-md rounded-2xl p-6 border border-blue-300/50 shadow-lg">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-2 mb-3">
+                      <Timer className="h-6 w-6 text-blue-100 drop-shadow-sm" />
+                      <span className="font-bold text-white text-lg drop-shadow-sm">RSVP Status</span>
+                    </div>
+                    <Badge className={`${getStatusColor()} text-sm px-4 py-2 rounded-full font-semibold shadow-md`}>
+                      {getRSVPStatusMessage()}
+                    </Badge>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-2 mb-3">
+                      <CreditCard className="h-6 w-6 text-green-200 drop-shadow-sm" />
+                      <span className="font-bold text-white text-lg drop-shadow-sm">Payment Status</span>
+                    </div>
+                    <div className="text-sm font-bold text-white bg-white/30 backdrop-blur-sm px-4 py-2 rounded-full border border-white/50 shadow-md">
+                      {getPaymentStatusMessage()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Information with Enhanced Blue Styling */}
+              {trip.requiresDownPayment && (
+                <div className="space-y-4">
+                  {/* Hide payment amount display after submission */}
+                  {(!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
+                    <>
+                      <div className="flex items-center justify-center gap-3 mb-2">
+                        <DollarSign className="h-6 w-6 text-blue-200" />
+                        <h3 className="text-xl font-bold text-white">Down Payment Required</h3>
+                      </div>
+                      
+                      <div className="relative p-6 bg-gradient-to-br from-blue-500/30 to-indigo-600/30 backdrop-blur-md rounded-2xl border border-blue-300/40 shadow-xl">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-2xl"></div>
+                        <div className="relative z-10 text-center">
+                          <div className="text-4xl font-bold text-white mb-1">${trip.downPaymentAmount}</div>
+                          <div className="text-blue-100 font-medium">Investment in your adventure</div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Enhanced Payment Submission Form */}
+                  {(!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
+                    <div className="space-y-4">
+                      <div className="h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+                      
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 justify-center">
+                          <CreditCard className="h-5 w-5 text-blue-200" />
+                          <h4 className="text-lg font-bold text-white">Choose Payment Method</h4>
+                        </div>
+                        
+                        {optionsLoading && (
+                          <div className="flex flex-col items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-300 border-t-white mb-3"></div>
+                            <span className="text-white/80 font-medium">Loading payment options...</span>
+                          </div>
+                        )}
+                        
+                        {optionsError && (
+                          <div className="bg-red-500/20 backdrop-blur-sm border border-red-300/30 p-4 rounded-2xl">
+                            <div className="flex items-center gap-3 mb-2">
+                              <AlertCircle className="h-5 w-5 text-red-300" />
+                              <span className="font-bold text-red-100">Failed to load payment options</span>
+                            </div>
+                            <p className="text-red-200 text-sm">Please try again or contact the organizer for assistance.</p>
+                          </div>
+                        )}
+                        
+                        {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).length === 0 && (
+                          <div className="bg-yellow-500/20 backdrop-blur-sm border border-yellow-300/30 p-4 rounded-2xl">
+                            <div className="flex items-center gap-3 mb-2">
+                              <AlertCircle className="h-5 w-5 text-yellow-300" />
+                              <span className="font-bold text-yellow-100">No payment methods available</span>
+                            </div>
+                            <p className="text-yellow-200 text-sm">Please contact the organizer to set up payment preferences.</p>
+                          </div>
+                        )}
+                        
+                        {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).map((option: SettlementOption, index: number) => (
+                          <div
+                            key={`${option.method}-${index}`}
+                            className={`border-2 rounded-2xl p-4 cursor-pointer transition-all duration-500 hover:shadow-xl hover:scale-105 ${
+                              selectedMethod === option.method
+                                ? 'border-blue-400 bg-blue-500/20 backdrop-blur-sm shadow-xl'
+                                : 'border-white/30 bg-white/10 backdrop-blur-sm hover:border-blue-400/50'
+                            }`}
+                            onClick={() => setSelectedMethod(option.method)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className={`w-8 h-8 rounded-full border-3 flex items-center justify-center transition-all duration-300 ${
+                                  selectedMethod === option.method
+                                    ? 'border-blue-400 bg-blue-500 shadow-lg'
+                                    : 'border-white/50'
+                                }`}>
+                                  {selectedMethod === option.method && (
+                                    <Check className="h-5 w-5 text-white font-bold" />
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-white text-lg">{option.displayName}</div>
+                                  {option.method === 'cash' && (
+                                    <div className="text-blue-200 text-sm">
+                                      Settle in person with organizer
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {option.method !== 'cash' && (
+                                <ArrowRight className="h-6 w-6 text-blue-200" />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {selectedMethod && !showPaymentConfirmation && (
+                          <Button 
+                            onClick={() => handlePaymentSubmit(selectedMethod)}
+                            className="w-full py-6 text-lg font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-500 shadow-2xl rounded-2xl border border-blue-400/30"
+                          >
+                            <div className="flex items-center gap-3">
+                              <CreditCard className="h-5 w-5" />
+                              Submit Payment via {formatPaymentMethod(selectedMethod)}
+                            </div>
+                          </Button>
+                        )}
+                        
+                        {/* Payment Confirmation Dialog */}
+                        {showPaymentConfirmation && pendingPaymentMethod && (
+                          <div className="bg-blue-500/20 backdrop-blur-sm border border-blue-300/30 p-6 rounded-2xl">
+                            <div className="text-center space-y-4">
+                              <div className="flex items-center justify-center w-16 h-16 bg-blue-500/30 backdrop-blur-sm rounded-full mx-auto mb-4 border border-blue-300/40">
+                                <CheckCircle className="h-8 w-8 text-blue-200" />
+                              </div>
+                              <h3 className="text-2xl font-bold text-white mb-2">
+                                Complete Your Payment
+                              </h3>
+                              <p className="text-blue-200 text-lg mb-6">
+                                {pendingPaymentMethod === 'cash' 
+                                  ? 'Please arrange to pay the organizer in person, then mark as paid below.'
+                                  : `Please complete your payment on the ${formatPaymentMethod(pendingPaymentMethod)} page that opened, then confirm below.`
+                                }
+                              </p>
+                              
+                              <div className="flex gap-4">
+                                <Button 
+                                  onClick={() => {
+                                    setShowPaymentConfirmation(false);
+                                    setPendingPaymentMethod(null);
+                                  }}
+                                  variant="outline"
+                                  className="flex-1 py-4 text-lg bg-white/10 border-white/30 text-white hover:bg-white/20"
+                                >
+                                  Cancel
+                                </Button>
+                                <Button 
+                                  onClick={() => {
+                                    submitPaymentMutation.mutate({ paymentMethod: pendingPaymentMethod });
+                                  }}
+                                  disabled={submitPaymentMutation.isPending}
+                                  className="flex-1 py-4 text-lg bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                                >
+                                  {submitPaymentMutation.isPending ? (
+                                    <div className="flex items-center gap-2">
+                                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                                      Submitting...
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <Check className="h-5 w-5" />
+                                      Mark as Paid
+                                    </div>
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+
+                </div>
+              )}
+
+              {/* Enhanced RSVP Confirmation for trips without payment */}
+              {!trip.requiresDownPayment && (
+                <div className="text-center">
+                  <Button 
+                    onClick={() => confirmAttendanceMutation.mutate()}
+                    disabled={confirmAttendanceMutation.isPending}
+                    className="w-full py-6 text-lg font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-500 shadow-2xl rounded-2xl border border-blue-400/30"
+                  >
+                    {confirmAttendanceMutation.isPending ? (
+                      <div className="flex items-center gap-3">
+                        <div className="animate-spin rounded-full h-5 w-5 border-3 border-white border-t-transparent"></div>
+                        Confirming Attendance...
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="h-5 w-5" />
+                        Confirm Attendance
+                      </div>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
           </Card>
         </div>
 
