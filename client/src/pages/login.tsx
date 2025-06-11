@@ -58,11 +58,11 @@ export default function Login() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-2">
+          <div className="flex flex-col items-center justify-center mb-2">
             <img 
               src={navigatorLogo} 
               alt="Navigator Logo" 
-              className="h-12 w-12 mr-3"
+              className="h-72 w-72 mb-4"
             />
             <img 
               src={navigatorText} 
@@ -70,7 +70,6 @@ export default function Login() {
               className="h-10"
             />
           </div>
-          <p className="text-gray-600">Plan amazing trips with friends</p>
         </div>
 
         <Card>
