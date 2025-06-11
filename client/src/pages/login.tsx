@@ -61,7 +61,7 @@ export default function Login() {
       <img 
         src={companyLogo} 
         alt="Navigator Company Logo" 
-        className="absolute top-4 left-4 h-24"
+        className="absolute top-4 left-4 h-12 md:h-24"
       />
       <div className="w-full max-w-md">
         <div className="text-center mb-2">
@@ -69,7 +69,7 @@ export default function Login() {
             <img 
               src={navigatorLogo} 
               alt="Navigator Logo" 
-              className="h-56 w-56 mb-2 animate-bounce"
+              className="h-32 w-32 md:h-56 md:w-56 mb-2 md:animate-bounce"
               style={{ animationDuration: '3s' }}
             />
           </div>
