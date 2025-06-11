@@ -288,26 +288,34 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
       <div className="relative z-10 max-w-5xl mx-auto p-6 space-y-10">
         {/* Hero Section */}
-        <div className="text-center py-8 relative overflow-hidden rounded-3xl">
+        <div className="text-center py-8 relative overflow-hidden">
           {/* Trip Photo Background */}
           {(trip as any).cover && (
-            <div className="absolute inset-0 z-0 rounded-3xl overflow-hidden">
+            <div className="absolute inset-0 z-0">
               <img 
                 src={(trip as any).cover} 
                 alt={`${trip.name} cover`} 
-                className="w-full h-full object-cover blur-[1px]"
+                className="w-full h-full object-cover"
               />
               {/* Dark overlay for better text readability */}
               <div className="absolute inset-0 bg-black/40"></div>
-              {/* Enhanced gradient fade edges with blur for soft transition */}
-              <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/40"></div>
-              <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30 backdrop-blur-[1px]"></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/40 backdrop-blur-[1px]"></div>
-              {/* Edge blur effects */}
-              <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-black/20 to-transparent blur-sm"></div>
-              <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/20 to-transparent blur-sm"></div>
-              <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-black/20 to-transparent blur-sm"></div>
-              <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-black/20 to-transparent blur-sm"></div>
+              {/* Soft edge fade masks */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent via-transparent to-black/60" 
+                   style={{
+                     mask: 'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)',
+                     WebkitMask: 'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)'
+                   }}></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent via-transparent to-black/60"
+                   style={{
+                     mask: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)',
+                     WebkitMask: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
+                   }}></div>
+              {/* Corner fade effects */}
+              <div className="absolute inset-0"
+                   style={{
+                     background: 'radial-gradient(ellipse at center, transparent 40%, black 100%)',
+                     opacity: 0.3
+                   }}></div>
             </div>
           )}
           
