@@ -7,10 +7,70 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { 
   MapPin, Calendar, Users, DollarSign, CheckCircle, 
-  AlertCircle, Clock, Bell, Lock, Heart, User, UserPlus 
+  AlertCircle, Clock, Bell, Lock, Heart, User, UserPlus, Plane 
 } from "lucide-react";
 import { format } from "date-fns";
 import navigatorLogo from "@/assets/navigator-logo.svg";
+import Lottie from "lottie-react";
+
+// Simple travel-themed Lottie animation data
+const travelAnimation: any = {
+  "v": "5.5.7",
+  "fr": 60,
+  "ip": 0,
+  "op": 180,
+  "w": 200,
+  "h": 200,
+  "nm": "Travel Adventure",
+  "ddd": 0,
+  "assets": [],
+  "layers": [
+    {
+      "ddd": 0,
+      "ind": 1,
+      "ty": 4,
+      "nm": "Plane",
+      "sr": 1,
+      "ks": {
+        "o": {"a": 0, "k": 100},
+        "r": {"a": 0, "k": 0},
+        "p": {
+          "a": 1,
+          "k": [
+            {"i": {"x": 0.833, "y": 0.833}, "o": {"x": 0.167, "y": 0.167}, "t": 0, "s": [100, 100, 0]},
+            {"i": {"x": 0.833, "y": 0.833}, "o": {"x": 0.167, "y": 0.167}, "t": 90, "s": [120, 80, 0]},
+            {"t": 180, "s": [100, 100, 0]}
+          ]
+        },
+        "a": {"a": 0, "k": [0, 0, 0]},
+        "s": {"a": 0, "k": [100, 100, 100]}
+      },
+      "ao": 0,
+      "shapes": [
+        {
+          "ty": "gr",
+          "it": [
+            {
+              "ty": "rc",
+              "d": 1,
+              "s": {"a": 0, "k": [20, 4]},
+              "p": {"a": 0, "k": [0, 0]},
+              "r": {"a": 0, "k": 2}
+            },
+            {
+              "ty": "fl",
+              "c": {"a": 0, "k": [1, 1, 1, 1]},
+              "o": {"a": 0, "k": 100}
+            }
+          ]
+        }
+      ],
+      "ip": 0,
+      "op": 180,
+      "st": 0
+    }
+  ]
+};
 
 interface InvitationData {
   invitation: {
@@ -134,37 +194,84 @@ export default function InvitationPage() {
           <h1 className="text-2xl font-bold text-white">Navigator</h1>
         </div>
         
-        {/* Trip Header */}
-        <Card className="mb-8 bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-r from-white/5 to-white/10 p-8 text-center border-b border-white/20">
-            <div className="flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-6 shadow-xl border border-white/30">
-              <MapPin className="h-10 w-10 text-white" />
+        {/* Hero Section */}
+        <div className="text-center py-8 relative overflow-hidden mb-8">
+          {/* Trip Photo Background */}
+          {(trip as any).cover && (
+            <div className="absolute inset-0 z-0">
+              <img 
+                src={(trip as any).cover} 
+                alt={`${trip.name} cover`} 
+                className="w-full h-full object-cover"
+              />
+              {/* Dark overlay for better text readability */}
+              <div className="absolute inset-0 bg-black/40"></div>
+              {/* Soft edge fade masks */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent via-transparent to-black/60" 
+                   style={{
+                     mask: 'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)',
+                     WebkitMask: 'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)'
+                   }}></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent via-transparent to-black/60"
+                   style={{
+                     mask: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)',
+                     WebkitMask: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
+                   }}></div>
+              {/* Corner fade effects */}
+              <div className="absolute inset-0"
+                   style={{
+                     background: 'radial-gradient(ellipse at center, transparent 40%, black 100%)',
+                     opacity: 0.3
+                   }}></div>
             </div>
-            <h1 className="text-4xl font-bold text-white mb-4 tracking-tight">{trip.name}</h1>
-            <p className="text-white/80 text-xl mb-4">{trip.destination}</p>
-            
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-white/90">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                <span className="font-medium">
-                  {format(new Date(trip.startDate), 'MMM d')} - {format(new Date(trip.endDate), 'MMM d, yyyy')}
-                </span>
+          )}
+          
+          {/* Subtle Lottie Animation */}
+          <div className="absolute top-0 right-2 sm:right-4 md:right-8 opacity-30 z-10">
+            <Lottie 
+              animationData={travelAnimation} 
+              className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32"
+              loop={true}
+              autoplay={true}
+            />
+          </div>
+          
+          <div className="relative z-20">
+            {/* Translucent backdrop behind content for readability */}
+            <div className="bg-black/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 mx-2 sm:mx-4 border border-white/20 shadow-2xl">
+              <div className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-4 sm:mb-6 md:mb-8 shadow-2xl border border-white/30 overflow-hidden animate-bounce" style={{animationDuration: '3s', animationIterationCount: 'infinite'}}>
+                <Plane className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-white" />
               </div>
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                <span className="font-medium">{confirmedMembers.length} confirmed</span>
+              
+              <h1 className="text-4xl font-bold text-white mb-4 tracking-tight drop-shadow-lg">
+                {trip.name}
+              </h1>
+              
+              <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-4">
+                <div className="flex items-center gap-2 text-white/90 text-xl">
+                  <MapPin className="h-6 w-6 drop-shadow-md" />
+                  <span className="font-medium drop-shadow-md">{trip.destination}</span>
+                </div>
+                <div className="flex items-center gap-2 text-white/80 text-lg">
+                  <Calendar className="h-5 w-5 drop-shadow-md" />
+                  <span className="drop-shadow-md">
+                    {format(new Date(trip.startDate), 'MMM d')} - {format(new Date(trip.endDate), 'MMM d, yyyy')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-white/80 text-lg">
+                  <Users className="h-5 w-5 drop-shadow-md" />
+                  <span className="drop-shadow-md">{confirmedMembers.length} confirmed</span>
+                </div>
               </div>
+              
+              {trip.description && (
+                <p className="text-white/70 text-lg max-w-2xl mx-auto leading-relaxed drop-shadow-md">
+                  {trip.description}
+                </p>
+              )}
             </div>
           </div>
-
-          {trip.description && (
-            <CardContent className="p-6">
-              <p className="text-white/80 text-lg leading-relaxed text-center">
-                {trip.description}
-              </p>
-            </CardContent>
-          )}
-        </Card>
+        </div>
 
         {/* Trip Organizer */}
         <Card className="mb-8 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
