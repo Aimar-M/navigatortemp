@@ -10,6 +10,7 @@ import {
   AlertCircle, Clock, Bell, Lock, Heart, User, UserPlus 
 } from "lucide-react";
 import { format } from "date-fns";
+import navigatorLogo from "@/assets/navigator-logo.svg";
 
 interface InvitationData {
   invitation: {
@@ -118,6 +119,16 @@ export default function InvitationPage() {
       <div className="absolute inset-0 bg-gradient-to-br from-white/[0.024] to-white/[0.072] opacity-50"></div>
       
       <div className="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
+        {/* Navigator Branding */}
+        <div className="flex items-center mb-8">
+          <img 
+            src={navigatorLogo} 
+            alt="Navigator Logo" 
+            className="h-8 w-8 mr-2"
+          />
+          <h1 className="text-2xl font-bold text-white">Navigator</h1>
+        </div>
+        
         {/* Trip Header */}
         <Card className="mb-8 bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl overflow-hidden">
           <div className="bg-gradient-to-r from-white/5 to-white/10 p-8 text-center border-b border-white/20">
