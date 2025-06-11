@@ -624,19 +624,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                     </div>
                   )}
 
-                  {/* Enhanced Payment Status Messages */}
-                  {(member.paymentStatus === 'submitted' || member.paymentStatus === 'pending') && (
-                    <div className="bg-amber-500/20 backdrop-blur-sm border border-amber-300/30 p-6 rounded-2xl">
-                      <div className="flex items-center gap-3 mb-3">
-                        <Clock className="h-6 w-6 text-amber-300" />
-                        <span className="font-bold text-amber-100 text-lg">Payment Submitted</span>
-                      </div>
-                      <p className="text-amber-200 leading-relaxed">
-                        Your payment has been submitted and is awaiting organizer confirmation.
-                        <br /><strong>Next Step:</strong> The organizer needs to confirm your payment before you can access trip features.
-                      </p>
-                    </div>
-                  )}
+
                 </div>
               )}
 
