@@ -320,7 +320,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
             </div>
             
             <p className="text-white/70 text-lg max-w-2xl mx-auto leading-relaxed">
-              Your adventure awaits. Complete your RSVP to unlock the full travel experience.
+              Your adventure awaits.
             </p>
           </div>
         </div>
