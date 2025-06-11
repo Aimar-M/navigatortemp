@@ -321,16 +321,8 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           <div className="relative z-20">
             {/* Translucent backdrop behind content for readability */}
             <div className="bg-black/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 mx-2 sm:mx-4 border border-white/20 shadow-2xl">
-              <div className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-4 sm:mb-6 md:mb-8 shadow-2xl border border-white/30 overflow-hidden">
-                {(trip as any).cover ? (
-                  <img 
-                    src={(trip as any).cover} 
-                    alt={`${trip.name} cover`} 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <Plane className="h-12 w-12 text-white" />
-                )}
+              <div className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-4 sm:mb-6 md:mb-8 shadow-2xl border border-white/30 overflow-hidden animate-bounce" style={{animationDuration: '3s', animationIterationCount: 'infinite'}}>
+                <Plane className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-white" />
               </div>
               
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 tracking-tight drop-shadow-lg">
