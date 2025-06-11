@@ -5,9 +5,10 @@ import {
   Message, InsertMessage, SurveyQuestion, InsertSurveyQuestion,
   SurveyResponse, InsertSurveyResponse, Expense, InsertExpense,
   ExpenseSplit, InsertExpenseSplit, Settlement, InsertSettlement,
+  InvitationLink, InsertInvitationLink,
   users, trips, tripMembers, activities, activityRsvp, 
   messages, surveyQuestions, surveyResponses, expenses, expenseSplits, settlements,
-  polls, pollVotes
+  polls, pollVotes, invitationLinks
 } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 export class DatabaseStorage {
@@ -749,16 +750,34 @@ export class DatabaseStorage {
       .orderBy(desc(polls.createdAt));
   }
 
-  async createInvitationLink(data: any): Promise<any> {
-    return { id: 1, ...data };
+  async createInvitationLink(invitation: InsertInvitationLink): Promise<InvitationLink> {
+    const [link] = await db
+      .insert(invitationLinks)
+      .values(invitation)
+      .returning();
+    
+    return link;
   }
 
-  async getInvitationLinksByTrip(tripId: number): Promise<any[]> {
-    return [];
+  async getInvitationLinksByTrip(tripId: number): Promise<InvitationLink[]> {
+    return await db
+      .select()
+      .from(invitationLinks)
+      .where(
+        and(
+          eq(invitationLinks.tripId, tripId),
+          eq(invitationLinks.isActive, true)
+        )
+      );
   }
 
-  async getInvitationLink(token: string): Promise<any> {
-    return null;
+  async getInvitationLink(token: string): Promise<InvitationLink | undefined> {
+    const [link] = await db
+      .select()
+      .from(invitationLinks)
+      .where(eq(invitationLinks.token, token));
+    
+    return link || undefined;
   }
 
 
