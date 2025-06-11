@@ -433,12 +433,12 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-lg border border-white/30">
                             <span className="text-white font-bold text-sm">
-                              {member.name ? member.name.charAt(0).toUpperCase() : member.username?.charAt(0).toUpperCase() || '?'}
+                              {member.user?.name ? member.user.name.charAt(0).toUpperCase() : member.user?.username?.charAt(0).toUpperCase() || '?'}
                             </span>
                           </div>
                           <div className="flex-1">
                             <div className="text-white font-semibold">
-                              {member.name || member.username || 'Anonymous'}
+                              {member.user?.name || member.user?.username || 'Anonymous'}
                               {member.userId === trip.organizer && (
                                 <Badge className="ml-2 bg-amber-500/20 text-amber-300 border-amber-400/30 text-xs px-2 py-1">
                                   Organizer
