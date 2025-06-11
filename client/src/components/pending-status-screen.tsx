@@ -129,6 +129,8 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
+  const [pendingPaymentMethod, setPendingPaymentMethod] = useState<string | null>(null);
 
   // Fetch payment options
   const { data: settlementOptions = [], isLoading: optionsLoading, error: optionsError } = useQuery<SettlementOption[]>({
@@ -142,17 +144,23 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
     enabled: !!trip.id,
   });
 
-  // Submit payment mutation
+  // Handle initial payment submission (opens link and shows confirmation)
+  const handlePaymentSubmit = (paymentMethod: string) => {
+    const selectedOption = settlementOptions.find(opt => opt.method === paymentMethod);
+    
+    // For Venmo and PayPal, open the payment link first
+    if (selectedOption?.paymentLink && (paymentMethod === 'venmo' || paymentMethod === 'paypal')) {
+      window.open(selectedOption.paymentLink, '_blank');
+    }
+    
+    // Show confirmation dialog and store the payment method
+    setPendingPaymentMethod(paymentMethod);
+    setShowPaymentConfirmation(true);
+  };
+
+  // Submit payment mutation (only called after user confirms)
   const submitPaymentMutation = useMutation({
     mutationFn: async (data: { paymentMethod: string }) => {
-      const selectedOption = settlementOptions.find(opt => opt.method === data.paymentMethod);
-      
-      // For Venmo and PayPal, open the payment link first
-      if (selectedOption?.paymentLink && (data.paymentMethod === 'venmo' || data.paymentMethod === 'paypal')) {
-        window.open(selectedOption.paymentLink, '_blank');
-      }
-      
-      // Then submit the payment method to the backend
       return await apiRequest('POST', `/api/trips/${trip.id}/members/${user?.id}/payment`, data);
     },
     onSuccess: () => {
@@ -160,6 +168,9 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         title: "Payment Submitted",
         description: "Your payment has been submitted for organizer review.",
       });
+      setShowPaymentConfirmation(false);
+      setPendingPaymentMethod(null);
+      setSelectedMethod(null);
       queryClient.invalidateQueries({ queryKey: ['/api/trips', trip.id] });
       queryClient.invalidateQueries({ queryKey: ['/api/trips', trip.id, 'members'] });
     },
@@ -169,6 +180,8 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         description: error.message || "Failed to submit payment. Please try again.",
         variant: "destructive",
       });
+      setShowPaymentConfirmation(false);
+      setPendingPaymentMethod(null);
     },
   });
 
@@ -540,26 +553,68 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                           </div>
                         ))}
                         
-                        {selectedMethod && (
+                        {selectedMethod && !showPaymentConfirmation && (
                           <Button 
-                            onClick={() => {
-                              submitPaymentMutation.mutate({ paymentMethod: selectedMethod });
-                            }}
-                            disabled={submitPaymentMutation.isPending}
+                            onClick={() => handlePaymentSubmit(selectedMethod)}
                             className="w-full py-8 text-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-500 shadow-2xl rounded-2xl border border-blue-400/30"
                           >
-                            {submitPaymentMutation.isPending ? (
-                              <div className="flex items-center gap-3">
-                                <div className="animate-spin rounded-full h-6 w-6 border-3 border-white border-t-transparent"></div>
-                                Submitting Payment...
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-3">
-                                <CreditCard className="h-6 w-6" />
-                                Submit Payment via {formatPaymentMethod(selectedMethod)}
-                              </div>
-                            )}
+                            <div className="flex items-center gap-3">
+                              <CreditCard className="h-6 w-6" />
+                              Submit Payment via {formatPaymentMethod(selectedMethod)}
+                            </div>
                           </Button>
+                        )}
+                        
+                        {/* Payment Confirmation Dialog */}
+                        {showPaymentConfirmation && pendingPaymentMethod && (
+                          <div className="bg-blue-500/20 backdrop-blur-sm border border-blue-300/30 p-6 rounded-2xl">
+                            <div className="text-center space-y-4">
+                              <div className="flex items-center justify-center w-16 h-16 bg-blue-500/30 backdrop-blur-sm rounded-full mx-auto mb-4 border border-blue-300/40">
+                                <CheckCircle className="h-8 w-8 text-blue-200" />
+                              </div>
+                              <h3 className="text-2xl font-bold text-white mb-2">
+                                Complete Your Payment
+                              </h3>
+                              <p className="text-blue-200 text-lg mb-6">
+                                {pendingPaymentMethod === 'cash' 
+                                  ? 'Please arrange to pay the organizer in person, then mark as paid below.'
+                                  : `Please complete your payment on the ${formatPaymentMethod(pendingPaymentMethod)} page that opened, then confirm below.`
+                                }
+                              </p>
+                              
+                              <div className="flex gap-4">
+                                <Button 
+                                  onClick={() => {
+                                    setShowPaymentConfirmation(false);
+                                    setPendingPaymentMethod(null);
+                                  }}
+                                  variant="outline"
+                                  className="flex-1 py-4 text-lg bg-white/10 border-white/30 text-white hover:bg-white/20"
+                                >
+                                  Cancel
+                                </Button>
+                                <Button 
+                                  onClick={() => {
+                                    submitPaymentMutation.mutate({ paymentMethod: pendingPaymentMethod });
+                                  }}
+                                  disabled={submitPaymentMutation.isPending}
+                                  className="flex-1 py-4 text-lg bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                                >
+                                  {submitPaymentMutation.isPending ? (
+                                    <div className="flex items-center gap-2">
+                                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                                      Submitting...
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <Check className="h-5 w-5" />
+                                      Mark as Paid
+                                    </div>
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
