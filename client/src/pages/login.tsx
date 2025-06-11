@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import navigatorLogo from "@assets/ab_Navigator2-11_1749673314519.png";
-import navigatorText from "@assets/ab_Navigator2-09_1749673314520.png";
+import navigatorText from "@assets/ab_Navigator2-09_1749673915685.png";
 
 export default function Login() {
   const [username, setUsername] = useState("");
