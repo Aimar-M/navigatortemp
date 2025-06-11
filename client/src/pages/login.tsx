@@ -57,19 +57,13 @@ export default function Login() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-2">
           <div className="flex flex-col items-center justify-center mb-2">
             <img 
               src={navigatorLogo} 
               alt="Navigator Logo" 
               className="h-56 w-56 mb-2 animate-bounce"
               style={{ animationDuration: '3s' }}
-            />
-            <img 
-              src={navigatorText} 
-              alt="Navigator" 
-              className="h-30"
-              style={{ height: '7.5rem' }}
             />
           </div>
         </div>
