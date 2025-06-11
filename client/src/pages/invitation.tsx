@@ -87,6 +87,7 @@ interface InvitationData {
     description: string;
     requiresDownPayment: boolean;
     downPaymentAmount: number;
+    cover?: string;
     organizer: {
       id: number;
       name: string;
@@ -197,10 +198,10 @@ export default function InvitationPage() {
         {/* Hero Section */}
         <div className="text-center py-8 relative overflow-hidden mb-8">
           {/* Trip Photo Background */}
-          {(trip as any).cover && (
+          {trip.cover && (
             <div className="absolute inset-0 z-0">
               <img 
-                src={(trip as any).cover} 
+                src={trip.cover} 
                 alt={`${trip.name} cover`} 
                 className="w-full h-full object-cover"
               />
