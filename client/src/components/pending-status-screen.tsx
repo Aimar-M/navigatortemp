@@ -145,7 +145,15 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   // Submit payment mutation
   const submitPaymentMutation = useMutation({
     mutationFn: async (data: { paymentMethod: string }) => {
-      return await apiRequest(`/api/trips/${trip.id}/members/${user?.id}/payment`, 'POST', data);
+      const selectedOption = settlementOptions.find(opt => opt.method === data.paymentMethod);
+      
+      // For Venmo and PayPal, open the payment link first
+      if (selectedOption?.paymentLink && (data.paymentMethod === 'venmo' || data.paymentMethod === 'paypal')) {
+        window.open(selectedOption.paymentLink, '_blank');
+      }
+      
+      // Then submit the payment method to the backend
+      return await apiRequest('POST', `/api/trips/${trip.id}/members/${user?.id}/payment`, data);
     },
     onSuccess: () => {
       toast({
@@ -153,6 +161,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         description: "Your payment has been submitted for organizer review.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/trips', trip.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/trips', trip.id, 'members'] });
     },
     onError: (error: any) => {
       toast({
