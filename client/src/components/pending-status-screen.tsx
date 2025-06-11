@@ -436,26 +436,26 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
               </p>
             </div>
 
-            <CardContent className="p-8 space-y-8">
+            <CardContent className="p-6 space-y-6">
               {/* Current Status Display with Blue Theme */}
-              <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 backdrop-blur-sm rounded-2xl p-8 border border-blue-300/30">
-                <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 backdrop-blur-sm rounded-2xl p-6 border border-blue-300/30">
+                <div className="grid md:grid-cols-2 gap-4">
                   <div className="text-center">
-                    <div className="flex items-center justify-center gap-3 mb-4">
-                      <Timer className="h-6 w-6 text-blue-200" />
-                      <span className="font-bold text-white text-lg">RSVP Status</span>
+                    <div className="flex items-center justify-center gap-2 mb-3">
+                      <Timer className="h-5 w-5 text-blue-200" />
+                      <span className="font-bold text-white">RSVP Status</span>
                     </div>
-                    <Badge className={`${getStatusColor()} text-base px-6 py-3 rounded-full font-semibold`}>
+                    <Badge className={`${getStatusColor()} text-sm px-4 py-2 rounded-full font-semibold`}>
                       {getRSVPStatusMessage()}
                     </Badge>
                   </div>
                   
                   <div className="text-center">
-                    <div className="flex items-center justify-center gap-3 mb-4">
-                      <CreditCard className="h-6 w-6 text-green-300" />
-                      <span className="font-bold text-white text-lg">Payment Status</span>
+                    <div className="flex items-center justify-center gap-2 mb-3">
+                      <CreditCard className="h-5 w-5 text-green-300" />
+                      <span className="font-bold text-white">Payment Status</span>
                     </div>
-                    <div className="text-base font-bold text-white bg-white/20 backdrop-blur-sm px-6 py-3 rounded-full border border-white/30">
+                    <div className="text-sm font-bold text-white bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30">
                       {getPaymentStatusMessage()}
                     </div>
                   </div>
@@ -464,66 +464,62 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
               {/* Payment Information with Enhanced Blue Styling */}
               {trip.requiresDownPayment && (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="flex items-center gap-3 justify-center mb-4">
-                      <DollarSign className="h-7 w-7 text-blue-200" />
-                      <h3 className="text-2xl font-bold text-white">Down Payment Required</h3>
-                    </div>
-                    
-                    <div className="relative p-8 bg-gradient-to-br from-blue-500/30 to-indigo-600/30 backdrop-blur-md rounded-3xl border border-blue-300/40 shadow-2xl">
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-3xl"></div>
-                      <div className="relative z-10">
-                        <div className="text-5xl font-bold text-white mb-2">${trip.downPaymentAmount}</div>
-                        <div className="text-blue-100 text-lg font-medium">Investment in your adventure</div>
-                      </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    <DollarSign className="h-6 w-6 text-blue-200" />
+                    <h3 className="text-xl font-bold text-white">Down Payment Required</h3>
+                  </div>
+                  
+                  <div className="relative p-6 bg-gradient-to-br from-blue-500/30 to-indigo-600/30 backdrop-blur-md rounded-2xl border border-blue-300/40 shadow-xl">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-2xl"></div>
+                    <div className="relative z-10 text-center">
+                      <div className="text-4xl font-bold text-white mb-1">${trip.downPaymentAmount}</div>
+                      <div className="text-blue-100 font-medium">Investment in your adventure</div>
                     </div>
                   </div>
 
                   {/* Enhanced Payment Submission Form */}
                   {(!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                       <div className="h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
                       
-                      <div className="space-y-6">
-                        <div className="text-center">
-                          <div className="flex items-center gap-3 justify-center mb-4">
-                            <CreditCard className="h-6 w-6 text-blue-200" />
-                            <h4 className="text-xl font-bold text-white">Choose Payment Method</h4>
-                          </div>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 justify-center">
+                          <CreditCard className="h-5 w-5 text-blue-200" />
+                          <h4 className="text-lg font-bold text-white">Choose Payment Method</h4>
                         </div>
                         
                         {optionsLoading && (
-                          <div className="flex flex-col items-center justify-center py-12">
-                            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-300 border-t-white mb-4"></div>
-                            <span className="text-white/80 text-lg font-medium">Loading payment options...</span>
+                          <div className="flex flex-col items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-300 border-t-white mb-3"></div>
+                            <span className="text-white/80 font-medium">Loading payment options...</span>
                           </div>
                         )}
                         
                         {optionsError && (
-                          <div className="bg-red-500/20 backdrop-blur-sm border border-red-300/30 p-6 rounded-2xl">
-                            <div className="flex items-center gap-3 mb-3">
-                              <AlertCircle className="h-6 w-6 text-red-300" />
-                              <span className="font-bold text-red-100 text-lg">Failed to load payment options</span>
+                          <div className="bg-red-500/20 backdrop-blur-sm border border-red-300/30 p-4 rounded-2xl">
+                            <div className="flex items-center gap-3 mb-2">
+                              <AlertCircle className="h-5 w-5 text-red-300" />
+                              <span className="font-bold text-red-100">Failed to load payment options</span>
                             </div>
-                            <p className="text-red-200">Please try again or contact the organizer for assistance.</p>
+                            <p className="text-red-200 text-sm">Please try again or contact the organizer for assistance.</p>
                           </div>
                         )}
                         
                         {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).length === 0 && (
-                          <div className="bg-yellow-500/20 backdrop-blur-sm border border-yellow-300/30 p-6 rounded-2xl">
-                            <div className="flex items-center gap-3 mb-3">
-                              <AlertCircle className="h-6 w-6 text-yellow-300" />
-                              <span className="font-bold text-yellow-100 text-lg">No payment methods available</span>
+                          <div className="bg-yellow-500/20 backdrop-blur-sm border border-yellow-300/30 p-4 rounded-2xl">
+                            <div className="flex items-center gap-3 mb-2">
+                              <AlertCircle className="h-5 w-5 text-yellow-300" />
+                              <span className="font-bold text-yellow-100">No payment methods available</span>
                             </div>
-                            <p className="text-yellow-200">Please contact the organizer to set up payment preferences.</p>
+                            <p className="text-yellow-200 text-sm">Please contact the organizer to set up payment preferences.</p>
                           </div>
                         )}
                         
                         {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).map((option: SettlementOption, index: number) => (
                           <div
                             key={`${option.method}-${index}`}
-                            className={`border-2 rounded-2xl p-6 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:scale-105 ${
+                            className={`border-2 rounded-2xl p-4 cursor-pointer transition-all duration-500 hover:shadow-xl hover:scale-105 ${
                               selectedMethod === option.method
                                 ? 'border-blue-400 bg-blue-500/20 backdrop-blur-sm shadow-xl'
                                 : 'border-white/30 bg-white/10 backdrop-blur-sm hover:border-blue-400/50'
@@ -560,10 +556,10 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                         {selectedMethod && !showPaymentConfirmation && (
                           <Button 
                             onClick={() => handlePaymentSubmit(selectedMethod)}
-                            className="w-full py-8 text-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-500 shadow-2xl rounded-2xl border border-blue-400/30"
+                            className="w-full py-6 text-lg font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-500 shadow-2xl rounded-2xl border border-blue-400/30"
                           >
                             <div className="flex items-center gap-3">
-                              <CreditCard className="h-6 w-6" />
+                              <CreditCard className="h-5 w-5" />
                               Submit Payment via {formatPaymentMethod(selectedMethod)}
                             </div>
                           </Button>
@@ -646,16 +642,16 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                   <Button 
                     onClick={() => confirmAttendanceMutation.mutate()}
                     disabled={confirmAttendanceMutation.isPending}
-                    className="w-full py-8 text-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-500 shadow-2xl rounded-2xl border border-blue-400/30"
+                    className="w-full py-6 text-lg font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-500 shadow-2xl rounded-2xl border border-blue-400/30"
                   >
                     {confirmAttendanceMutation.isPending ? (
                       <div className="flex items-center gap-3">
-                        <div className="animate-spin rounded-full h-6 w-6 border-3 border-white border-t-transparent"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-3 border-white border-t-transparent"></div>
                         Confirming Attendance...
                       </div>
                     ) : (
                       <div className="flex items-center gap-3">
-                        <CheckCircle className="h-6 w-6" />
+                        <CheckCircle className="h-5 w-5" />
                         Confirm Attendance
                       </div>
                     )}
