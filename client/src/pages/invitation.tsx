@@ -60,6 +60,14 @@ export default function InvitationPage() {
     enabled: !!token,
   });
 
+  // Debug logging
+  console.log('Invitation Debug:', {
+    token,
+    isLoading,
+    error: error?.message,
+    data: invitationData
+  });
+
   const handleSignUpRedirect = () => {
     // Store the invitation token for after authentication
     localStorage.setItem('pendingInvitation', token || '');
