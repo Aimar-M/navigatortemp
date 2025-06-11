@@ -274,7 +274,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{
-      background: 'linear-gradient(135deg, #0000FF 0%, #1e40af 25%, #3b82f6 50%, #60a5fa 75%, #93c5fd 100%)'
+      background: '#1a3cff'
     }}>
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
