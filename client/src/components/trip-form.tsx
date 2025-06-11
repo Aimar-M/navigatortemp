@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import CityAutocomplete from "@/components/city-autocomplete";
 
 interface TripFormProps {
   onComplete?: () => void;
@@ -144,11 +145,11 @@ export default function TripForm({ onComplete }: TripFormProps) {
               <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-1">
                 Destination
               </label>
-              <Input
+              <CityAutocomplete
                 id="destination"
                 name="destination"
                 value={formData.destination}
-                onChange={handleChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, destination: value }))}
                 placeholder="Where are you going?"
                 required
               />
