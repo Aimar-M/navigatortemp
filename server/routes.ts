@@ -2026,6 +2026,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: trip.description,
           requiresDownPayment: trip.requiresDownPayment,
           downPaymentAmount: trip.downPaymentAmount,
+          cover: trip.cover,
           organizer: organizer ? {
             id: organizer.id,
             name: organizer.name || organizer.username,
