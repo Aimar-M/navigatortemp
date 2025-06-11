@@ -188,7 +188,9 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   // Confirm attendance mutation (for trips without payment)
   const confirmAttendanceMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('PUT', `/api/trips/${trip.id}/members/${user?.id}/rsvp`, { rsvpStatus: 'confirmed' });
+      // For trips without down payment, update both rsvpStatus and status to 'confirmed'
+      await apiRequest('PUT', `/api/trips/${trip.id}/members/${user?.id}/rsvp`, { rsvpStatus: 'confirmed' });
+      return await apiRequest('PUT', `/api/trips/${trip.id}/members/${user?.id}`, { status: 'confirmed' });
     },
     onSuccess: () => {
       toast({
