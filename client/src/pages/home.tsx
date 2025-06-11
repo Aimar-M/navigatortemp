@@ -35,11 +35,15 @@ export default function Home() {
   useEffect(() => {
     const handlePendingInvitation = async () => {
       const pendingInvitation = localStorage.getItem('pendingInvitation');
-      if (pendingInvitation && user) {
+      if (pendingInvitation && user && token) {
         try {
           // Accept the invitation to add user to trip membership (but with pending RSVP status)
           const response = await fetch(`/api/invite/${pendingInvitation}/accept`, {
             method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
             credentials: 'include',
           });
           
@@ -60,7 +64,7 @@ export default function Home() {
     };
 
     handlePendingInvitation();
-  }, [user, queryClient]);
+  }, [user, token, queryClient]);
   
   // Use React Query with proper dependencies to avoid setState during render
   const { data: trips, isLoading } = useQuery({
