@@ -248,6 +248,43 @@ export default function InvitationPage() {
                   </div>
                 ))}
               </div>
+              
+              {/* Preview Indicator - identical to pending status screen */}
+              <div className="mt-6 relative">
+                {/* Gradient fade effect */}
+                <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-transparent to-white/5 pointer-events-none rounded-t-xl"></div>
+                
+                <div className="bg-gradient-to-br from-purple-500/20 to-indigo-600/20 backdrop-blur-sm rounded-xl p-3 border border-purple-300/30 relative overflow-hidden">
+                  {/* Animated background sparkles */}
+                  <div className="absolute inset-0 opacity-30">
+                    <div className="absolute top-2 left-4 w-1 h-1 bg-white rounded-full animate-pulse"></div>
+                    <div className="absolute top-6 right-6 w-1 h-1 bg-blue-300 rounded-full animate-pulse delay-300"></div>
+                    <div className="absolute bottom-3 left-1/3 w-1 h-1 bg-purple-300 rounded-full animate-pulse delay-700"></div>
+                  </div>
+                  
+                  <div className="relative z-10 text-center">
+                    <div className="flex items-center justify-center gap-2 mb-3">
+                      <div className="relative">
+                        <Calendar className="h-4 w-4 text-purple-200 animate-pulse" />
+                        <div className="absolute inset-0 bg-purple-300 rounded-full blur-sm opacity-50 animate-ping"></div>
+                      </div>
+                      <span className="font-bold text-white text-sm bg-gradient-to-r from-purple-200 to-blue-200 bg-clip-text text-transparent">
+                        Preview Only
+                      </span>
+                    </div>
+                    
+                    {/* Animated dots indicating more content */}
+                    <div className="flex items-center justify-center gap-1">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-blue-300 rounded-full animate-bounce delay-150"></div>
+                        <div className="w-2 h-2 bg-indigo-300 rounded-full animate-bounce delay-300"></div>
+                      </div>
+                      <span className="text-white/70 text-xs ml-2 font-medium">More amazing experiences await</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
