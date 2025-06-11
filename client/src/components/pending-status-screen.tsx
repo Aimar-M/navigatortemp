@@ -721,14 +721,14 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         {/* Enhanced What Happens Next Section */}
         <Card className="mb-10 bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500">
           <CardContent className="p-8">
-            <div className="flex items-start gap-6">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6">
               <div className="flex-shrink-0">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-xl border border-white/30">
-                  <Bell className="h-8 w-8 text-white" />
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-xl border border-white/30">
+                  <Bell className="h-6 w-6 md:h-8 md:w-8 text-white" />
                 </div>
               </div>
-              <div className="flex-1">
-                <h3 className="text-3xl font-bold text-white mb-4 tracking-tight">What happens next?</h3>
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 tracking-tight">What happens next?</h3>
                 <p className="text-white/80 text-lg mb-6 leading-relaxed">
                   You'll receive a notification once your RSVP is confirmed by the organizer. 
                   This exciting adventure is just getting started!
