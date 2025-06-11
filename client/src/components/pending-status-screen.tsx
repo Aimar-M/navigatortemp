@@ -421,49 +421,55 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
 
             <CardContent className="p-4 space-y-4">
-              {/* Compact Status Display */}
+              {/* Consolidated Status and Payment Display */}
               <div className="bg-gradient-to-r from-blue-600/30 to-indigo-600/30 backdrop-blur-md rounded-xl p-4 border border-blue-300/50 shadow-lg">
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-6">
-                  <div className="flex-1 text-center sm:text-left">
-                    <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
-                      <Timer className="h-4 w-4 text-blue-100" />
-                      <span className="font-semibold text-white text-sm">RSVP Status</span>
+                <div className="flex flex-col lg:flex-row gap-4">
+                  {/* Status Section */}
+                  <div className="flex-1">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-6">
+                      <div className="flex-1 text-center sm:text-left">
+                        <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
+                          <Timer className="h-4 w-4 text-blue-100" />
+                          <span className="font-semibold text-white text-sm">RSVP Status</span>
+                        </div>
+                        <Badge className={`${getStatusColor()} text-xs px-3 py-1 rounded-full font-medium`}>
+                          {getRSVPStatusMessage()}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex-1 text-center sm:text-left">
+                        <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
+                          <CreditCard className="h-4 w-4 text-green-200" />
+                          <span className="font-semibold text-white text-sm">Payment Status</span>
+                        </div>
+                        <div className="text-xs font-semibold text-white bg-white/30 backdrop-blur-sm px-3 py-1 rounded-full border border-white/50 inline-block">
+                          {getPaymentStatusMessage()}
+                        </div>
+                      </div>
                     </div>
-                    <Badge className={`${getStatusColor()} text-xs px-3 py-1 rounded-full font-medium`}>
-                      {getRSVPStatusMessage()}
-                    </Badge>
                   </div>
-                  
-                  <div className="flex-1 text-center sm:text-left">
-                    <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
-                      <CreditCard className="h-4 w-4 text-green-200" />
-                      <span className="font-semibold text-white text-sm">Payment Status</span>
-                    </div>
-                    <div className="text-xs font-semibold text-white bg-white/30 backdrop-blur-sm px-3 py-1 rounded-full border border-white/50 inline-block">
-                      {getPaymentStatusMessage()}
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Compact Payment Information */}
-              {trip.requiresDownPayment && (
-                <div className="space-y-3">
-                  {/* Compact payment amount display */}
-                  {(!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
-                    <div className="bg-gradient-to-r from-blue-500/25 to-indigo-600/25 backdrop-blur-md rounded-xl p-4 border border-blue-300/40">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-5 w-5 text-blue-200" />
+                  {/* Payment Amount Section - Only show when payment required and not yet submitted */}
+                  {trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
+                    <div className="lg:flex-shrink-0 lg:border-l lg:border-white/20 lg:pl-4">
+                      <div className="text-center lg:text-right">
+                        <div className="flex items-center justify-center lg:justify-end gap-2 mb-2">
+                          <DollarSign className="h-4 w-4 text-blue-200" />
                           <span className="font-semibold text-white text-sm">Down Payment Required</span>
                         </div>
-                        <div className="text-right">
+                        <div className="space-y-1">
                           <div className="text-2xl font-bold text-white">${trip.downPaymentAmount}</div>
                           <div className="text-blue-100 text-xs">Investment in your adventure</div>
                         </div>
                       </div>
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Payment Method Selection */}
+              {trip.requiresDownPayment && (
+                <div className="space-y-3">
 
                   {/* Compact Payment Method Selection */}
                   {(!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
