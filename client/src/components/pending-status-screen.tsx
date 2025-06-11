@@ -288,23 +288,26 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
       <div className="relative z-10 max-w-5xl mx-auto p-6 space-y-10">
         {/* Hero Section */}
-        <div className="text-center py-8 relative overflow-hidden">
+        <div className="text-center py-8 relative overflow-hidden rounded-3xl">
           {/* Trip Photo Background */}
           {(trip as any).cover && (
-            <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 z-0 rounded-3xl overflow-hidden">
               <img 
                 src={(trip as any).cover} 
                 alt={`${trip.name} cover`} 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover blur-[1px]"
               />
               {/* Dark overlay for better text readability */}
               <div className="absolute inset-0 bg-black/40"></div>
-              {/* Gradient fade edges for soft transition */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-transparent 
-                            before:absolute before:inset-0 before:bg-gradient-to-t before:from-transparent before:via-transparent before:to-black/30
-                            after:absolute after:inset-0 after:bg-gradient-to-b after:from-transparent after:via-transparent after:to-black/30"></div>
-              <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20"></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/30"></div>
+              {/* Enhanced gradient fade edges with blur for soft transition */}
+              <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/40"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30 backdrop-blur-[1px]"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/40 backdrop-blur-[1px]"></div>
+              {/* Edge blur effects */}
+              <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-black/20 to-transparent blur-sm"></div>
+              <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/20 to-transparent blur-sm"></div>
+              <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-black/20 to-transparent blur-sm"></div>
+              <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-black/20 to-transparent blur-sm"></div>
             </div>
           )}
           
