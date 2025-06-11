@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import navigatorLogo from "@assets/ab_Navigator2-11_1749673314519.png";
 import navigatorText from "@assets/ab_Navigator2-09_1749673915685.png";
+import companyLogo from "@assets/ab_Navigator2-09_1749674413735.png";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -55,7 +56,13 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 relative">
+      {/* Company logo in top right */}
+      <img 
+        src={companyLogo} 
+        alt="Navigator Company Logo" 
+        className="absolute top-4 right-4 h-8"
+      />
       <div className="w-full max-w-md">
         <div className="text-center mb-2">
           <div className="flex flex-col items-center justify-center mb-2">
