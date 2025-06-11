@@ -57,11 +57,11 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 relative">
-      {/* Company logo in top right */}
+      {/* Company logo in top left */}
       <img 
         src={companyLogo} 
         alt="Navigator Company Logo" 
-        className="absolute top-4 right-4 h-8"
+        className="absolute top-4 left-4 h-24"
       />
       <div className="w-full max-w-md">
         <div className="text-center mb-2">
