@@ -92,6 +92,38 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
   // Handle input changes and search
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const searchValue = e.target.value;
+    
+    // Handle comma-separated input
+    if (searchValue.includes(',')) {
+      const cities = searchValue.split(',').map(city => city.trim()).filter(Boolean);
+      const lastCity = cities.pop() || '';
+      
+      // Add all complete cities except the last one
+      cities.forEach(cityName => {
+        if (cityName && selectedCities.length < 5) {
+          addManualCity(cityName);
+        }
+      });
+      
+      setInputValue(lastCity);
+      setActiveSuggestion(-1);
+      
+      if (lastCity.trim() && selectedCities.length < 5) {
+        const results = fuse.current.search(lastCity);
+        const filteredResults = results
+          .slice(0, 8)
+          .map(result => result.item)
+          .filter(city => !selectedCities.some(selected => selected.name === city.name));
+        
+        setSuggestions(filteredResults);
+        setShowSuggestions(true);
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+      return;
+    }
+    
     setInputValue(searchValue);
     setActiveSuggestion(-1);
 
@@ -129,7 +161,14 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showSuggestions) return;
+    if (!showSuggestions) {
+      // Allow Enter to add manually typed city when suggestions are not shown
+      if (e.key === "Enter" && inputValue.trim() && selectedCities.length < 5) {
+        e.preventDefault();
+        addManualCity(inputValue.trim());
+      }
+      return;
+    }
 
     switch (e.key) {
       case "ArrowDown":
@@ -146,6 +185,9 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
         e.preventDefault();
         if (activeSuggestion >= 0 && suggestions[activeSuggestion]) {
           selectCity(suggestions[activeSuggestion]);
+        } else if (inputValue.trim() && selectedCities.length < 5) {
+          // If no suggestion is selected but there's input, add as manual city
+          addManualCity(inputValue.trim());
         }
         break;
       case "Escape":
@@ -155,8 +197,34 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
     }
   };
 
+  // Add manually entered city
+  const addManualCity = (cityName: string) => {
+    if (selectedCities.length < 5 && !selectedCities.some(selected => 
+      selected.name.toLowerCase() === cityName.toLowerCase()
+    )) {
+      const newCity: City = {
+        name: cityName,
+        country: "Unknown",
+        region: "Unknown",
+        lat: 0,
+        lng: 0,
+      };
+      setSelectedCities(prev => [...prev, newCity]);
+      setInputValue("");
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setActiveSuggestion(-1);
+      inputRef.current?.focus();
+    }
+  };
+
   // Handle input blur
   const handleBlur = () => {
+    // Add any manually typed city before hiding suggestions
+    if (inputValue.trim() && selectedCities.length < 5) {
+      addManualCity(inputValue.trim());
+    }
+    
     // Delay hiding suggestions to allow for clicks
     setTimeout(() => {
       setShowSuggestions(false);
@@ -269,7 +337,7 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
         )}
         {selectedCities.length === 0 && (
           <span>
-            Type to search cities worldwide. You can add up to 5 destinations.
+            Type any city name or use suggestions. Press Enter or use commas to add multiple cities (up to 5).
           </span>
         )}
       </div>
