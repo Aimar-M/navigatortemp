@@ -190,7 +190,7 @@ export default function OrganizerReviewDashboard({
                   <div className="space-y-1 text-sm text-gray-600 pl-11">
                     <div className="flex items-center gap-2">
                       {getPaymentMethodIcon(member.paymentMethod || '')}
-                      <span className="font-medium">{member.paymentMethod || 'Unknown'}</span>
+                      <span className="font-medium">{member.paymentMethod || 'Not specified'}</span>
                       <span>•</span>
                       <span className="font-semibold">${member.paymentAmount}</span>
                     </div>

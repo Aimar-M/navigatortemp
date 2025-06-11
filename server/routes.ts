@@ -768,7 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Not a member of this trip' });
       }
       
-      // Get detailed info about each member
+      // Get detailed info about each member including payment information
       const membersWithDetails = await Promise.all(
         members.map(async (member) => {
           const user = await storage.getUser(member.userId);
@@ -777,7 +777,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const { password, ...userWithoutPassword } = user;
           return {
             ...member,
-            user: userWithoutPassword
+            user: userWithoutPassword,
+            // Ensure payment fields are included
+            paymentMethod: member.paymentMethod,
+            paymentStatus: member.paymentStatus,
+            paymentAmount: member.paymentAmount,
+            paymentSubmittedAt: member.paymentSubmittedAt,
+            paymentConfirmedAt: member.paymentConfirmedAt
           };
         })
       );
