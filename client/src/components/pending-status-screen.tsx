@@ -348,79 +348,71 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           </div>
         )}
 
-        {/* Trip Itinerary Preview */}
-        <div className="mb-10">
-          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/15">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
-                <CalendarDays className="h-7 w-7 text-blue-200" />
-                Trip Itinerary Preview
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {activities && activities.length > 0 ? (
-                <>
-                  {(activities as any[])
-                    .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                    .slice(0, 3) // Show first 3 activities for preview
-                    .map((activity: any) => (
-                      <div key={activity.id} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="text-white font-semibold text-lg mb-2">{activity.name}</h4>
-                            {activity.description && (
-                              <p className="text-white/70 text-sm mb-3 leading-relaxed">{activity.description}</p>
-                            )}
-                            <div className="flex flex-wrap gap-3 text-sm">
-                              <div className="flex items-center gap-2 text-blue-200">
-                                <Calendar className="h-4 w-4" />
-                                <span>{new Date(activity.date).toLocaleDateString('en-US', { 
-                                  weekday: 'short', 
-                                  month: 'short', 
-                                  day: 'numeric' 
-                                })}</span>
-                              </div>
-                              {activity.location && (
-                                <div className="flex items-center gap-2 text-blue-200">
-                                  <MapPin className="h-4 w-4" />
-                                  <span>{activity.location}</span>
-                                </div>
-                              )}
-                              {activity.duration && (
-                                <div className="flex items-center gap-2 text-blue-200">
-                                  <Clock className="h-4 w-4" />
-                                  <span>{activity.duration}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          {activity.cost && parseFloat(activity.cost) > 0 && (
-                            <div className="bg-green-500/20 backdrop-blur-sm px-3 py-2 rounded-full border border-green-400/30">
-                              <span className="text-green-300 font-semibold">${parseFloat(activity.cost).toFixed(2)}</span>
-                            </div>
+        {/* Trip Itinerary Preview - Only show if activities exist */}
+        {activities && activities.length > 0 && (
+          <div className="mb-10">
+            <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/15">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
+                  <CalendarDays className="h-7 w-7 text-blue-200" />
+                  Trip Itinerary Preview
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(activities as any[])
+                  .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                  .slice(0, 3) // Show first 3 activities for preview
+                  .map((activity: any) => (
+                    <div key={activity.id} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="text-white font-semibold text-lg mb-2">{activity.name}</h4>
+                          {activity.description && (
+                            <p className="text-white/70 text-sm mb-3 leading-relaxed">{activity.description}</p>
                           )}
+                          <div className="flex flex-wrap gap-3 text-sm">
+                            <div className="flex items-center gap-2 text-blue-200">
+                              <Calendar className="h-4 w-4" />
+                              <span>{new Date(activity.date).toLocaleDateString('en-US', { 
+                                weekday: 'short', 
+                                month: 'short', 
+                                day: 'numeric' 
+                              })}</span>
+                            </div>
+                            {activity.location && (
+                              <div className="flex items-center gap-2 text-blue-200">
+                                <MapPin className="h-4 w-4" />
+                                <span>{activity.location}</span>
+                              </div>
+                            )}
+                            {activity.duration && (
+                              <div className="flex items-center gap-2 text-blue-200">
+                                <Clock className="h-4 w-4" />
+                                <span>{activity.duration}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  
-                  {activities.length > 3 && (
-                    <div className="text-center pt-4">
-                      <div className="text-white/60 text-sm">
-                        And {activities.length - 3} more activities planned...
+                        {activity.cost && parseFloat(activity.cost) > 0 && (
+                          <div className="bg-green-500/20 backdrop-blur-sm px-3 py-2 rounded-full border border-green-400/30">
+                            <span className="text-green-300 font-semibold">${parseFloat(activity.cost).toFixed(2)}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-white/60 text-lg">
-                    No activities planned yet. The organizer will add exciting activities soon!
+                  ))}
+                
+                {activities.length > 3 && (
+                  <div className="text-center pt-4">
+                    <div className="text-white/60 text-sm">
+                      And {activities.length - 3} more activities planned...
+                    </div>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Confirmed Attendees */}
         <div className="mb-10">
