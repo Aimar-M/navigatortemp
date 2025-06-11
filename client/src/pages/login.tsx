@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import navigatorLogo from "@/assets/navigator-logo.svg";
+import navigatorLogo from "@assets/ab_Navigator2-11_1749673314519.png";
+import navigatorText from "@assets/ab_Navigator2-09_1749673314520.png";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -61,9 +62,13 @@ export default function Login() {
             <img 
               src={navigatorLogo} 
               alt="Navigator Logo" 
-              className="h-10 w-10 mr-2"
+              className="h-12 w-12 mr-3"
             />
-            <h1 className="text-2xl font-bold text-gray-900">Navigator</h1>
+            <img 
+              src={navigatorText} 
+              alt="Navigator" 
+              className="h-10"
+            />
           </div>
           <p className="text-gray-600">Plan amazing trips with friends</p>
         </div>
