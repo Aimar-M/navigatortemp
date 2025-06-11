@@ -677,31 +677,26 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
             </CardHeader>
             <CardContent>
               {members && members.length > 0 ? (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="flex flex-wrap gap-2">
                   {(members as any[])
                     .filter((member: any) => member.status === 'confirmed' || member.userId === trip.organizer)
                     .map((member: any) => (
-                      <div key={member.userId} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-lg border border-white/30">
-                            <span className="text-white font-bold text-sm">
-                              {member.user?.name ? member.user.name.charAt(0).toUpperCase() : member.user?.username?.charAt(0).toUpperCase() || '?'}
-                            </span>
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-white font-semibold">
-                              {member.user?.name || member.user?.username || 'Anonymous'}
-                              {member.userId === trip.organizer && (
-                                <Badge className="ml-2 bg-amber-500/20 text-amber-300 border-amber-400/30 text-xs px-2 py-1">
-                                  Organizer
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="text-white/60 text-sm">
-                              {member.status === 'confirmed' ? 'Confirmed' : 'Organizer'}
-                            </div>
-                          </div>
+                      <div key={member.userId} className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-2 border border-white/20">
+                        <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
+                          <span className="text-white font-bold text-xs">
+                            {member.user?.name ? member.user.name.charAt(0).toUpperCase() : member.user?.username?.charAt(0).toUpperCase() || '?'}
+                          </span>
                         </div>
+                        <span className="text-white font-medium text-sm">
+                          {member.user?.name || member.user?.username || 'Anonymous'}
+                        </span>
+                        {member.userId === trip.organizer ? (
+                          <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/30 text-xs px-2 py-0.5">
+                            Organizer
+                          </Badge>
+                        ) : (
+                          <span className="text-green-300 text-xs font-medium">✓</span>
+                        )}
                       </div>
                     ))}
                 </div>
