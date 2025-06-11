@@ -62,12 +62,13 @@ export default function Login() {
             <img 
               src={navigatorLogo} 
               alt="Navigator Logo" 
-              className="h-72 w-72 mb-4"
+              className="h-56 w-56 mb-2"
             />
             <img 
               src={navigatorText} 
               alt="Navigator" 
-              className="h-10"
+              className="h-30"
+              style={{ height: '7.5rem' }}
             />
           </div>
         </div>
