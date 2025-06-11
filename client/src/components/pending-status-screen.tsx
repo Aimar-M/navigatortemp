@@ -436,25 +436,25 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
             </div>
 
             <CardContent className="p-6 space-y-6">
-              {/* Current Status Display with Blue Theme */}
-              <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 backdrop-blur-sm rounded-2xl p-6 border border-blue-300/30">
+              {/* Current Status Display with Enhanced Contrast */}
+              <div className="bg-gradient-to-r from-blue-600/30 to-indigo-600/30 backdrop-blur-md rounded-2xl p-6 border border-blue-300/50 shadow-lg">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-2 mb-3">
-                      <Timer className="h-5 w-5 text-blue-200" />
-                      <span className="font-bold text-white">RSVP Status</span>
+                      <Timer className="h-6 w-6 text-blue-100 drop-shadow-sm" />
+                      <span className="font-bold text-white text-lg drop-shadow-sm">RSVP Status</span>
                     </div>
-                    <Badge className={`${getStatusColor()} text-sm px-4 py-2 rounded-full font-semibold`}>
+                    <Badge className={`${getStatusColor()} text-sm px-4 py-2 rounded-full font-semibold shadow-md`}>
                       {getRSVPStatusMessage()}
                     </Badge>
                   </div>
                   
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-2 mb-3">
-                      <CreditCard className="h-5 w-5 text-green-300" />
-                      <span className="font-bold text-white">Payment Status</span>
+                      <CreditCard className="h-6 w-6 text-green-200 drop-shadow-sm" />
+                      <span className="font-bold text-white text-lg drop-shadow-sm">Payment Status</span>
                     </div>
-                    <div className="text-sm font-bold text-white bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30">
+                    <div className="text-sm font-bold text-white bg-white/30 backdrop-blur-sm px-4 py-2 rounded-full border border-white/50 shadow-md">
                       {getPaymentStatusMessage()}
                     </div>
                   </div>
@@ -727,12 +727,12 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                   This exciting adventure is just getting started!
                 </p>
                 
-                <div className="bg-gradient-to-br from-blue-500/20 to-indigo-600/20 backdrop-blur-sm rounded-2xl p-6 border border-blue-300/30">
-                  <h4 className="font-bold text-white text-xl mb-4 flex items-center gap-3">
-                    <Lock className="h-6 w-6 text-blue-300" />
+                <div className="bg-gradient-to-br from-blue-500/30 to-indigo-600/30 backdrop-blur-md rounded-2xl p-6 border border-blue-300/50 shadow-lg">
+                  <h4 className="font-bold text-white text-xl mb-4 flex items-center gap-3 drop-shadow-sm">
+                    <Lock className="h-6 w-6 text-blue-200 drop-shadow-sm" />
                     Once confirmed, you'll unlock:
                   </h4>
-                  <div className="grid sm:grid-cols-2 gap-3 text-white/90">
+                  <div className="grid sm:grid-cols-2 gap-3 text-white font-medium">
                     <div className="flex items-center gap-3">
                       <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
                       <span className="font-medium">Trip chat and messaging</span>
