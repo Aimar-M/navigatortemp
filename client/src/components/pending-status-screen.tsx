@@ -280,7 +280,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
       <div className="relative z-10 max-w-5xl mx-auto p-6 space-y-10">
         {/* Hero Section */}
-        <div className="text-center py-12 relative">
+        <div className="text-center py-8 relative">
           {/* Subtle Lottie Animation */}
           <div className="absolute top-0 right-8 opacity-30">
             <Lottie 
