@@ -2031,13 +2031,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(410).json({ message: 'This invitation link has expired' });
       }
       
-      // Add user to trip members with confirmed invitation status and confirmed RSVP status
+      // Get trip details to check if down payment is required
+      const trip = await storage.getTrip(invitation.tripId);
+      if (!trip) {
+        return res.status(404).json({ message: 'Trip not found' });
+      }
+      
+      // Determine status based on whether trip requires down payment
+      let memberStatus = "confirmed";
+      let rsvpStatus = "pending";
+      
+      if (!trip.requiresDownPayment) {
+        // No down payment required - can auto-confirm
+        rsvpStatus = "confirmed";
+      }
+      // If down payment is required, keep rsvpStatus as "pending" to trigger payment flow
+      
       const tripMember = await storage.addTripMember({
         tripId: invitation.tripId,
         userId: user.id,
-        status: "confirmed", // Auto-confirm since they accepted the invitation
-        rsvpStatus: "confirmed", // User confirmed by accepting invitation
-        rsvpDate: new Date()
+        status: memberStatus,
+        rsvpStatus: rsvpStatus,
+        rsvpDate: rsvpStatus === "confirmed" ? new Date() : undefined
       });
       
       res.status(201).json({ 

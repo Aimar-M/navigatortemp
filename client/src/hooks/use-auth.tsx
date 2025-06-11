@@ -94,16 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Connect WebSocket after login
       wsClient.connect(userData.id, []);
       
-      // Check for pending invitation
-      const pendingInvitation = getPendingInvitation();
-      if (pendingInvitation) {
-        // Clear the pending invitation
-        removePendingInvitation();
-        // Redirect to the invitation page to complete the acceptance process
-        navigate(`/invite/${pendingInvitation}`);
-      } else {
-        navigate("/");
-      }
+      // Always redirect to home page - let home page handle pending invitations
+      navigate("/");
     } catch (error) {
       toast({
         title: "Login failed",
@@ -132,16 +124,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Connect WebSocket after registration
       wsClient.connect(newUser.id, []);
       
-      // Check for pending invitation
-      const pendingInvitation = getPendingInvitation();
-      if (pendingInvitation) {
-        // Clear the pending invitation
-        removePendingInvitation();
-        // Redirect to the invitation page to complete the acceptance process
-        navigate(`/invite/${pendingInvitation}`);
-      } else {
-        navigate("/");
-      }
+      // Always redirect to home page - let home page handle pending invitations
+      navigate("/");
     } catch (error) {
       toast({
         title: "Registration failed",
