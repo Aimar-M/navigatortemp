@@ -422,7 +422,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                   {/* Gradient fade effect */}
                   <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-transparent to-white/5 pointer-events-none rounded-t-xl"></div>
                   
-                  <div className="bg-gradient-to-br from-purple-500/20 to-indigo-600/20 backdrop-blur-sm rounded-xl p-4 border border-purple-300/30 relative overflow-hidden">
+                  <div className="bg-gradient-to-br from-purple-500/20 to-indigo-600/20 backdrop-blur-sm rounded-xl p-3 border border-purple-300/30 relative overflow-hidden">
                     {/* Animated background sparkles */}
                     <div className="absolute inset-0 opacity-30">
                       <div className="absolute top-2 left-4 w-1 h-1 bg-white rounded-full animate-pulse"></div>
@@ -430,10 +430,10 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                       <div className="absolute bottom-3 left-1/3 w-1 h-1 bg-purple-300 rounded-full animate-pulse delay-700"></div>
                     </div>
                     
-                    <div className="relative z-10 text-center space-y-3">
-                      <div className="flex items-center justify-center gap-2 mb-2">
+                    <div className="relative z-10 text-center">
+                      <div className="flex items-center justify-center gap-2 mb-3">
                         <div className="relative">
-                          <Calendar className="h-5 w-5 text-purple-200 animate-pulse" />
+                          <Calendar className="h-4 w-4 text-purple-200 animate-pulse" />
                           <div className="absolute inset-0 bg-purple-300 rounded-full blur-sm opacity-50 animate-ping"></div>
                         </div>
                         <span className="font-bold text-white text-sm bg-gradient-to-r from-purple-200 to-blue-200 bg-clip-text text-transparent">
@@ -441,18 +441,8 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                         </span>
                       </div>
                       
-                      <div className="space-y-2">
-                        <div className="text-lg font-bold text-white">
-                          🎉 This is just the beginning!
-                        </div>
-                        <div className="text-purple-100 text-sm leading-relaxed">
-                          <span className="font-semibold text-white">Unlock the full itinerary</span> with detailed schedules, 
-                          interactive planning tools, and exclusive trip features once you confirm your attendance.
-                        </div>
-                      </div>
-                      
                       {/* Animated dots indicating more content */}
-                      <div className="flex items-center justify-center gap-1 pt-2">
+                      <div className="flex items-center justify-center gap-1">
                         <div className="flex gap-1">
                           <div className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"></div>
                           <div className="w-2 h-2 bg-blue-300 rounded-full animate-bounce delay-150"></div>
