@@ -339,57 +339,7 @@ export default function InvitationPage() {
           </CardContent>
         </Card>
 
-        {/* What Happens Next Section */}
-        <Card className="mb-10 bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500">
-          <CardContent className="p-8">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-xl border border-white/30">
-                  <Bell className="h-6 w-6 md:h-8 md:w-8 text-white" />
-                </div>
-              </div>
-              <div className="flex-1 text-center md:text-left">
-                <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 tracking-tight">What happens next?</h3>
-                <p className="text-white/80 text-lg mb-6 leading-relaxed">
-                  After creating your account and confirming attendance, you'll get access to all trip features and can start planning with the group!
-                </p>
-                
-                <div className="bg-gradient-to-br from-blue-500/20 to-indigo-600/20 backdrop-blur-sm rounded-2xl p-6 border border-blue-300/30">
-                  <h4 className="font-bold text-white text-xl mb-4 flex items-center gap-3">
-                    <Lock className="h-6 w-6 text-blue-300" />
-                    Once you join, you'll unlock:
-                  </h4>
-                  <div className="grid sm:grid-cols-2 gap-3 text-white/90">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="font-medium">Trip chat and messaging</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="font-medium">Expense tracking and splitting</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="font-medium">Activity planning and polls</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="font-medium">Flight coordination</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="font-medium">All trip management features</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="font-medium">Real-time updates and notifications</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
 
         {/* Footer */}
         <div className="text-center py-12">
