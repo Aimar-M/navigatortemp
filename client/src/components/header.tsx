@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import UserAvatar from "@/components/user-avatar";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
-import navigatorLogo from "@/assets/navigator-logo.svg";
+import navigatorLogo from "@assets/ab_Navigator2-11_1749671092581.png";
 import { NotificationBell } from "@/components/NotificationBell";
 
 export default function Header() {
@@ -120,7 +120,7 @@ export default function Header() {
               <img 
                 src={navigatorLogo} 
                 alt="Navigator Logo" 
-                className="h-8 w-8"
+                className="h-10 w-10"
               />
               <h1 className="text-xl font-bold text-gray-800">Navigator</h1>
             </div>
