@@ -431,16 +431,6 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                     </div>
                     
                     <div className="relative z-10 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-3">
-                        <div className="relative">
-                          <Calendar className="h-4 w-4 text-purple-200 animate-pulse" />
-                          <div className="absolute inset-0 bg-purple-300 rounded-full blur-sm opacity-50 animate-ping"></div>
-                        </div>
-                        <span className="font-bold text-white text-sm bg-gradient-to-r from-purple-200 to-blue-200 bg-clip-text text-transparent">
-                          Preview Only
-                        </span>
-                      </div>
-                      
                       {/* Animated dots indicating more content */}
                       <div className="flex items-center justify-center gap-1">
                         <div className="flex gap-1">
