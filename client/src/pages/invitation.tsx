@@ -268,21 +268,21 @@ export default function InvitationPage() {
             {confirmedMembers.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {confirmedMembers.map((member) => (
-                  <div key={member.userId} className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-2 border border-white/20">
-                    <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
+                  <div key={member.userId} className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 border border-white/40 shadow-lg">
+                    <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-md">
                       <span className="text-white font-bold text-xs">
                         {member.user.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <span className="text-white font-medium text-sm">
+                    <span className="text-white font-semibold text-sm drop-shadow-sm">
                       {member.user.name}
                     </span>
                     {member.userId === trip.organizer.id ? (
-                      <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/30 text-xs px-2 py-0.5">
+                      <Badge className="bg-amber-500/30 text-amber-200 border-amber-400/50 text-xs px-2 py-0.5 shadow-sm">
                         Organizer
                       </Badge>
                     ) : (
-                      <span className="text-green-300 text-xs font-medium">✓</span>
+                      <CheckCircle className="h-4 w-4 text-green-300 drop-shadow-sm" />
                     )}
                   </div>
                 ))}
