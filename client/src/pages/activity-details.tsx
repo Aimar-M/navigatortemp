@@ -29,6 +29,7 @@ interface ActivityDetail {
   description?: string;
   date: string;
   startTime?: string;
+  activityType?: string;
   location?: string;
   duration?: string;
   cost?: string;
@@ -225,6 +226,14 @@ export default function ActivityDetails() {
           )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {activity.activityType && (
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  {activity.activityType}
+                </Badge>
+              </div>
+            )}
+            
             {activity.location && (
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-gray-500" />
