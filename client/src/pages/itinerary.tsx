@@ -334,6 +334,25 @@ function Itinerary() {
               </div>
             </div>
 
+            <div>
+              <Label htmlFor="activity-type">Type of Activity</Label>
+              <Select
+                value={activityFormData.activityType}
+                onValueChange={(value) => setActivityFormData(prev => ({ ...prev, activityType: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select activity type (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Food & Drink">Food & Drink</SelectItem>
+                  <SelectItem value="Transportation">Transportation</SelectItem>
+                  <SelectItem value="Attraction">Attraction</SelectItem>
+                  <SelectItem value="Event">Event</SelectItem>
+                  <SelectItem value="Activity">Activity</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="activity-duration">Duration</Label>
@@ -420,6 +439,7 @@ function Itinerary() {
                     description: "",
                     date: "",
                     startTime: "",
+                    activityType: "",
                     location: "",
                     duration: "",
                     cost: "",

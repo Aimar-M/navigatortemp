@@ -15,6 +15,7 @@ interface ActivityCardProps {
   description?: string;
   date: string;
   startTime?: string;
+  activityType?: string;
   location?: string;
   duration?: string;
   cost?: string;
@@ -32,6 +33,7 @@ export default function ActivityCard({
   description,
   date,
   startTime,
+  activityType,
   location,
   duration,
   cost,
@@ -137,6 +139,13 @@ export default function ActivityCard({
               )}
             </div>
             <h4 className="font-medium text-gray-900">{name}</h4>
+            {activityType && (
+              <div className="mt-1">
+                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                  {activityType}
+                </Badge>
+              </div>
+            )}
             {description && (
               <p className="text-sm text-gray-600 mt-1">{description}</p>
             )}
