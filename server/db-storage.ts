@@ -238,9 +238,17 @@ export class DatabaseStorage {
   }
 
   async createActivity(activity: InsertActivity): Promise<Activity> {
+    // Ensure dates are properly handled as timestamps
+    const activityData = {
+      ...activity,
+      date: activity.date instanceof Date ? activity.date : new Date(activity.date),
+      checkInDate: activity.checkInDate ? (activity.checkInDate instanceof Date ? activity.checkInDate : new Date(activity.checkInDate)) : null,
+      checkOutDate: activity.checkOutDate ? (activity.checkOutDate instanceof Date ? activity.checkOutDate : new Date(activity.checkOutDate)) : null
+    };
+    
     const [newActivity] = await db
       .insert(activities)
-      .values(activity)
+      .values(activityData)
       .returning();
     
     return newActivity;
