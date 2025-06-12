@@ -35,6 +35,7 @@ export default function ActivityCard({
   date,
   startTime,
   activityType,
+  activityLink,
   location,
   duration,
   cost,
