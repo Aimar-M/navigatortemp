@@ -31,6 +31,7 @@ export default function ActivityCard({
   name,
   description,
   date,
+  startTime,
   location,
   duration,
   cost,
@@ -127,7 +128,14 @@ export default function ActivityCard({
       <CardContent className="p-3">
         <div className="flex justify-between items-start">
           <div>
-            <span className="text-xs text-gray-500">{formatDate(date)}</span>
+            <div className="text-xs text-gray-500">
+              {formatDate(date)}
+              {startTime && (
+                <span className="ml-2 font-medium text-blue-600">
+                  at {startTime}
+                </span>
+              )}
+            </div>
             <h4 className="font-medium text-gray-900">{name}</h4>
             {description && (
               <p className="text-sm text-gray-600 mt-1">{description}</p>
