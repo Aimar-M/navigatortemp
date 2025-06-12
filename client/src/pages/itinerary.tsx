@@ -254,6 +254,7 @@ function Itinerary() {
                   name={activity.name}
                   description={activity.description}
                   date={activity.date}
+                  startTime={activity.startTime}
                   location={activity.location}
                   duration={activity.duration}
                   cost={activity.cost}
