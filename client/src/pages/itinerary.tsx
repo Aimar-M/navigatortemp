@@ -42,6 +42,8 @@ function Itinerary() {
     cost: "",
     paymentType: "free",
     maxParticipants: "",
+    checkInDate: "",
+    checkOutDate: ""
   });
 
   // Fetch trip details
@@ -357,6 +359,7 @@ function Itinerary() {
                   <SelectItem value="Attraction">Attraction</SelectItem>
                   <SelectItem value="Event">Event</SelectItem>
                   <SelectItem value="Activity">Activity</SelectItem>
+                  <SelectItem value="Accommodation">Accommodation</SelectItem>
                 </SelectContent>
               </Select>
             </div>

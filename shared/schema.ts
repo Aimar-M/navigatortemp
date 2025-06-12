@@ -191,7 +191,7 @@ export const activities = pgTable("activities", {
   description: text("description"),
   date: timestamp("date").notNull(),
   startTime: text("start_time"), // optional time field in HH:MM format
-  activityType: text("activity_type"), // optional: Food & Drink, Transportation, Attraction, Event, Activity
+  activityType: text("activity_type"), // optional: Food & Drink, Transportation, Attraction, Event, Activity, Accommodation
   activityLink: text("activity_link"), // optional URL link to activity website
   location: text("location"),
   duration: text("duration"), // changed from integer to text for free-form input
@@ -199,6 +199,8 @@ export const activities = pgTable("activities", {
   paymentType: text("payment_type").notNull().default("free"), // free, payment_onsite, prepaid
   maxParticipants: integer("max_participants"), // optional registration cap
   createdBy: integer("created_by").references(() => users.id), // who created this activity
+  checkInDate: timestamp("check_in_date"), // for accommodation types only
+  checkOutDate: timestamp("check_out_date"), // for accommodation types only
 });
 
 export const activitiesRelations = relations(activities, ({ one, many }) => ({
@@ -223,6 +225,8 @@ export const insertActivitySchema = createInsertSchema(activities).pick({
   paymentType: true,
   maxParticipants: true,
   createdBy: true,
+  checkInDate: true,
+  checkOutDate: true,
 });
 
 // ActivityRSVP schema
