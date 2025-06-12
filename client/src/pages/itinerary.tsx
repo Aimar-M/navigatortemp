@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 
-import { Plus, MapPin, Clock, DollarSign, Users, Calendar } from "lucide-react";
+import { Plus, MapPin, Clock, DollarSign, Users, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import ActivityCard from "@/components/activity-card";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -28,6 +28,7 @@ function Itinerary() {
   });
   const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showMoreDetails, setShowMoreDetails] = useState(false);
   
   const [activityFormData, setActivityFormData] = useState({
     name: "",
@@ -284,6 +285,7 @@ function Itinerary() {
             <DialogTitle>Add New Activity</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Activity Name */}
             <div>
               <Label htmlFor="activity-name">Activity Name *</Label>
               <Input
@@ -294,6 +296,7 @@ function Itinerary() {
               />
             </div>
 
+            {/* Description */}
             <div>
               <Label htmlFor="activity-description">Description</Label>
               <Textarea
@@ -305,7 +308,8 @@ function Itinerary() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Trip Day & Start Time */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="activity-date">Trip Day *</Label>
                 <Select
@@ -337,6 +341,7 @@ function Itinerary() {
               </div>
             </div>
 
+            {/* Type of Activity */}
             <div>
               <Label htmlFor="activity-type">Type of Activity</Label>
               <Select
@@ -356,40 +361,8 @@ function Itinerary() {
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="activity-link">Link to Activity</Label>
-              <Input
-                id="activity-link"
-                type="url"
-                value={activityFormData.activityLink}
-                onChange={(e) => setActivityFormData(prev => ({ ...prev, activityLink: e.target.value }))}
-                placeholder="https://example.com/activity-booking"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="activity-duration">Duration</Label>
-                <Input
-                  id="activity-duration"
-                  value={activityFormData.duration}
-                  onChange={(e) => setActivityFormData(prev => ({ ...prev, duration: e.target.value }))}
-                  placeholder="e.g., 2 hours, Half day"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="activity-location">Location</Label>
-                <Input
-                  id="activity-location"
-                  value={activityFormData.location}
-                  onChange={(e) => setActivityFormData(prev => ({ ...prev, location: e.target.value }))}
-                  placeholder="Where is this activity?"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
+            {/* Payment Type & Cost */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="activity-payment-type">Payment Type</Label>
                 <Select 
@@ -406,9 +379,7 @@ function Itinerary() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="activity-cost">
                   Cost {activityFormData.paymentType === "free" ? "(optional)" : "*"}
@@ -428,17 +399,70 @@ function Itinerary() {
                   <p className="text-sm text-red-600 mt-1">Cost is required for paid activities</p>
                 )}
               </div>
+            </div>
 
-              <div>
-                <Label htmlFor="activity-max-participants">Registration cap on participants (optional)</Label>
-                <Input
-                  id="activity-max-participants"
-                  type="number"
-                  min="1"
-                  value={activityFormData.maxParticipants}
-                  onChange={(e) => setActivityFormData(prev => ({ ...prev, maxParticipants: e.target.value }))}
-                  placeholder="e.g., 10"
-                />
+            {/* More Details Button - Mobile Only */}
+            <div className="md:hidden">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowMoreDetails(!showMoreDetails)}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                {showMoreDetails ? "Hide Details" : "Add More Details"}
+                {showMoreDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </div>
+
+            {/* Additional Details - Always visible on desktop, toggleable on mobile */}
+            <div className={`space-y-4 ${showMoreDetails ? 'block' : 'hidden md:block'}`}>
+              {/* Duration & Location */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="activity-duration">Duration</Label>
+                  <Input
+                    id="activity-duration"
+                    value={activityFormData.duration}
+                    onChange={(e) => setActivityFormData(prev => ({ ...prev, duration: e.target.value }))}
+                    placeholder="e.g., 2 hours, Half day"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="activity-location">Location</Label>
+                  <Input
+                    id="activity-location"
+                    value={activityFormData.location}
+                    onChange={(e) => setActivityFormData(prev => ({ ...prev, location: e.target.value }))}
+                    placeholder="Where is this activity?"
+                  />
+                </div>
+              </div>
+
+              {/* Link to Activity & Registration Cap */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="activity-link">Link to Activity</Label>
+                  <Input
+                    id="activity-link"
+                    type="url"
+                    value={activityFormData.activityLink}
+                    onChange={(e) => setActivityFormData(prev => ({ ...prev, activityLink: e.target.value }))}
+                    placeholder="https://example.com/activity-booking"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="activity-max-participants">Registration cap (optional)</Label>
+                  <Input
+                    id="activity-max-participants"
+                    type="number"
+                    min="1"
+                    value={activityFormData.maxParticipants}
+                    onChange={(e) => setActivityFormData(prev => ({ ...prev, maxParticipants: e.target.value }))}
+                    placeholder="e.g., 10"
+                  />
+                </div>
               </div>
             </div>
 
