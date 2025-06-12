@@ -17,7 +17,7 @@ import TripDetailLayout from "@/components/trip-detail-layout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export default function Itinerary() {
+function Itinerary() {
   const { id } = useParams<{ id: string }>();
   const tripId = parseInt(id!);
   const { toast } = useToast();
@@ -62,6 +62,30 @@ export default function Itinerary() {
   const { data: activities = [], isLoading: isActivitiesLoading } = useQuery({
     queryKey: [`/api/trips/${tripId}/activities`],
     enabled: !!tripId && !!user,
+  });
+
+  // Sort activities chronologically by date and start time
+  const sortedActivities = (activities as any[]).sort((a: any, b: any) => {
+    // First sort by date
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    if (dateA.getTime() !== dateB.getTime()) {
+      return dateA.getTime() - dateB.getTime();
+    }
+    
+    // If dates are the same, sort by start time
+    // Activities without start time come last within the same day
+    if (!a.startTime && !b.startTime) return 0;
+    if (!a.startTime) return 1;
+    if (!b.startTime) return -1;
+    
+    // Convert time strings to comparable format (HH:MM to minutes)
+    const timeToMinutes = (timeStr: string) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+    
+    return timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
   });
 
   // Generate trip days for the date selector
@@ -212,7 +236,7 @@ export default function Itinerary() {
                   <p>Loading activities...</p>
                 </CardContent>
               </Card>
-            ) : (activities as any[]).length === 0 ? (
+            ) : sortedActivities.length === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center">
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -223,7 +247,7 @@ export default function Itinerary() {
                 </CardContent>
               </Card>
             ) : (
-              (activities as any[]).map((activity: any) => (
+              sortedActivities.map((activity: any) => (
                 <ActivityCard 
                   key={activity.id} 
                   id={activity.id}
@@ -329,17 +353,7 @@ export default function Itinerary() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="activity-location">Location</Label>
-                <Input
-                  id="activity-location"
-                  value={activityFormData.location}
-                  onChange={(e) => setActivityFormData(prev => ({ ...prev, location: e.target.value }))}
-                  placeholder="Where is this activity?"
-                />
-              </div>
-
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <Label htmlFor="activity-payment-type">Payment Type</Label>
                 <Select 
@@ -356,7 +370,9 @@ export default function Itinerary() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="activity-cost">
                   Cost {activityFormData.paymentType === "free" ? "(optional)" : "*"}
@@ -424,3 +440,5 @@ export default function Itinerary() {
     </TripDetailLayout>
   );
 }
+
+export default Itinerary;
