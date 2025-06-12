@@ -14,6 +14,7 @@ interface ActivityCardProps {
   name: string;
   description?: string;
   date: string;
+  startTime?: string;
   location?: string;
   duration?: string;
   cost?: string;
