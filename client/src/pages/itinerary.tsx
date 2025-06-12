@@ -69,14 +69,51 @@ function Itinerary() {
     enabled: !!tripId && !!user,
   });
 
+  // Expand accommodation activities across multiple days
+  const expandAccommodationActivities = (activities: any[]) => {
+    const expandedActivities: any[] = [];
+    
+    activities.forEach((activity: any) => {
+      if (activity.activityType === "Accommodation" && activity.checkInDate && activity.checkOutDate) {
+        // Create entries for each day from check-in to day before check-out
+        const checkInDate = new Date(activity.checkInDate);
+        const checkOutDate = new Date(activity.checkOutDate);
+        
+        const currentDate = new Date(checkInDate);
+        while (currentDate < checkOutDate) {
+          expandedActivities.push({
+            ...activity,
+            date: new Date(currentDate),
+            displayDate: new Date(currentDate),
+            isAccommodationEntry: true
+          });
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      } else {
+        // Regular activity - add as is
+        expandedActivities.push({
+          ...activity,
+          displayDate: new Date(activity.date),
+          isAccommodationEntry: false
+        });
+      }
+    });
+    
+    return expandedActivities;
+  };
+
   // Sort activities chronologically by date and start time
-  const sortedActivities = (activities as any[]).sort((a: any, b: any) => {
+  const sortedActivities = expandAccommodationActivities(activities as any[]).sort((a: any, b: any) => {
     // First sort by date
-    const dateA = new Date(a.date);
-    const dateB = new Date(b.date);
+    const dateA = new Date(a.displayDate);
+    const dateB = new Date(b.displayDate);
     if (dateA.getTime() !== dateB.getTime()) {
       return dateA.getTime() - dateB.getTime();
     }
+    
+    // Accommodation entries come first within the same day
+    if (a.isAccommodationEntry && !b.isAccommodationEntry) return -1;
+    if (!a.isAccommodationEntry && b.isAccommodationEntry) return 1;
     
     // If dates are the same, sort by start time
     // Activities without start time come last within the same day
@@ -146,6 +183,8 @@ function Itinerary() {
         cost: "",
         paymentType: "free",
         maxParticipants: "",
+        checkInDate: "",
+        checkOutDate: ""
       });
       toast({
         title: "Activity added",
@@ -162,13 +201,38 @@ function Itinerary() {
   });
 
   const handleAddActivity = async () => {
-    if (!activityFormData.name || !activityFormData.date) {
-      toast({
-        title: "Missing information",
-        description: "Please provide at least activity name and date",
-        variant: "destructive"
-      });
-      return;
+    // Validate required fields based on activity type
+    if (activityFormData.activityType === "Accommodation") {
+      if (!activityFormData.name || !activityFormData.checkInDate || !activityFormData.checkOutDate) {
+        toast({
+          title: "Missing information",
+          description: "Please provide activity name, check-in date, and check-out date",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validate check-out is after check-in
+      const checkInIndex = tripDays.findIndex(day => day.value === activityFormData.checkInDate);
+      const checkOutIndex = tripDays.findIndex(day => day.value === activityFormData.checkOutDate);
+      
+      if (checkOutIndex <= checkInIndex) {
+        toast({
+          title: "Invalid dates",
+          description: "Check-out date must be after check-in date",
+          variant: "destructive"
+        });
+        return;
+      }
+    } else {
+      if (!activityFormData.name || !activityFormData.date) {
+        toast({
+          title: "Missing information",
+          description: "Please provide at least activity name and date",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     // Validate cost is required when payment type is not free
@@ -184,11 +248,24 @@ function Itinerary() {
     setIsSubmitting(true);
     
     try {
-      const activityData = {
+      // Prepare activity data based on type
+      let activityData: any = {
         ...activityFormData,
         cost: activityFormData.cost ? activityFormData.cost : null,
         maxParticipants: activityFormData.maxParticipants ? parseInt(activityFormData.maxParticipants) : null,
       };
+
+      // For accommodation, convert check-in/check-out to proper date format and set the main date field
+      if (activityFormData.activityType === "Accommodation") {
+        const checkInDay = tripDays.find(day => day.value === activityFormData.checkInDate);
+        const checkOutDay = tripDays.find(day => day.value === activityFormData.checkOutDate);
+        
+        if (checkInDay && checkOutDay) {
+          activityData.checkInDate = checkInDay.date;
+          activityData.checkOutDate = checkOutDay.date;
+          activityData.date = checkInDay.date; // Set main date to check-in date
+        }
+      }
 
       addActivityMutation.mutate(activityData);
     } catch (error) {
@@ -310,38 +387,80 @@ function Itinerary() {
               />
             </div>
 
-            {/* Trip Day & Start Time */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="activity-date">Trip Day *</Label>
-                <Select
-                  value={activityFormData.date}
-                  onValueChange={(value) => setActivityFormData(prev => ({ ...prev, date: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a day..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tripDays.map((day) => (
-                      <SelectItem key={day.value} value={day.value}>
-                        {day.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Trip Day & Start Time OR Check In & Check Out for Accommodation */}
+            {activityFormData.activityType === "Accommodation" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="activity-checkin">Check In *</Label>
+                  <Select
+                    value={activityFormData.checkInDate}
+                    onValueChange={(value) => setActivityFormData(prev => ({ ...prev, checkInDate: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select check-in day..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tripDays.map((day) => (
+                        <SelectItem key={day.value} value={day.value}>
+                          {day.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div>
-                <Label htmlFor="activity-start-time">Start Time</Label>
-                <Input
-                  id="activity-start-time"
-                  type="time"
-                  value={activityFormData.startTime}
-                  onChange={(e) => setActivityFormData(prev => ({ ...prev, startTime: e.target.value }))}
-                  placeholder="HH:MM"
-                />
+                <div>
+                  <Label htmlFor="activity-checkout">Check Out *</Label>
+                  <Select
+                    value={activityFormData.checkOutDate}
+                    onValueChange={(value) => setActivityFormData(prev => ({ ...prev, checkOutDate: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select check-out day..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tripDays.map((day) => (
+                        <SelectItem key={day.value} value={day.value}>
+                          {day.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="activity-date">Trip Day *</Label>
+                  <Select
+                    value={activityFormData.date}
+                    onValueChange={(value) => setActivityFormData(prev => ({ ...prev, date: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a day..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tripDays.map((day) => (
+                        <SelectItem key={day.value} value={day.value}>
+                          {day.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="activity-start-time">Start Time</Label>
+                  <Input
+                    id="activity-start-time"
+                    type="time"
+                    value={activityFormData.startTime}
+                    onChange={(e) => setActivityFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                    placeholder="HH:MM"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Type of Activity */}
             <div>
@@ -486,6 +605,8 @@ function Itinerary() {
                     cost: "",
                     paymentType: "free",
                     maxParticipants: "",
+                    checkInDate: "",
+                    checkOutDate: ""
                   });
                 }}
               >
