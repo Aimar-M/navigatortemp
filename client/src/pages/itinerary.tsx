@@ -35,6 +35,7 @@ function Itinerary() {
     date: "",
     startTime: "",
     activityType: "",
+    activityLink: "",
     location: "",
     duration: "",
     cost: "",
@@ -136,6 +137,7 @@ function Itinerary() {
         date: "",
         startTime: "",
         activityType: "",
+        activityLink: "",
         location: "",
         duration: "",
         cost: "",
@@ -354,6 +356,18 @@ function Itinerary() {
               </Select>
             </div>
 
+            <div>
+              <Label htmlFor="activity-link">Link to Activity</Label>
+              <Input
+                id="activity-link"
+                type="url"
+                value={activityFormData.activityLink}
+                onChange={(e) => setActivityFormData(prev => ({ ...prev, activityLink: e.target.value }))}
+                placeholder="https://example.com/activity-booking"
+              />
+              <p className="text-sm text-gray-500 mt-1">Optional - website or booking link for this activity</p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="activity-duration">Duration</Label>
@@ -441,6 +455,7 @@ function Itinerary() {
                     date: "",
                     startTime: "",
                     activityType: "",
+                    activityLink: "",
                     location: "",
                     duration: "",
                     cost: "",

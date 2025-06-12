@@ -16,6 +16,7 @@ interface ActivityCardProps {
   date: string;
   startTime?: string;
   activityType?: string;
+  activityLink?: string;
   location?: string;
   duration?: string;
   cost?: string;

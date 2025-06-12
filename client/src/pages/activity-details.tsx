@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, MapPin, Clock, DollarSign, Users, CheckIcon, XIcon, Trash2 } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, DollarSign, Users, CheckIcon, XIcon, Trash2, ExternalLink } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useState } from "react";
@@ -30,6 +30,7 @@ interface ActivityDetail {
   date: string;
   startTime?: string;
   activityType?: string;
+  activityLink?: string;
   location?: string;
   duration?: string;
   cost?: string;
@@ -231,6 +232,20 @@ export default function ActivityDetails() {
                 <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                   {activity.activityType}
                 </Badge>
+              </div>
+            )}
+            
+            {activity.activityLink && (
+              <div className="flex items-center gap-2">
+                <ExternalLink className="h-4 w-4 text-gray-500" />
+                <a 
+                  href={activity.activityLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:text-blue-800 underline"
+                >
+                  View Activity Website
+                </a>
               </div>
             )}
             
