@@ -334,7 +334,6 @@ function Itinerary() {
                   onChange={(e) => setActivityFormData(prev => ({ ...prev, startTime: e.target.value }))}
                   placeholder="HH:MM"
                 />
-                <p className="text-sm text-gray-500 mt-1">Optional - helps organize activities chronologically</p>
               </div>
             </div>
 
@@ -366,7 +365,6 @@ function Itinerary() {
                 onChange={(e) => setActivityFormData(prev => ({ ...prev, activityLink: e.target.value }))}
                 placeholder="https://example.com/activity-booking"
               />
-              <p className="text-sm text-gray-500 mt-1">Optional - website or booking link for this activity</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -441,7 +439,6 @@ function Itinerary() {
                   onChange={(e) => setActivityFormData(prev => ({ ...prev, maxParticipants: e.target.value }))}
                   placeholder="e.g., 10"
                 />
-                <p className="text-sm text-gray-500 mt-1">Leave empty for unlimited participants</p>
               </div>
             </div>
 
