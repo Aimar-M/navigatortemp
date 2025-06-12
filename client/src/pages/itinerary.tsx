@@ -33,6 +33,7 @@ export default function Itinerary() {
     name: "",
     description: "",
     date: "",
+    startTime: "",
     location: "",
     duration: "",
     cost: "",
@@ -108,6 +109,7 @@ export default function Itinerary() {
         name: "",
         description: "",
         date: "",
+        startTime: "",
         location: "",
         duration: "",
         cost: "",
@@ -293,12 +295,36 @@ export default function Itinerary() {
               </div>
 
               <div>
+                <Label htmlFor="activity-start-time">Start Time</Label>
+                <Input
+                  id="activity-start-time"
+                  type="time"
+                  value={activityFormData.startTime}
+                  onChange={(e) => setActivityFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                  placeholder="HH:MM"
+                />
+                <p className="text-sm text-gray-500 mt-1">Optional - helps organize activities chronologically</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <Label htmlFor="activity-duration">Duration</Label>
                 <Input
                   id="activity-duration"
                   value={activityFormData.duration}
                   onChange={(e) => setActivityFormData(prev => ({ ...prev, duration: e.target.value }))}
                   placeholder="e.g., 2 hours, Half day"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="activity-location">Location</Label>
+                <Input
+                  id="activity-location"
+                  value={activityFormData.location}
+                  onChange={(e) => setActivityFormData(prev => ({ ...prev, location: e.target.value }))}
+                  placeholder="Where is this activity?"
                 />
               </div>
             </div>
@@ -374,6 +400,7 @@ export default function Itinerary() {
                     name: "",
                     description: "",
                     date: "",
+                    startTime: "",
                     location: "",
                     duration: "",
                     cost: "",
