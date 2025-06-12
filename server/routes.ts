@@ -1204,6 +1204,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           date: req.body.date ? new Date(req.body.date) : undefined,
           duration: req.body.duration === '' ? null : req.body.duration || null,
           cost: req.body.cost === '' ? null : req.body.cost,
+          checkInDate: req.body.checkInDate ? new Date(req.body.checkInDate) : null,
+          checkOutDate: req.body.checkOutDate ? new Date(req.body.checkOutDate) : null,
           createdBy: authUser.id
         };
         
