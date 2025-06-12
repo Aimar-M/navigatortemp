@@ -28,6 +28,7 @@ interface ActivityDetail {
   name: string;
   description?: string;
   date: string;
+  startTime?: string;
   location?: string;
   duration?: string;
   cost?: string;
@@ -189,7 +190,14 @@ export default function ActivityDetails() {
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="text-2xl font-bold text-gray-900">{activity.name}</CardTitle>
-              <p className="text-gray-500 mt-1">{formatDate(activity.date)}</p>
+              <div className="text-gray-500 mt-1">
+                {formatDate(activity.date)}
+                {activity.startTime && (
+                  <span className="ml-2 font-medium text-blue-600">
+                    at {activity.startTime}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex flex-col items-end gap-2">
               <Badge variant="outline" className="bg-primary-100 text-primary-800">
@@ -317,10 +325,10 @@ export default function ActivityDetails() {
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={rsvp.user.avatar} />
                       <AvatarFallback className="bg-green-100 text-green-600">
-                        {(rsvp.user.name || rsvp.user.username || 'U').charAt(0).toUpperCase()}
+                        {(rsvp.user.name || 'U').charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium text-gray-900">{rsvp.user.name || rsvp.user.username || 'Unknown User'}</span>
+                    <span className="text-sm font-medium text-gray-900">{rsvp.user.name || 'Unknown User'}</span>
                   </div>
                 ))}
               </div>
@@ -346,10 +354,10 @@ export default function ActivityDetails() {
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={rsvp.user.avatar} />
                       <AvatarFallback className="bg-red-100 text-red-600">
-                        {(rsvp.user.name || rsvp.user.username || 'U').charAt(0).toUpperCase()}
+                        {(rsvp.user.name || 'U').charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium text-gray-900">{rsvp.user.name || rsvp.user.username || 'Unknown User'}</span>
+                    <span className="text-sm font-medium text-gray-900">{rsvp.user.name || 'Unknown User'}</span>
                   </div>
                 ))}
               </div>
