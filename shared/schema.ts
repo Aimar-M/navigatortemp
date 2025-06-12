@@ -191,6 +191,7 @@ export const activities = pgTable("activities", {
   description: text("description"),
   date: timestamp("date").notNull(),
   startTime: text("start_time"), // optional time field in HH:MM format
+  activityType: text("activity_type"), // optional: Food & Drink, Transportation, Attraction, Event, Activity
   location: text("location"),
   duration: text("duration"), // changed from integer to text for free-form input
   cost: text("cost"),
@@ -213,6 +214,7 @@ export const insertActivitySchema = createInsertSchema(activities).pick({
   description: true,
   date: true,
   startTime: true,
+  activityType: true,
   location: true,
   duration: true,
   cost: true,
