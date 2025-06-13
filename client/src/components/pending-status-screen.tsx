@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
-import { CreditCard, Clock, CheckCircle, AlertCircle, Bell, Timer, DollarSign, Check, ArrowRight, Lock, Heart, Plane, MapPin, Calendar, CalendarDays } from "lucide-react";
+import { CreditCard, Clock, CheckCircle, AlertCircle, Bell, Timer, DollarSign, Check, ArrowRight, Lock, Heart, Plane, MapPin, Calendar, CalendarDays, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -49,7 +49,7 @@ const travelAnimation: any = {
   "op": 180,
   "w": 200,
   "h": 200,
-  "nm": "Travel Adventure",
+  "nm": "Travel Animation",
   "ddd": 0,
   "assets": [],
   "layers": [
@@ -61,16 +61,15 @@ const travelAnimation: any = {
       "sr": 1,
       "ks": {
         "o": {"a": 0, "k": 100, "ix": 11},
-        "r": {"a": 1, "k": [
-          {"i": {"x": [0.833], "y": [0.833]}, "o": {"x": [0.167], "y": [0.167]}, "t": 0, "s": [0]},
-          {"i": {"x": [0.833], "y": [0.833]}, "o": {"x": [0.167], "y": [0.167]}, "t": 90, "s": [5]},
-          {"t": 180, "s": [0]}
-        ], "ix": 10},
-        "p": {"a": 1, "k": [
-          {"i": {"x": 0.833, "y": 0.833}, "o": {"x": 0.167, "y": 0.167}, "t": 0, "s": [50, 100, 0]},
-          {"i": {"x": 0.833, "y": 0.833}, "o": {"x": 0.167, "y": 0.167}, "t": 90, "s": [150, 80, 0]},
-          {"t": 180, "s": [250, 100, 0]}
-        ], "ix": 2},
+        "r": {"a": 0, "k": 0, "ix": 10},
+        "p": {
+          "a": 1,
+          "k": [
+            {"i": {"x": 0.833, "y": 0.833}, "o": {"x": 0.167, "y": 0.167}, "t": 0, "s": [50, 100, 0]},
+            {"t": 180, "s": [150, 100, 0]}
+          ],
+          "ix": 2
+        },
         "a": {"a": 0, "k": [0, 0, 0], "ix": 1},
         "s": {"a": 0, "k": [100, 100, 100], "ix": 6}
       },
@@ -86,20 +85,17 @@ const travelAnimation: any = {
               "ks": {
                 "a": 0,
                 "k": {
-                  "i": [[0,0],[0,0],[0,0],[0,0]],
-                  "o": [[0,0],[0,0],[0,0],[0,0]],
-                  "v": [[-15,-5],[15,-5],[10,5],[-10,5]],
+                  "i": [[0, 0], [0, 0], [0, 0]],
+                  "o": [[0, 0], [0, 0], [0, 0]],
+                  "v": [[-10, 0], [10, -5], [10, 5]],
                   "c": true
                 },
                 "ix": 2
-              },
-              "nm": "Path 1",
-              "mn": "ADBE Vector Shape - Group",
-              "hd": false
+              }
             },
             {
               "ty": "fl",
-              "c": {"a": 0, "k": [0, 0.4, 1, 1], "ix": 4},
+              "c": {"a": 0, "k": [0.2, 0.5, 1, 1], "ix": 4},
               "o": {"a": 0, "k": 100, "ix": 5},
               "r": 1,
               "bm": 0,
@@ -108,7 +104,7 @@ const travelAnimation: any = {
               "hd": false
             }
           ],
-          "nm": "Plane Body",
+          "nm": "Plane Shape",
           "np": 2,
           "cix": 2,
           "bm": 0,
@@ -127,60 +123,43 @@ const travelAnimation: any = {
 };
 
 export default function PendingStatusScreen({ trip, member }: PendingStatusScreenProps) {
-  const { toast } = useToast();
   const { user } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
   const [pendingPaymentMethod, setPendingPaymentMethod] = useState<string | null>(null);
 
-  // Fetch payment options
-  const { data: settlementOptions = [], isLoading: optionsLoading, error: optionsError } = useQuery<SettlementOption[]>({
-    queryKey: [`/api/trips/${trip.id}/settlement-options/${trip.organizer}?amount=${trip.downPaymentAmount || 0}`],
-    enabled: !!trip.requiresDownPayment && !!trip.organizer,
+  // Fetch settlement options for this user
+  const { data: settlementOptions, isLoading: optionsLoading, error: optionsError } = useQuery({
+    queryKey: [`/api/trips/${trip.id}/settlement-options/${user?.id}`],
+    enabled: !!user?.id && trip.requiresDownPayment,
   });
 
-  // Fetch activities for itinerary preview (no auth required - preview only)
-  const { data: activities = [] } = useQuery<any[]>({
-    queryKey: [`/api/trips/${trip.id}/activities/preview`],
-    enabled: !!trip.id,
-  });
-
-  // Fetch trip members for confirmed attendees list
-  const { data: members = [] } = useQuery<any[]>({
+  // Fetch trip members for the confirmed attendees section
+  const { data: members } = useQuery({
     queryKey: [`/api/trips/${trip.id}/members`],
-    enabled: !!trip.id,
   });
 
-  // Handle initial payment submission (opens link and shows confirmation)
-  const handlePaymentSubmit = (paymentMethod: string) => {
-    const selectedOption = settlementOptions.find(opt => opt.method === paymentMethod);
-    
-    // For Venmo and PayPal, open the payment link first
-    if (selectedOption?.paymentLink && (paymentMethod === 'venmo' || paymentMethod === 'paypal')) {
-      window.open(selectedOption.paymentLink, '_blank');
-    }
-    
-    // Show confirmation dialog and store the payment method
-    setPendingPaymentMethod(paymentMethod);
-    setShowPaymentConfirmation(true);
-  };
-
-  // Submit payment mutation (only called after user confirms)
   const submitPaymentMutation = useMutation({
-    mutationFn: async (data: { paymentMethod: string }) => {
-      return await apiRequest('POST', `/api/trips/${trip.id}/members/${user?.id}/payment`, data);
+    mutationFn: async ({ paymentMethod }: { paymentMethod: string }) => {
+      return await apiRequest(`/api/trips/${trip.id}/members/${user?.id}/payment`, {
+        method: 'POST',
+        body: JSON.stringify({ 
+          paymentMethod,
+          paymentAmount: trip.downPaymentAmount 
+        }),
+      });
     },
     onSuccess: () => {
       toast({
         title: "Payment Submitted",
-        description: "Your payment has been submitted for organizer review.",
+        description: "Your payment has been submitted and is pending confirmation.",
       });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${trip.id}/members`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/trips'] });
       setShowPaymentConfirmation(false);
       setPendingPaymentMethod(null);
-      setSelectedMethod(null);
-      queryClient.invalidateQueries({ queryKey: ['/api/trips', trip.id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/trips', trip.id, 'members'] });
     },
     onError: (error: any) => {
       toast({
@@ -188,25 +167,36 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         description: error.message || "Failed to submit payment. Please try again.",
         variant: "destructive",
       });
-      setShowPaymentConfirmation(false);
-      setPendingPaymentMethod(null);
     },
   });
 
-  // Confirm attendance mutation (for trips without payment)
+  const handlePaymentSubmit = (method: string) => {
+    if (method === 'cash') {
+      setShowPaymentConfirmation(true);
+      setPendingPaymentMethod(method);
+    } else {
+      const option = (settlementOptions as SettlementOption[])?.find(opt => opt.method === method);
+      if (option?.paymentLink) {
+        window.open(option.paymentLink, '_blank');
+      }
+      setShowPaymentConfirmation(true);
+      setPendingPaymentMethod(method);
+    }
+  };
+
   const confirmAttendanceMutation = useMutation({
     mutationFn: async () => {
-      // For trips without down payment, update both rsvpStatus and status to 'confirmed'
-      await apiRequest('PUT', `/api/trips/${trip.id}/members/${user?.id}/rsvp`, { rsvpStatus: 'confirmed' });
-      return await apiRequest('PUT', `/api/trips/${trip.id}/members/${user?.id}`, { status: 'confirmed' });
+      return await apiRequest(`/api/trips/${trip.id}/members/${user?.id}/rsvp`, {
+        method: 'POST',
+        body: JSON.stringify({ rsvpStatus: 'confirmed' }),
+      });
     },
     onSuccess: () => {
       toast({
         title: "RSVP Confirmed",
-        description: "Your attendance has been confirmed!",
+        description: "Your attendance has been confirmed! Welcome to the trip.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/trips', trip.id] });
-      queryClient.invalidateQueries({ queryKey: ['/api/trips', trip.id, 'members'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${trip.id}/members`] });
       queryClient.invalidateQueries({ queryKey: ['/api/trips'] });
     },
     onError: (error: any) => {
@@ -228,36 +218,24 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   };
 
   const getRSVPStatusMessage = () => {
-    if (member.rsvpStatus === 'pending') {
-      if (trip.requiresDownPayment) {
-        if (!member.paymentStatus || member.paymentStatus === 'not_required') {
-          return 'Payment Required';
-        } else if (member.paymentStatus === 'submitted' || member.paymentStatus === 'pending') {
-          return 'Payment Submitted';
-        } else if (member.paymentStatus === 'confirmed') {
-          return 'Payment Confirmed';
-        }
+    if (trip.requiresDownPayment) {
+      if (!member.paymentStatus || member.paymentStatus === 'not_required') {
+        return 'Payment Required';
+      } else if (member.paymentStatus === 'submitted' || member.paymentStatus === 'pending') {
+        return 'Payment Pending Review';
+      } else if (member.paymentStatus === 'confirmed') {
+        return 'Payment Confirmed - Welcome!';
+      } else if (member.paymentStatus === 'rejected') {
+        return 'Payment Rejected - Try Again';
       }
-      return 'Pending Confirmation';
+    } else {
+      if (member.rsvpStatus === 'pending') {
+        return 'RSVP Pending';
+      } else if (member.rsvpStatus === 'confirmed') {
+        return 'RSVP Confirmed';
+      }
     }
-    return member.rsvpStatus || 'Unknown';
-  };
-
-  const getPaymentStatusMessage = () => {
-    if (!trip.requiresDownPayment) return 'No payment required';
-    
-    switch (member.paymentStatus) {
-      case 'submitted':
-      case 'pending':
-        return 'Awaiting confirmation';
-      case 'confirmed':
-        return 'Payment confirmed';
-      case 'rejected':
-        return 'Payment rejected';
-      case 'not_required':
-      default:
-        return 'Payment required';
-    }
+    return 'Status Unknown';
   };
 
   const getStatusColor = () => {
@@ -303,40 +281,36 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
               {/* Corner fade effects */}
               <div className="absolute inset-0"
                    style={{
-                     background: 'radial-gradient(ellipse at center, transparent 40%, black 100%)',
-                     opacity: 0.3
+                     background: 'radial-gradient(circle at top left, transparent 70%, rgba(0,0,0,0.4) 100%), radial-gradient(circle at top right, transparent 70%, rgba(0,0,0,0.4) 100%), radial-gradient(circle at bottom left, transparent 70%, rgba(0,0,0,0.4) 100%), radial-gradient(circle at bottom right, transparent 70%, rgba(0,0,0,0.4) 100%)'
                    }}></div>
             </div>
           )}
           
-          {/* Subtle Lottie Animation */}
-          <div className="absolute top-4 right-4 opacity-40 z-10">
-            <Lottie 
-              animationData={travelAnimation} 
-              className="w-16 h-16 sm:w-20 sm:h-20"
-              loop={true}
-              autoplay={true}
-            />
-          </div>
-          
-          <div className="relative z-20 text-center py-12 px-6">
-            <div className="flex items-center justify-center w-20 h-20 rounded-full mx-auto mb-6 shadow-xl" style={{ backgroundColor: '#3A8DFF' }}>
-              <Plane className="h-10 w-10 text-white" />
+          {/* Hero Content */}
+          <div className="relative z-10 px-8 py-16 text-center">
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <div className="w-16 h-16">
+                <Lottie 
+                  animationData={travelAnimation} 
+                  loop={true}
+                  className="w-full h-full"
+                />
+              </div>
             </div>
             
-            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 tracking-tight" style={{ color: '#FFFFFF' }}>
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-lg">
               {trip.name}
             </h1>
             
-            <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-6">
+            <div className="flex flex-wrap items-center justify-center gap-4 mb-6 text-white/90">
               {trip.destination && (
-                <div className="flex items-center gap-3 text-white text-lg">
-                  <MapPin className="h-5 w-5" />
-                  <span className="font-medium">{trip.destination}</span>
+                <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg border border-white/30">
+                  <MapPin className="h-4 w-4" />
+                  <span>{trip.destination}</span>
                 </div>
               )}
               {(trip.startDate || trip.endDate) && (
-                <div className="flex items-center gap-3 text-white/90 text-base">
+                <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg border border-white/30">
                   <Calendar className="h-4 w-4" />
                   <span>
                     {trip.startDate && new Date(trip.startDate).toLocaleDateString()}
@@ -359,7 +333,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl font-bold flex items-center gap-3" style={{ color: '#1A1A1A' }}>
                 <Plane className="h-7 w-7" style={{ color: '#3A8DFF' }} />
-                About This Adventure
+                Trip Details
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -368,10 +342,10 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           </Card>
         )}
 
-        {/* Enhanced Trip Itinerary Preview with Day View */}
-        {activities && activities.length > 0 && (
-          <EnhancedItineraryPreview 
-            activities={activities as any[]}
+        {/* Enhanced Itinerary Preview */}
+        {trip.id && (
+          <EnhancedItineraryPreview
+            tripId={trip.id}
             tripName={trip.name}
             className="mb-10"
           />
@@ -420,200 +394,198 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
               </div>
             </div>
 
-              {/* Payment Method Selection */}
-              {trip.requiresDownPayment && (
-                <div className="space-y-3">
-
-                  {/* Payment Method Selection */}
-                  {(!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 justify-center">
-                        <CreditCard className="h-4 w-4" style={{ color: '#3A8DFF' }} />
-                        <h4 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Choose Payment Method</h4>
-                      </div>
-                        
-                      {optionsLoading && (
-                        <div className="flex items-center justify-center py-4">
-                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-t-transparent mr-2" style={{ borderColor: '#3A8DFF', borderTopColor: 'transparent' }}></div>
-                          <span className="text-sm" style={{ color: '#4B5A6A' }}>Loading payment options...</span>
-                        </div>
-                      )}
-                      
-                      {optionsError && (
-                        <div className="p-3 rounded-xl border" style={{ backgroundColor: '#FDF2F2', borderColor: '#E74C3C' }}>
-                          <div className="flex items-center gap-2 mb-1">
-                            <AlertCircle className="h-4 w-4" style={{ color: '#E74C3C' }} />
-                            <span className="font-semibold text-sm" style={{ color: '#E74C3C' }}>Failed to load payment options</span>
-                          </div>
-                          <p className="text-xs" style={{ color: '#4B5A6A' }}>Please try again or contact the organizer for assistance.</p>
-                        </div>
-                      )}
-                      
-                      {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).length === 0 && (
-                        <div className="p-3 rounded-xl border" style={{ backgroundColor: '#FFF8E1', borderColor: '#FF9F43' }}>
-                          <div className="flex items-center gap-2 mb-1">
-                            <AlertCircle className="h-4 w-4" style={{ color: '#FF9F43' }} />
-                            <span className="font-semibold text-sm" style={{ color: '#FF9F43' }}>No payment methods available</span>
-                          </div>
-                          <p className="text-xs" style={{ color: '#4B5A6A' }}>Please contact the organizer to set up payment preferences.</p>
-                        </div>
-                      )}
-                        
-                      {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).map((option: SettlementOption, index: number) => (
-                        <div
-                          key={`${option.method}-${index}`}
-                          className="border rounded-xl p-4 cursor-pointer transition-all duration-300"
-                          style={{
-                            borderColor: selectedMethod === option.method ? '#3A8DFF' : '#CED6E0',
-                            backgroundColor: selectedMethod === option.method ? '#F5F9FF' : '#FFFFFF'
-                          }}
-                          onClick={() => setSelectedMethod(option.method)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div 
-                                className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300"
-                                style={{
-                                  borderColor: selectedMethod === option.method ? '#3A8DFF' : '#CED6E0',
-                                  backgroundColor: selectedMethod === option.method ? '#3A8DFF' : 'transparent'
-                                }}
-                              >
-                                {selectedMethod === option.method && (
-                                  <Check className="h-3 w-3 text-white" />
-                                )}
-                              </div>
-                              <div>
-                                <div className="font-semibold text-sm" style={{ color: '#1A1A1A' }}>{option.displayName}</div>
-                                {option.method === 'cash' && (
-                                  <div className="text-xs" style={{ color: '#4B5A6A' }}>
-                                    Settle in person with organizer
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            {option.method !== 'cash' && (
-                              <ArrowRight className="h-4 w-4" style={{ color: '#4B5A6A' }} />
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                        
-                      {selectedMethod && !showPaymentConfirmation && (
-                        <Button 
-                          onClick={() => handlePaymentSubmit(selectedMethod)}
-                          className="w-full py-4 text-sm font-semibold rounded-xl transition-all duration-300"
-                          style={{ 
-                            backgroundColor: '#3A8DFF',
-                            color: 'white',
-                            border: 'none'
-                          }}
-                        >
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4" />
-                            Submit Payment via {formatPaymentMethod(selectedMethod)}
-                          </div>
-                        </Button>
-                      )}
-                      
-                      {/* Payment Confirmation Dialog */}
-                      {showPaymentConfirmation && pendingPaymentMethod && (
-                        <div className="p-4 rounded-xl border" style={{ backgroundColor: '#F5F9FF', borderColor: '#3A8DFF' }}>
-                          <div className="text-center space-y-3">
-                            <div 
-                              className="flex items-center justify-center w-12 h-12 rounded-full mx-auto border"
-                              style={{ backgroundColor: '#3A8DFF', borderColor: '#3A8DFF' }}
-                            >
-                              <CheckCircle className="h-6 w-6 text-white" />
-                            </div>
-                            <h3 className="text-lg font-bold" style={{ color: '#1A1A1A' }}>
-                              Complete Your Payment
-                            </h3>
-                            <p className="text-sm" style={{ color: '#4B5A6A' }}>
-                              {pendingPaymentMethod === 'cash' 
-                                ? 'Please arrange to pay the organizer in person, then mark as paid below.'
-                                : `Please complete your payment on the ${formatPaymentMethod(pendingPaymentMethod)} page that opened, then confirm below.`
-                              }
-                            </p>
-                            
-                            <div className="flex gap-3">
-                              <Button 
-                                onClick={() => {
-                                  setShowPaymentConfirmation(false);
-                                  setPendingPaymentMethod(null);
-                                }}
-                                variant="outline"
-                                className="flex-1 py-3 text-sm"
-                                style={{ 
-                                  backgroundColor: 'white',
-                                  borderColor: '#CED6E0',
-                                  color: '#4B5A6A'
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                              <Button 
-                                onClick={() => {
-                                  submitPaymentMutation.mutate({ paymentMethod: pendingPaymentMethod });
-                                }}
-                                disabled={submitPaymentMutation.isPending}
-                                className="flex-1 py-3 text-sm"
-                                style={{ 
-                                  backgroundColor: '#28A745',
-                                  color: 'white',
-                                  border: 'none'
-                                }}
-                              >
-                                {submitPaymentMutation.isPending ? (
-                                  <div className="flex items-center gap-2">
-                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                                    Submitting...
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2">
-                                    <Check className="h-4 w-4" />
-                                    Mark as Paid
-                                  </div>
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+            {/* Payment Method Selection */}
+            {trip.requiresDownPayment && (
+              <div className="space-y-3">
+                {/* Payment Method Selection */}
+                {(!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 justify-center">
+                      <CreditCard className="h-4 w-4" style={{ color: '#3A8DFF' }} />
+                      <h4 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Choose Payment Method</h4>
                     </div>
-                  )}
-                </div>
-              )}
-
-              {/* RSVP Confirmation for trips without payment */}
-              {!trip.requiresDownPayment && (
-                <div className="text-center">
-                  <Button 
-                    onClick={() => confirmAttendanceMutation.mutate()}
-                    disabled={confirmAttendanceMutation.isPending}
-                    className="w-full py-4 text-sm font-semibold transition-all duration-300 rounded-xl"
-                    style={{ 
-                      backgroundColor: '#3A8DFF',
-                      color: 'white',
-                      border: 'none'
-                    }}
-                  >
-                    {confirmAttendanceMutation.isPending ? (
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                        Confirming Attendance...
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4" />
-                        Confirm Attendance
+                      
+                    {optionsLoading && (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-t-transparent mr-2" style={{ borderColor: '#3A8DFF', borderTopColor: 'transparent' }}></div>
+                        <span className="text-sm" style={{ color: '#4B5A6A' }}>Loading payment options...</span>
                       </div>
                     )}
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    
+                    {optionsError && (
+                      <div className="p-3 rounded-xl border" style={{ backgroundColor: '#FDF2F2', borderColor: '#E74C3C' }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <AlertCircle className="h-4 w-4" style={{ color: '#E74C3C' }} />
+                          <span className="font-semibold text-sm" style={{ color: '#E74C3C' }}>Failed to load payment options</span>
+                        </div>
+                        <p className="text-xs" style={{ color: '#4B5A6A' }}>Please try again or contact the organizer for assistance.</p>
+                      </div>
+                    )}
+                    
+                    {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).length === 0 && (
+                      <div className="p-3 rounded-xl border" style={{ backgroundColor: '#FFF8E1', borderColor: '#FF9F43' }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <AlertCircle className="h-4 w-4" style={{ color: '#FF9F43' }} />
+                          <span className="font-semibold text-sm" style={{ color: '#FF9F43' }}>No payment methods available</span>
+                        </div>
+                        <p className="text-xs" style={{ color: '#4B5A6A' }}>Please contact the organizer to set up payment preferences.</p>
+                      </div>
+                    )}
+                      
+                    {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).map((option: SettlementOption, index: number) => (
+                      <div
+                        key={`${option.method}-${index}`}
+                        className="border rounded-xl p-4 cursor-pointer transition-all duration-300"
+                        style={{
+                          borderColor: selectedMethod === option.method ? '#3A8DFF' : '#CED6E0',
+                          backgroundColor: selectedMethod === option.method ? '#F5F9FF' : '#FFFFFF'
+                        }}
+                        onClick={() => setSelectedMethod(option.method)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300"
+                              style={{
+                                borderColor: selectedMethod === option.method ? '#3A8DFF' : '#CED6E0',
+                                backgroundColor: selectedMethod === option.method ? '#3A8DFF' : 'transparent'
+                              }}
+                            >
+                              {selectedMethod === option.method && (
+                                <Check className="h-3 w-3 text-white" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-sm" style={{ color: '#1A1A1A' }}>{option.displayName}</div>
+                              {option.method === 'cash' && (
+                                <div className="text-xs" style={{ color: '#4B5A6A' }}>
+                                  Settle in person with organizer
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {option.method !== 'cash' && (
+                            <ArrowRight className="h-4 w-4" style={{ color: '#4B5A6A' }} />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                      
+                    {selectedMethod && !showPaymentConfirmation && (
+                      <Button 
+                        onClick={() => handlePaymentSubmit(selectedMethod)}
+                        className="w-full py-4 text-sm font-semibold rounded-xl transition-all duration-300"
+                        style={{ 
+                          backgroundColor: '#3A8DFF',
+                          color: 'white',
+                          border: 'none'
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="h-4 w-4" />
+                          Submit Payment via {formatPaymentMethod(selectedMethod)}
+                        </div>
+                      </Button>
+                    )}
+                    
+                    {/* Payment Confirmation Dialog */}
+                    {showPaymentConfirmation && pendingPaymentMethod && (
+                      <div className="p-4 rounded-xl border" style={{ backgroundColor: '#F5F9FF', borderColor: '#3A8DFF' }}>
+                        <div className="text-center space-y-3">
+                          <div 
+                            className="flex items-center justify-center w-12 h-12 rounded-full mx-auto border"
+                            style={{ backgroundColor: '#3A8DFF', borderColor: '#3A8DFF' }}
+                          >
+                            <CheckCircle className="h-6 w-6 text-white" />
+                          </div>
+                          <h3 className="text-lg font-bold" style={{ color: '#1A1A1A' }}>
+                            Complete Your Payment
+                          </h3>
+                          <p className="text-sm" style={{ color: '#4B5A6A' }}>
+                            {pendingPaymentMethod === 'cash' 
+                              ? 'Please arrange to pay the organizer in person, then mark as paid below.'
+                              : `Please complete your payment on the ${formatPaymentMethod(pendingPaymentMethod)} page that opened, then confirm below.`
+                            }
+                          </p>
+                          
+                          <div className="flex gap-3">
+                            <Button 
+                              onClick={() => {
+                                setShowPaymentConfirmation(false);
+                                setPendingPaymentMethod(null);
+                              }}
+                              variant="outline"
+                              className="flex-1 py-3 text-sm"
+                              style={{ 
+                                backgroundColor: 'white',
+                                borderColor: '#CED6E0',
+                                color: '#4B5A6A'
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button 
+                              onClick={() => {
+                                submitPaymentMutation.mutate({ paymentMethod: pendingPaymentMethod });
+                              }}
+                              disabled={submitPaymentMutation.isPending}
+                              className="flex-1 py-3 text-sm"
+                              style={{ 
+                                backgroundColor: '#28A745',
+                                color: 'white',
+                                border: 'none'
+                              }}
+                            >
+                              {submitPaymentMutation.isPending ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                  Submitting...
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <Check className="h-4 w-4" />
+                                  Mark as Paid
+                                </div>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* RSVP Confirmation for trips without payment */}
+            {!trip.requiresDownPayment && (
+              <div className="text-center">
+                <Button 
+                  onClick={() => confirmAttendanceMutation.mutate()}
+                  disabled={confirmAttendanceMutation.isPending}
+                  className="w-full py-4 text-sm font-semibold transition-all duration-300 rounded-xl"
+                  style={{ 
+                    backgroundColor: '#3A8DFF',
+                    color: 'white',
+                    border: 'none'
+                  }}
+                >
+                  {confirmAttendanceMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Confirming Attendance...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Confirm Attendance
+                    </div>
+                  )}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Confirmed Attendees */}
         <Card className="bg-white rounded-2xl shadow-lg border-0 mb-10">
@@ -650,6 +622,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
               </div>
             ) : (
               <div className="text-center py-8">
+                <Users className="h-12 w-12 mx-auto mb-3" style={{ color: '#4B5A6A' }} />
                 <div className="text-lg" style={{ color: '#4B5A6A' }}>
                   No confirmed attendees yet. Be the first to join!
                 </div>
@@ -658,51 +631,51 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           </CardContent>
         </Card>
 
-        {/* Enhanced What Happens Next Section */}
-        <Card className="mb-10 bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500">
+        {/* What Happens Next Section */}
+        <Card className="mb-10 bg-white rounded-2xl shadow-lg border-0">
           <CardContent className="p-8">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6">
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-xl border border-white/30">
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-xl border" style={{ backgroundColor: '#3A8DFF', borderColor: '#3A8DFF' }}>
                   <Bell className="h-6 w-6 md:h-8 md:w-8 text-white" />
                 </div>
               </div>
               <div className="flex-1 text-center md:text-left">
-                <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 tracking-tight">What happens next?</h3>
-                <p className="text-white/80 text-lg mb-6 leading-relaxed">
+                <h3 className="text-2xl md:text-3xl font-bold mb-4 tracking-tight" style={{ color: '#1A1A1A' }}>What happens next?</h3>
+                <p className="text-lg mb-6 leading-relaxed" style={{ color: '#4B5A6A' }}>
                   You'll receive a notification once your RSVP is confirmed by the organizer. 
                   This exciting adventure is just getting started!
                 </p>
                 
-                <div className="bg-gradient-to-br from-blue-500/30 to-indigo-600/30 backdrop-blur-md rounded-2xl p-6 border border-blue-300/50 shadow-lg">
-                  <h4 className="font-bold text-white text-xl mb-4 flex items-center gap-3 drop-shadow-sm">
-                    <Lock className="h-6 w-6 text-blue-200 drop-shadow-sm" />
+                <div className="rounded-2xl p-6 border shadow-lg" style={{ backgroundColor: '#F5F9FF', borderColor: '#CED6E0' }}>
+                  <h4 className="font-bold text-xl mb-4 flex items-center gap-3" style={{ color: '#1A1A1A' }}>
+                    <Lock className="h-6 w-6" style={{ color: '#3A8DFF' }} />
                     Once confirmed, you'll unlock:
                   </h4>
-                  <div className="grid sm:grid-cols-2 gap-3 text-white font-medium">
+                  <div className="grid sm:grid-cols-2 gap-3 font-medium">
                     <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="font-medium">Trip chat and messaging</span>
+                      <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: '#28A745' }} />
+                      <span className="font-medium" style={{ color: '#1A1A1A' }}>Trip chat and messaging</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="font-medium">Expense tracking and splitting</span>
+                      <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: '#28A745' }} />
+                      <span className="font-medium" style={{ color: '#1A1A1A' }}>Expense tracking and splitting</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="font-medium">Activity planning and polls</span>
+                      <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: '#28A745' }} />
+                      <span className="font-medium" style={{ color: '#1A1A1A' }}>Activity planning and polls</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="font-medium">Flight coordination</span>
+                      <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: '#28A745' }} />
+                      <span className="font-medium" style={{ color: '#1A1A1A' }}>Flight coordination</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="font-medium">All trip management features</span>
+                      <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: '#28A745' }} />
+                      <span className="font-medium" style={{ color: '#1A1A1A' }}>All trip management features</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="font-medium">Real-time updates and notifications</span>
+                      <CheckCircle className="h-5 w-5 flex-shrink-0" style={{ color: '#28A745' }} />
+                      <span className="font-medium" style={{ color: '#1A1A1A' }}>Real-time updates and notifications</span>
                     </div>
                   </div>
                 </div>
