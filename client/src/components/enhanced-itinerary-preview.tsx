@@ -102,18 +102,18 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
     return (
       <Dialog>
         <DialogTrigger asChild>
-          <div className="cursor-pointer hover:bg-white/10 transition-colors rounded-lg p-3">
+          <div className="cursor-pointer hover:opacity-80 transition-colors rounded-lg p-3">
             <div className="flex items-center justify-between gap-3">
               {/* Left side: Title, location, and accommodation icon */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   {isAccommodation && (
-                    <Building className="h-4 w-4 text-amber-300 flex-shrink-0" />
+                    <Building className="h-4 w-4 flex-shrink-0" style={{ color: '#FF9F43' }} />
                   )}
-                  <h4 className="font-medium text-white text-sm truncate">{activity.name}</h4>
+                  <h4 className="font-medium text-sm truncate" style={{ color: '#1A1A1A' }}>{activity.name}</h4>
                 </div>
                 {activity.location && (
-                  <div className="flex items-center text-xs text-blue-200">
+                  <div className="flex items-center text-xs" style={{ color: '#4B5A6A' }}>
                     <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
                     <span className="truncate">{activity.location}</span>
                   </div>
@@ -123,14 +123,19 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
               {/* Right side: Time and payment info */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 {activity.startTime && (
-                  <span className="text-xs font-medium text-blue-200 whitespace-nowrap">
+                  <span className="text-xs font-medium whitespace-nowrap" style={{ color: '#4B5A6A' }}>
                     {formatTime(activity.startTime)}
                   </span>
                 )}
                 {activity.paymentType && (
                   <Badge 
-                    variant={activity.paymentType === 'free' ? 'secondary' : activity.paymentType === 'prepaid' ? 'default' : 'outline'}
-                    className="text-xs bg-white/20 text-white border-white/30 px-2 py-1"
+                    variant="outline"
+                    className="text-xs px-2 py-1"
+                    style={{
+                      backgroundColor: activity.paymentType === 'free' ? '#28A745' : activity.paymentType === 'prepaid' ? '#3A8DFF' : '#FF9F43',
+                      color: 'white',
+                      borderColor: 'transparent'
+                    }}
                   >
                     {activity.paymentType === 'free' ? 'Free' : 
                      activity.paymentType === 'payment_onsite' ? 'Pay Onsite' : 
@@ -293,10 +298,10 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
 
   return (
     <div className={className}>
-      <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/15">
+      <Card className="bg-white rounded-2xl shadow-lg border-0">
         <CardHeader className="pb-4">
-          <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
-            <CalendarDays className="h-7 w-7 text-blue-200" />
+          <CardTitle className="text-2xl font-bold flex items-center gap-3" style={{ color: '#1A1A1A' }}>
+            <CalendarDays className="h-7 w-7" style={{ color: '#3A8DFF' }} />
             Trip Itinerary Preview
           </CardTitle>
         </CardHeader>
@@ -311,17 +316,25 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
                   size="sm"
                   onClick={goToPreviousDay}
                   disabled={selectedDay === 0}
-                  className="text-white hover:bg-white/20 disabled:opacity-30 h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 disabled:opacity-30"
+                  style={{ 
+                    color: selectedDay === 0 ? '#CED6E0' : '#3A8DFF',
+                    backgroundColor: 'transparent'
+                  }}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
               )}
               
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-              <div className="text-white/90 font-medium px-3 py-1 bg-white/10 rounded-full text-sm">
+              <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, #CED6E0, transparent)' }}></div>
+              <div className="font-medium px-3 py-1 rounded-full text-sm" style={{ 
+                color: '#1A1A1A',
+                backgroundColor: '#F5F9FF',
+                border: '1px solid #CED6E0'
+              }}>
                 {formatDate(uniqueDays[selectedDay])}
               </div>
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+              <div className="flex-1 h-px" style={{ background: 'linear-gradient(to right, transparent, #CED6E0, transparent)' }}></div>
               
               {/* Next Day Button */}
               {uniqueDays.length > 1 && (
@@ -330,7 +343,11 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
                   size="sm"
                   onClick={goToNextDay}
                   disabled={selectedDay === uniqueDays.length - 1}
-                  className="text-white hover:bg-white/20 disabled:opacity-30 h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 disabled:opacity-30"
+                  style={{ 
+                    color: selectedDay === uniqueDays.length - 1 ? '#CED6E0' : '#3A8DFF',
+                    backgroundColor: 'transparent'
+                  }}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -344,7 +361,7 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
             {currentDayActivities
               .filter(activity => !isAccommodationEntry(activity))
               .map((activity) => (
-                <div key={activity.id} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+                <div key={activity.id} className="rounded-xl border" style={{ backgroundColor: '#F5F9FF', borderColor: '#CED6E0' }}>
                   <ActivityDetailsDialog activity={activity} />
                 </div>
               ))}
@@ -353,7 +370,7 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
             {currentDayActivities
               .filter(activity => isAccommodationEntry(activity))
               .map((activity) => (
-                <div key={`accommodation-${activity.id}-${uniqueDays[selectedDay]}`} className="bg-amber-500/10 backdrop-blur-sm rounded-xl border border-amber-300/20">
+                <div key={`accommodation-${activity.id}-${uniqueDays[selectedDay]}`} className="rounded-xl border" style={{ backgroundColor: '#FFF7E6', borderColor: '#FF9F43' }}>
                   <ActivityDetailsDialog activity={activity} />
                 </div>
               ))}
