@@ -85,10 +85,10 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
           <div className="cursor-pointer hover:bg-white/10 transition-colors rounded-lg p-3 -m-3">
             <div className="space-y-2">
               {/* Title and Time row */}
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-white flex-1">{activity.name}</h4>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
+                <h4 className="font-bold text-white text-base sm:text-lg flex-1">{activity.name}</h4>
                 {activity.startTime && (
-                  <span className="text-sm font-bold text-yellow-300 ml-3 bg-black/20 px-2 py-1 rounded">
+                  <span className="text-sm font-bold text-black bg-amber-300 px-3 py-1 rounded-lg shadow-md self-start sm:self-auto">
                     {formatTime(activity.startTime)}
                   </span>
                 )}
@@ -96,25 +96,25 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
               
               {/* Location */}
               {activity.location && (
-                <div className="flex items-center text-sm text-white/80">
-                  <MapPin className="h-4 w-4 mr-2 text-blue-300" />
-                  {activity.location}
+                <div className="flex items-center text-sm text-slate-200 font-medium">
+                  <MapPin className="h-4 w-4 mr-2 text-cyan-300 flex-shrink-0" />
+                  <span className="break-words">{activity.location}</span>
                 </div>
               )}
 
               {/* Bottom row: Payment type and RSVP info */}
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
                 {/* Payment type */}
-                <div>
+                <div className="flex-shrink-0">
                   {activity.paymentType && (
                     <Badge 
                       variant={activity.paymentType === 'free' ? 'secondary' : activity.paymentType === 'prepaid' ? 'default' : 'outline'}
                       className={
                         activity.paymentType === 'free' 
-                          ? "text-xs bg-green-600/80 text-white border-green-500/50" 
+                          ? "text-xs font-bold bg-emerald-500 text-white border-emerald-400 shadow-md" 
                           : activity.paymentType === 'prepaid' 
-                          ? "text-xs bg-blue-600/80 text-white border-blue-500/50" 
-                          : "text-xs bg-orange-600/80 text-white border-orange-500/50"
+                          ? "text-xs font-bold bg-blue-500 text-white border-blue-400 shadow-md" 
+                          : "text-xs font-bold bg-orange-500 text-white border-orange-400 shadow-md"
                       }
                     >
                       {activity.paymentType === 'free' ? 'Free' : 
@@ -126,10 +126,13 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
 
                 {/* RSVP info and spots */}
                 {!isAccommodation && (
-                  <div className="flex items-center gap-3 text-xs text-white/90 font-medium">
-                    <span>{confirmedCount}/{totalCount} going</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs font-bold">
+                    <span className="text-slate-100 bg-slate-600/60 px-2 py-1 rounded">{confirmedCount}/{totalCount} going</span>
                     {activity.maxParticipants && (
-                      <span className={spotsLeft && spotsLeft <= 3 ? "text-yellow-300 font-bold" : "text-white/80"}>
+                      <span className={spotsLeft && spotsLeft <= 3 
+                        ? "text-black bg-yellow-300 px-2 py-1 rounded font-bold" 
+                        : "text-slate-100 bg-slate-600/60 px-2 py-1 rounded"
+                      }>
                         {spotsLeft && spotsLeft > 0 
                           ? `${spotsLeft} spots left`
                           : "Full"
@@ -304,50 +307,55 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
         <CardContent className="space-y-4">
           {/* Day Navigation */}
           {uniqueDays.length > 1 && (
-            <div className="flex items-center justify-between bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/30 shadow-lg">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={goToPreviousDay}
-                disabled={selectedDay === 0}
-                className="text-white font-semibold hover:bg-white/30 disabled:opacity-40 bg-white/10 border border-white/20"
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
-              </Button>
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:justify-between bg-gradient-to-r from-slate-800/90 to-slate-700/90 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-slate-500/50 shadow-xl">
+              {/* Mobile: Day info first, then buttons below */}
+              <div className="order-2 sm:order-1 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goToPreviousDay}
+                  disabled={selectedDay === 0}
+                  className="text-white font-bold hover:bg-slate-600/60 disabled:opacity-30 bg-slate-600/40 border border-slate-400/50 px-3 py-2 sm:px-4 shadow-lg"
+                >
+                  <ChevronLeft className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Previous</span>
+                </Button>
+              </div>
               
-              <div className="text-center bg-black/20 px-4 py-2 rounded-lg">
-                <div className="text-white font-bold text-lg">
+              <div className="order-1 sm:order-2 text-center bg-gradient-to-r from-slate-900/80 to-slate-800/80 px-3 py-2 sm:px-4 sm:py-2 rounded-lg border border-slate-400/30 shadow-inner">
+                <div className="text-white font-bold text-base sm:text-lg">
                   Day {selectedDay + 1} of {uniqueDays.length}
                 </div>
                 {uniqueDays[selectedDay] && (
-                  <div className="text-yellow-300 text-sm font-medium">
+                  <div className="text-amber-300 text-xs sm:text-sm font-semibold">
                     {formatDate(uniqueDays[selectedDay])}
                   </div>
                 )}
               </div>
               
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={goToNextDay}
-                disabled={selectedDay === uniqueDays.length - 1}
-                className="text-white font-semibold hover:bg-white/30 disabled:opacity-40 bg-white/10 border border-white/20"
-              >
-                Next
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
+              <div className="order-3 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goToNextDay}
+                  disabled={selectedDay === uniqueDays.length - 1}
+                  className="text-white font-bold hover:bg-slate-600/60 disabled:opacity-30 bg-slate-600/40 border border-slate-400/50 px-3 py-2 sm:px-4 shadow-lg"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="h-4 w-4 sm:ml-1" />
+                </Button>
+              </div>
             </div>
           )}
 
           {/* Day Separator */}
           {uniqueDays[selectedDay] && (
             <div className="flex items-center gap-3 py-3">
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
-              <div className="text-white font-bold px-4 py-2 bg-gradient-to-r from-blue-600/60 to-purple-600/60 rounded-full text-sm border border-white/30 shadow-lg">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-400/60 to-transparent"></div>
+              <div className="text-white font-bold px-3 py-2 bg-gradient-to-r from-slate-700/80 to-slate-600/80 rounded-full text-sm border border-slate-400/50 shadow-lg">
                 {formatDate(uniqueDays[selectedDay])}
               </div>
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-400/60 to-transparent"></div>
             </div>
           )}
 
@@ -357,7 +365,7 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
             {currentDayActivities
               .filter(activity => !isAccommodationEntry(activity))
               .map((activity) => (
-                <div key={activity.id} className="bg-white/20 backdrop-blur-md rounded-xl border border-white/30 shadow-lg hover:bg-white/25 transition-all">
+                <div key={activity.id} className="bg-slate-700/60 backdrop-blur-md rounded-xl border border-slate-500/50 shadow-lg hover:bg-slate-600/70 transition-all">
                   <ActivityDetailsDialog activity={activity} />
                 </div>
               ))}
@@ -366,7 +374,7 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
             {currentDayActivities
               .filter(activity => isAccommodationEntry(activity))
               .map((activity) => (
-                <div key={activity.id} className="bg-blue-600/30 backdrop-blur-md rounded-xl border border-blue-400/50 shadow-lg hover:bg-blue-600/35 transition-all">
+                <div key={activity.id} className="bg-blue-700/50 backdrop-blur-md rounded-xl border border-blue-500/60 shadow-lg hover:bg-blue-600/60 transition-all">
                   <ActivityDetailsDialog activity={activity} />
                 </div>
               ))}
@@ -374,8 +382,8 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
 
           {/* No Activities Message */}
           {currentDayActivities.length === 0 && (
-            <div className="text-center py-8 bg-white/10 rounded-xl border border-white/20">
-              <CalendarDays className="h-12 w-12 mx-auto mb-3 text-white/60" />
+            <div className="text-center py-8 bg-slate-700/40 rounded-xl border border-slate-500/40">
+              <CalendarDays className="h-12 w-12 mx-auto mb-3 text-slate-300" />
               <p className="text-white font-medium">No activities planned for this day</p>
             </div>
           )}
