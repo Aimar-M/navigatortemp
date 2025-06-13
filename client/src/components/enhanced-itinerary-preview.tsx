@@ -34,6 +34,22 @@ interface EnhancedItineraryPreviewProps {
 export default function EnhancedItineraryPreview({ activities, tripName, className }: EnhancedItineraryPreviewProps) {
   const [selectedDay, setSelectedDay] = useState<number>(0);
 
+  const isAccommodationEntry = (activity: Activity) => {
+    return activity.checkInDate || activity.checkOutDate || 
+           activity.activityType === 'accommodation' ||
+           activity.name?.toLowerCase().includes('hotel') ||
+           activity.name?.toLowerCase().includes('accommodation');
+  };
+
+  const formatTime = (time?: string) => {
+    if (!time) return '';
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
   // Group activities by day and sort chronologically
   const groupedActivities = activities
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -75,22 +91,6 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
 
   const goToNextDay = () => {
     setSelectedDay(prev => Math.min(uniqueDays.length - 1, prev + 1));
-  };
-
-  const formatTime = (time?: string) => {
-    if (!time) return '';
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
-  };
-
-  const isAccommodationEntry = (activity: Activity) => {
-    return activity.checkInDate || activity.checkOutDate || 
-           activity.activityType === 'accommodation' ||
-           activity.name?.toLowerCase().includes('hotel') ||
-           activity.name?.toLowerCase().includes('accommodation');
   };
 
   const ActivityDetailsDialog = ({ activity }: { activity: Activity }) => {
