@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { CalendarDays, ChevronLeft, ChevronRight, MapPin, Clock, Users, ExternalLink, Plane, Building } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -139,14 +139,14 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">{activity.name}</DialogTitle>
-            <div className="text-gray-500 mt-1">
+            <DialogDescription className="text-gray-500 mt-1">
               {formatDate(activity.date)}
               {activity.startTime && (
                 <span className="ml-2 font-medium text-blue-600">
                   at {formatTime(activity.startTime)}
                 </span>
               )}
-            </div>
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-6">
@@ -296,52 +296,40 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Day Navigation */}
-          {uniqueDays.length > 1 && (
-            <div className="flex items-center justify-between bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={goToPreviousDay}
-                disabled={selectedDay === 0}
-                className="text-white hover:bg-white/20 disabled:opacity-50"
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
-              </Button>
-              
-              <div className="text-center">
-                <div className="text-white font-medium">
-                  Day {selectedDay + 1} of {uniqueDays.length}
-                </div>
-                {uniqueDays[selectedDay] && (
-                  <div className="text-blue-200 text-sm">
-                    {formatDate(uniqueDays[selectedDay])}
-                  </div>
-                )}
-              </div>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={goToNextDay}
-                disabled={selectedDay === uniqueDays.length - 1}
-                className="text-white hover:bg-white/20 disabled:opacity-50"
-              >
-                Next
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          )}
-
-          {/* Day Separator */}
+          {/* Day Separator with Integrated Navigation */}
           {uniqueDays[selectedDay] && (
             <div className="flex items-center gap-3 py-2">
+              {/* Previous Day Button */}
+              {uniqueDays.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goToPreviousDay}
+                  disabled={selectedDay === 0}
+                  className="text-white hover:bg-white/20 disabled:opacity-30 h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              )}
+              
               <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
               <div className="text-white/90 font-medium px-3 py-1 bg-white/10 rounded-full text-sm">
                 {formatDate(uniqueDays[selectedDay])}
               </div>
               <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+              
+              {/* Next Day Button */}
+              {uniqueDays.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goToNextDay}
+                  disabled={selectedDay === uniqueDays.length - 1}
+                  className="text-white hover:bg-white/20 disabled:opacity-30 h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           )}
 
@@ -371,34 +359,6 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
             <div className="text-center py-8 text-white/70">
               <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>No activities planned for this day</p>
-            </div>
-          )}
-
-          {/* More Content Indicator */}
-          {uniqueDays.length > 1 && (
-            <div className="mt-6 relative">
-              <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-transparent to-white/5 pointer-events-none rounded-t-xl"></div>
-              
-              <div className="bg-gradient-to-br from-purple-500/20 to-indigo-600/20 backdrop-blur-sm rounded-xl p-3 border border-purple-300/30 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-30">
-                  <div className="absolute top-2 left-4 w-1 h-1 bg-white rounded-full animate-pulse"></div>
-                  <div className="absolute top-6 right-6 w-1 h-1 bg-blue-300 rounded-full animate-pulse delay-300"></div>
-                  <div className="absolute bottom-3 left-1/3 w-1 h-1 bg-purple-300 rounded-full animate-pulse delay-700"></div>
-                </div>
-                
-                <div className="relative z-10 text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-blue-300 rounded-full animate-bounce delay-150"></div>
-                      <div className="w-2 h-2 bg-indigo-300 rounded-full animate-bounce delay-300"></div>
-                    </div>
-                    <span className="text-white/70 text-xs ml-2 font-medium">
-                      {uniqueDays.length - 1} more days of amazing experiences
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
         </CardContent>
