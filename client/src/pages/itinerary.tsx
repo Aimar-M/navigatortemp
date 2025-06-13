@@ -475,6 +475,7 @@ function Itinerary() {
                   <Input
                     id="activity-start-time"
                     type="time"
+                    step="300"
                     value={activityFormData.startTime}
                     onChange={(e) => setActivityFormData(prev => ({ ...prev, startTime: e.target.value }))}
                     placeholder="HH:MM"
