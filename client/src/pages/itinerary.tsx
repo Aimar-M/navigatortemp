@@ -307,7 +307,7 @@ function Itinerary() {
               disabled={!isConfirmedMember}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Activity
+              Add to Itinerary
             </Button>
           </div>
 
@@ -361,12 +361,12 @@ function Itinerary() {
       <Dialog open={isAddActivityModalOpen} onOpenChange={setIsAddActivityModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Add New Activity</DialogTitle>
+            <DialogTitle>Add New Itinerary Item</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Activity Name */}
+            {/* Title */}
             <div>
-              <Label htmlFor="activity-name">Activity Name *</Label>
+              <Label htmlFor="activity-name">Title *</Label>
               <Input
                 id="activity-name"
                 value={activityFormData.name}
@@ -385,6 +385,27 @@ function Itinerary() {
                 placeholder="Describe what you'll be doing..."
                 rows={3}
               />
+            </div>
+
+            {/* Category */}
+            <div>
+              <Label htmlFor="activity-type">Category</Label>
+              <Select
+                value={activityFormData.activityType}
+                onValueChange={(value) => setActivityFormData(prev => ({ ...prev, activityType: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Food & Drink">Food & Drink</SelectItem>
+                  <SelectItem value="Transportation">Transportation</SelectItem>
+                  <SelectItem value="Attraction">Attraction</SelectItem>
+                  <SelectItem value="Event">Event</SelectItem>
+                  <SelectItem value="Activity">Activity</SelectItem>
+                  <SelectItem value="Accommodation">Accommodation</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Trip Day & Start Time OR Check In & Check Out for Accommodation */}
@@ -461,27 +482,6 @@ function Itinerary() {
                 </div>
               </div>
             )}
-
-            {/* Type of Activity */}
-            <div>
-              <Label htmlFor="activity-type">Type of Activity</Label>
-              <Select
-                value={activityFormData.activityType}
-                onValueChange={(value) => setActivityFormData(prev => ({ ...prev, activityType: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select activity type (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Food & Drink">Food & Drink</SelectItem>
-                  <SelectItem value="Transportation">Transportation</SelectItem>
-                  <SelectItem value="Attraction">Attraction</SelectItem>
-                  <SelectItem value="Event">Event</SelectItem>
-                  <SelectItem value="Activity">Activity</SelectItem>
-                  <SelectItem value="Accommodation">Accommodation</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
             {/* Payment Type & Cost */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -561,10 +561,10 @@ function Itinerary() {
                 </div>
               </div>
 
-              {/* Link to Activity & Registration Cap */}
+              {/* Website & Registration Cap */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="activity-link">Link to Activity</Label>
+                  <Label htmlFor="activity-link">Website</Label>
                   <Input
                     id="activity-link"
                     type="url"
