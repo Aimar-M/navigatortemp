@@ -12,6 +12,7 @@ import {
 import { format } from "date-fns";
 import navigatorLogo from "@/assets/navigator-logo.svg";
 import Lottie from "lottie-react";
+import EnhancedItineraryPreview from "@/components/enhanced-itinerary-preview";
 
 // Simple travel-themed Lottie animation data
 const travelAnimation: any = {
@@ -297,94 +298,13 @@ export default function InvitationPage() {
           </CardContent>
         </Card>
 
-        {/* Activities */}
+        {/* Enhanced Trip Itinerary Preview with Day View */}
         {activityPreview && activityPreview.length > 0 && (
-          <Card className="mb-8 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
-                <Calendar className="h-7 w-7 text-blue-200" />
-                Planned Activities
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {activityPreview.map((activity) => (
-                  <div key={activity.id} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                    <div className="flex flex-col lg:flex-row gap-4">
-                      {/* Activity Details Section */}
-                      <div className="flex-1">
-                        <div className="text-center sm:text-left">
-                          <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
-                            <Calendar className="h-4 w-4 text-blue-100" />
-                            <span className="font-semibold text-white text-sm">{activity.name}</span>
-                          </div>
-                          {activity.description && (
-                            <p className="text-white/70 text-xs mb-3 leading-relaxed">{activity.description}</p>
-                          )}
-                          <div className="flex flex-wrap gap-3 text-xs">
-                            <div className="flex items-center gap-2 text-blue-200">
-                              <Calendar className="h-3 w-3" />
-                              <span>{format(new Date(activity.date), 'MMM d')}</span>
-                            </div>
-                            {activity.duration && (
-                              <div className="flex items-center gap-2 text-blue-200">
-                                <Clock className="h-3 w-3" />
-                                <span>{activity.duration}</span>
-                              </div>
-                            )}
-                            {activity.location && (
-                              <div className="flex items-center gap-2 text-blue-200">
-                                <MapPin className="h-3 w-3" />
-                                <span>{activity.location}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Activity Details Section - Right side with border */}
-                      <div className="lg:flex-shrink-0 lg:border-l lg:border-white/20 lg:pl-4">
-                        <div className="text-center lg:text-right">
-                          <div className="flex items-center justify-center lg:justify-end gap-2 mb-2">
-                            <Clock className="h-4 w-4 text-blue-200" />
-                            <span className="font-semibold text-white text-sm">Activity Details</span>
-                          </div>
-                          <div className="text-sm font-bold text-white">{format(new Date(activity.date), 'EEEE, MMM d')}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Preview Indicator - identical to pending status screen */}
-              <div className="mt-6 relative">
-                {/* Gradient fade effect */}
-                <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-transparent to-white/5 pointer-events-none rounded-t-xl"></div>
-                
-                <div className="bg-gradient-to-br from-purple-500/20 to-indigo-600/20 backdrop-blur-sm rounded-xl p-3 border border-purple-300/30 relative overflow-hidden">
-                  {/* Animated background sparkles */}
-                  <div className="absolute inset-0 opacity-30">
-                    <div className="absolute top-2 left-4 w-1 h-1 bg-white rounded-full animate-pulse"></div>
-                    <div className="absolute top-6 right-6 w-1 h-1 bg-blue-300 rounded-full animate-pulse delay-300"></div>
-                    <div className="absolute bottom-3 left-1/3 w-1 h-1 bg-purple-300 rounded-full animate-pulse delay-700"></div>
-                  </div>
-                  
-                  <div className="relative z-10 text-center">
-                    {/* Animated dots indicating more content */}
-                    <div className="flex items-center justify-center gap-1">
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-purple-300 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-blue-300 rounded-full animate-bounce delay-150"></div>
-                        <div className="w-2 h-2 bg-indigo-300 rounded-full animate-bounce delay-300"></div>
-                      </div>
-                      <span className="text-white/70 text-xs ml-2 font-medium">More amazing experiences await</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <EnhancedItineraryPreview 
+            activities={activityPreview as any[]}
+            tripName={trip.name}
+            className="mb-8"
+          />
         )}
 
         {/* Payment Information */}
