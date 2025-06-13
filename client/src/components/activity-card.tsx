@@ -209,7 +209,7 @@ export default function ActivityCard({
               </div>
 
               {/* Center: RSVP info and spots */}
-              <div className="flex items-center gap-3 text-xs text-gray-600">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs text-gray-600">
                 <span>{confirmedCount}/{totalCount} going</span>
                 {maxParticipants && (
                   <span className={maxParticipants - confirmedCount <= 3 ? "text-amber-600 font-medium" : ""}>
@@ -253,10 +253,7 @@ export default function ActivityCard({
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete();
-                      }}
+                      onClick={(e) => handleDelete(e)}
                       disabled={isSubmitting}
                       className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
                     >
