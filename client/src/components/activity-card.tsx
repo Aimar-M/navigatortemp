@@ -26,6 +26,7 @@ interface ActivityCardProps {
   totalCount: number;
   rsvps?: any[];
   createdBy?: number;
+  isAccommodationEntry?: boolean;
 }
 
 export default function ActivityCard({
