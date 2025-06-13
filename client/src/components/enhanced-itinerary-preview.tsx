@@ -86,9 +86,9 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
             <div className="space-y-2">
               {/* Title and Time row */}
               <div className="flex items-center justify-between">
-                <h4 className="font-medium text-white flex-1">{activity.name}</h4>
+                <h4 className="font-semibold text-white flex-1">{activity.name}</h4>
                 {activity.startTime && (
-                  <span className="text-sm font-medium text-blue-200 ml-3">
+                  <span className="text-sm font-bold text-yellow-300 ml-3 bg-black/20 px-2 py-1 rounded">
                     {formatTime(activity.startTime)}
                   </span>
                 )}
@@ -96,8 +96,8 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
               
               {/* Location */}
               {activity.location && (
-                <div className="flex items-center text-sm text-blue-200">
-                  <MapPin className="h-4 w-4 mr-2" />
+                <div className="flex items-center text-sm text-white/80">
+                  <MapPin className="h-4 w-4 mr-2 text-blue-300" />
                   {activity.location}
                 </div>
               )}
@@ -109,7 +109,13 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
                   {activity.paymentType && (
                     <Badge 
                       variant={activity.paymentType === 'free' ? 'secondary' : activity.paymentType === 'prepaid' ? 'default' : 'outline'}
-                      className="text-xs bg-white/20 text-white border-white/30"
+                      className={
+                        activity.paymentType === 'free' 
+                          ? "text-xs bg-green-600/80 text-white border-green-500/50" 
+                          : activity.paymentType === 'prepaid' 
+                          ? "text-xs bg-blue-600/80 text-white border-blue-500/50" 
+                          : "text-xs bg-orange-600/80 text-white border-orange-500/50"
+                      }
                     >
                       {activity.paymentType === 'free' ? 'Free' : 
                        activity.paymentType === 'payment_onsite' ? 'Pay Onsite' : 
@@ -120,10 +126,10 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
 
                 {/* RSVP info and spots */}
                 {!isAccommodation && (
-                  <div className="flex items-center gap-3 text-xs text-blue-200">
+                  <div className="flex items-center gap-3 text-xs text-white/90 font-medium">
                     <span>{confirmedCount}/{totalCount} going</span>
                     {activity.maxParticipants && (
-                      <span className={spotsLeft && spotsLeft <= 3 ? "text-amber-300 font-medium" : ""}>
+                      <span className={spotsLeft && spotsLeft <= 3 ? "text-yellow-300 font-bold" : "text-white/80"}>
                         {spotsLeft && spotsLeft > 0 
                           ? `${spotsLeft} spots left`
                           : "Full"
@@ -298,24 +304,24 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
         <CardContent className="space-y-4">
           {/* Day Navigation */}
           {uniqueDays.length > 1 && (
-            <div className="flex items-center justify-between bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+            <div className="flex items-center justify-between bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/30 shadow-lg">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={goToPreviousDay}
                 disabled={selectedDay === 0}
-                className="text-white hover:bg-white/20 disabled:opacity-50"
+                className="text-white font-semibold hover:bg-white/30 disabled:opacity-40 bg-white/10 border border-white/20"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Previous
               </Button>
               
-              <div className="text-center">
-                <div className="text-white font-medium">
+              <div className="text-center bg-black/20 px-4 py-2 rounded-lg">
+                <div className="text-white font-bold text-lg">
                   Day {selectedDay + 1} of {uniqueDays.length}
                 </div>
                 {uniqueDays[selectedDay] && (
-                  <div className="text-blue-200 text-sm">
+                  <div className="text-yellow-300 text-sm font-medium">
                     {formatDate(uniqueDays[selectedDay])}
                   </div>
                 )}
@@ -326,7 +332,7 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
                 size="sm"
                 onClick={goToNextDay}
                 disabled={selectedDay === uniqueDays.length - 1}
-                className="text-white hover:bg-white/20 disabled:opacity-50"
+                className="text-white font-semibold hover:bg-white/30 disabled:opacity-40 bg-white/10 border border-white/20"
               >
                 Next
                 <ChevronRight className="h-4 w-4 ml-1" />
@@ -336,12 +342,12 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
 
           {/* Day Separator */}
           {uniqueDays[selectedDay] && (
-            <div className="flex items-center gap-3 py-2">
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-              <div className="text-white/90 font-medium px-3 py-1 bg-white/10 rounded-full text-sm">
+            <div className="flex items-center gap-3 py-3">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
+              <div className="text-white font-bold px-4 py-2 bg-gradient-to-r from-blue-600/60 to-purple-600/60 rounded-full text-sm border border-white/30 shadow-lg">
                 {formatDate(uniqueDays[selectedDay])}
               </div>
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
             </div>
           )}
 
@@ -351,7 +357,7 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
             {currentDayActivities
               .filter(activity => !isAccommodationEntry(activity))
               .map((activity) => (
-                <div key={activity.id} className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+                <div key={activity.id} className="bg-white/20 backdrop-blur-md rounded-xl border border-white/30 shadow-lg hover:bg-white/25 transition-all">
                   <ActivityDetailsDialog activity={activity} />
                 </div>
               ))}
@@ -360,7 +366,7 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
             {currentDayActivities
               .filter(activity => isAccommodationEntry(activity))
               .map((activity) => (
-                <div key={activity.id} className="bg-blue-500/10 backdrop-blur-sm rounded-xl border border-blue-300/20">
+                <div key={activity.id} className="bg-blue-600/30 backdrop-blur-md rounded-xl border border-blue-400/50 shadow-lg hover:bg-blue-600/35 transition-all">
                   <ActivityDetailsDialog activity={activity} />
                 </div>
               ))}
@@ -368,9 +374,9 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
 
           {/* No Activities Message */}
           {currentDayActivities.length === 0 && (
-            <div className="text-center py-8 text-white/70">
-              <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No activities planned for this day</p>
+            <div className="text-center py-8 bg-white/10 rounded-xl border border-white/20">
+              <CalendarDays className="h-12 w-12 mx-auto mb-3 text-white/60" />
+              <p className="text-white font-medium">No activities planned for this day</p>
             </div>
           )}
 
