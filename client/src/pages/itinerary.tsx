@@ -495,29 +495,26 @@ function Itinerary() {
                           }
                           
                           return (
-                            <div 
+                            <ActivityCard 
                               key={activity.id}
-                              className={activity.isAccommodationEntry ? "opacity-75" : ""}
-                            >
-                              <ActivityCard 
-                                id={activity.id}
-                                name={activity.name}
-                                description={activity.description}
-                                date={activity.date}
-                                startTime={activity.startTime}
-                                activityType={activity.activityType}
-                                activityLink={activity.activityLink}
-                                location={activity.location}
-                                duration={activity.duration}
-                                cost={activity.cost}
-                                paymentType={activity.paymentType}
-                                maxParticipants={activity.maxParticipants}
-                                confirmedCount={activity.confirmedCount || 0}
-                                totalCount={activity.totalCount || 0}
-                                rsvps={activity.rsvps || []}
-                                createdBy={activity.createdBy}
-                              />
-                            </div>
+                              id={activity.id}
+                              name={activity.name}
+                              description={activity.description}
+                              date={activity.date}
+                              startTime={activity.startTime}
+                              activityType={activity.activityType}
+                              activityLink={activity.activityLink}
+                              location={activity.location}
+                              duration={activity.duration}
+                              cost={activity.cost}
+                              paymentType={activity.paymentType}
+                              maxParticipants={activity.maxParticipants}
+                              confirmedCount={activity.confirmedCount || 0}
+                              totalCount={activity.totalCount || 0}
+                              rsvps={activity.rsvps || []}
+                              createdBy={activity.createdBy}
+                              isAccommodationEntry={activity.isAccommodationEntry}
+                            />
                           );
                         })}
                       </div>
@@ -548,29 +545,26 @@ function Itinerary() {
                     }
                     
                     return (
-                      <div 
+                      <ActivityCard 
                         key={activity.id}
-                        className={activity.isAccommodationEntry ? "opacity-75" : ""}
-                      >
-                        <ActivityCard 
-                          id={activity.id}
-                          name={activity.name}
-                          description={activity.description}
-                          date={activity.date}
-                          startTime={activity.startTime}
-                          activityType={activity.activityType}
-                          activityLink={activity.activityLink}
-                          location={activity.location}
-                          duration={activity.duration}
-                          cost={activity.cost}
-                          paymentType={activity.paymentType}
-                          maxParticipants={activity.maxParticipants}
-                          confirmedCount={activity.confirmedCount || 0}
-                          totalCount={activity.totalCount || 0}
-                          rsvps={activity.rsvps || []}
-                          createdBy={activity.createdBy}
-                        />
-                      </div>
+                        id={activity.id}
+                        name={activity.name}
+                        description={activity.description}
+                        date={activity.date}
+                        startTime={activity.startTime}
+                        activityType={activity.activityType}
+                        activityLink={activity.activityLink}
+                        location={activity.location}
+                        duration={activity.duration}
+                        cost={activity.cost}
+                        paymentType={activity.paymentType}
+                        maxParticipants={activity.maxParticipants}
+                        confirmedCount={activity.confirmedCount || 0}
+                        totalCount={activity.totalCount || 0}
+                        rsvps={activity.rsvps || []}
+                        createdBy={activity.createdBy}
+                        isAccommodationEntry={activity.isAccommodationEntry}
+                      />
                     );
                   })}
                 </div>
