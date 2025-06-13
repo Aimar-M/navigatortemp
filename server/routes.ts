@@ -1148,8 +1148,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const activities = await storage.getActivitiesByTrip(tripId);
       
-      // Return limited preview data only (no sensitive information)
-      const previewActivities = activities.slice(0, 3).map(activity => ({
+      // Return preview data only (no sensitive information)
+      const previewActivities = activities.map(activity => ({
         id: activity.id,
         name: activity.name,
         description: activity.description,
