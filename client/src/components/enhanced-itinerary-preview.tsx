@@ -38,11 +38,31 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
   const groupedActivities = activities
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .reduce((groups: { [key: string]: Activity[] }, activity) => {
-      const dateKey = activity.date;
-      if (!groups[dateKey]) {
-        groups[dateKey] = [];
+      // For accommodations, add to all days between check-in and check-out
+      if (isAccommodationEntry(activity) && activity.checkInDate && activity.checkOutDate) {
+        const checkIn = new Date(activity.checkInDate);
+        const checkOut = new Date(activity.checkOutDate);
+        const currentDate = new Date(checkIn);
+        
+        while (currentDate < checkOut) {
+          const dateKey = currentDate.toISOString().split('T')[0];
+          if (!groups[dateKey]) {
+            groups[dateKey] = [];
+          }
+          // Avoid duplicates
+          if (!groups[dateKey].some(a => a.id === activity.id)) {
+            groups[dateKey].push(activity);
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      } else {
+        // Regular activities go on their specified date
+        const dateKey = activity.date;
+        if (!groups[dateKey]) {
+          groups[dateKey] = [];
+        }
+        groups[dateKey].push(activity);
       }
-      groups[dateKey].push(activity);
       return groups;
     }, {});
 
@@ -82,55 +102,40 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
     return (
       <Dialog>
         <DialogTrigger asChild>
-          <div className="cursor-pointer hover:bg-white/10 transition-colors rounded-lg p-4">
-            <div className="space-y-3">
-              {/* Title and Time row */}
-              <div className="flex items-start justify-between gap-3">
-                <h4 className="font-medium text-white flex-1 pr-2 leading-tight">{activity.name}</h4>
+          <div className="cursor-pointer hover:bg-white/10 transition-colors rounded-lg p-3">
+            <div className="flex items-center justify-between gap-3">
+              {/* Left side: Title, location, and accommodation icon */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  {isAccommodation && (
+                    <Building className="h-4 w-4 text-amber-300 flex-shrink-0" />
+                  )}
+                  <h4 className="font-medium text-white text-sm truncate">{activity.name}</h4>
+                </div>
+                {activity.location && (
+                  <div className="flex items-center text-xs text-blue-200">
+                    <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                    <span className="truncate">{activity.location}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Right side: Time and payment info */}
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {activity.startTime && (
-                  <span className="text-sm font-medium text-blue-200 whitespace-nowrap">
+                  <span className="text-xs font-medium text-blue-200 whitespace-nowrap">
                     {formatTime(activity.startTime)}
                   </span>
                 )}
-              </div>
-              
-              {/* Location */}
-              {activity.location && (
-                <div className="flex items-center text-sm text-blue-200">
-                  <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">{activity.location}</span>
-                </div>
-              )}
-
-              {/* Bottom row: Payment type and RSVP info */}
-              <div className="flex items-center justify-between gap-3">
-                {/* Payment type */}
-                <div className="flex-shrink-0">
-                  {activity.paymentType && (
-                    <Badge 
-                      variant={activity.paymentType === 'free' ? 'secondary' : activity.paymentType === 'prepaid' ? 'default' : 'outline'}
-                      className="text-xs bg-white/20 text-white border-white/30"
-                    >
-                      {activity.paymentType === 'free' ? 'Free' : 
-                       activity.paymentType === 'payment_onsite' ? 'Pay Onsite' : 
-                       'Prepaid'}
-                    </Badge>
-                  )}
-                </div>
-
-                {/* RSVP info and spots */}
-                {!isAccommodation && (
-                  <div className="flex items-center gap-2 text-xs text-blue-200 flex-shrink-0">
-                    <span className="whitespace-nowrap">{confirmedCount}/{totalCount} going</span>
-                    {activity.maxParticipants && (
-                      <span className={`whitespace-nowrap ${spotsLeft && spotsLeft <= 3 ? "text-amber-300 font-medium" : ""}`}>
-                        {spotsLeft && spotsLeft > 0 
-                          ? `${spotsLeft} spots left`
-                          : "Full"
-                        }
-                      </span>
-                    )}
-                  </div>
+                {activity.paymentType && (
+                  <Badge 
+                    variant={activity.paymentType === 'free' ? 'secondary' : activity.paymentType === 'prepaid' ? 'default' : 'outline'}
+                    className="text-xs bg-white/20 text-white border-white/30 px-2 py-1"
+                  >
+                    {activity.paymentType === 'free' ? 'Free' : 
+                     activity.paymentType === 'payment_onsite' ? 'Pay Onsite' : 
+                     'Prepaid'}
+                  </Badge>
                 )}
               </div>
             </div>
@@ -348,7 +353,7 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
             {currentDayActivities
               .filter(activity => isAccommodationEntry(activity))
               .map((activity) => (
-                <div key={activity.id} className="bg-blue-500/10 backdrop-blur-sm rounded-xl border border-blue-300/20">
+                <div key={`accommodation-${activity.id}-${uniqueDays[selectedDay]}`} className="bg-amber-500/10 backdrop-blur-sm rounded-xl border border-amber-300/20">
                   <ActivityDetailsDialog activity={activity} />
                 </div>
               ))}
