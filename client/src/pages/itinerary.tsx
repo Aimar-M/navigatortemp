@@ -29,6 +29,8 @@ function Itinerary() {
   const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMoreDetails, setShowMoreDetails] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'day'>('list');
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
   
   const [activityFormData, setActivityFormData] = useState({
     name: "",
@@ -69,7 +71,7 @@ function Itinerary() {
     enabled: !!tripId && !!user,
   });
 
-  // Expand accommodation activities across multiple days
+  // Expand accommodation activities across multiple days and add checkout notifications
   const expandAccommodationActivities = (activities: any[]) => {
     const expandedActivities: any[] = [];
     
@@ -89,12 +91,24 @@ function Itinerary() {
           });
           currentDate.setDate(currentDate.getDate() + 1);
         }
+        
+        // Add checkout notification on checkout day
+        expandedActivities.push({
+          id: `checkout-${activity.id}`,
+          name: `Check out of ${activity.name}`,
+          description: `Checkout from accommodation`,
+          date: new Date(checkOutDate),
+          displayDate: new Date(checkOutDate),
+          isCheckoutNotification: true,
+          originalAccommodation: activity
+        });
       } else {
         // Regular activity - add as is
         expandedActivities.push({
           ...activity,
           displayDate: new Date(activity.date),
-          isAccommodationEntry: false
+          isAccommodationEntry: false,
+          isCheckoutNotification: false
         });
       }
     });
@@ -102,7 +116,7 @@ function Itinerary() {
     return expandedActivities;
   };
 
-  // Sort activities chronologically by date and start time
+  // Sort activities chronologically by date and reorganize by type
   const sortedActivities = expandAccommodationActivities(activities as any[]).sort((a: any, b: any) => {
     // First sort by date
     const dateA = new Date(a.displayDate);
@@ -111,12 +125,22 @@ function Itinerary() {
       return dateA.getTime() - dateB.getTime();
     }
     
-    // Accommodation entries come first within the same day
-    if (a.isAccommodationEntry && !b.isAccommodationEntry) return -1;
-    if (!a.isAccommodationEntry && b.isAccommodationEntry) return 1;
+    // Within the same day: regular activities first, then checkout notifications, then accommodations last
+    const getTypeOrder = (item: any) => {
+      if (item.isCheckoutNotification) return 1;
+      if (item.isAccommodationEntry) return 2;
+      return 0; // regular activities
+    };
     
-    // If dates are the same, sort by start time
-    // Activities without start time come last within the same day
+    const typeOrderA = getTypeOrder(a);
+    const typeOrderB = getTypeOrder(b);
+    
+    if (typeOrderA !== typeOrderB) {
+      return typeOrderA - typeOrderB;
+    }
+    
+    // If same type and dates, sort by start time
+    // Activities without start time come last within the same type
     if (!a.startTime && !b.startTime) return 0;
     if (!a.startTime) return 1;
     if (!b.startTime) return -1;
@@ -129,6 +153,42 @@ function Itinerary() {
     
     return timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
   });
+
+  // Group activities by day for day separators and day view
+  const groupActivitiesByDay = (activities: any[]) => {
+    const grouped: { [key: string]: any[] } = {};
+    
+    activities.forEach((activity: any) => {
+      const dayKey = activity.displayDate.toISOString().split('T')[0];
+      if (!grouped[dayKey]) {
+        grouped[dayKey] = [];
+      }
+      grouped[dayKey].push(activity);
+    });
+    
+    return grouped;
+  };
+
+  const activitiesByDay = groupActivitiesByDay(sortedActivities);
+
+  // Get current trip day if trip is active
+  const getCurrentTripDay = () => {
+    if (!(trip as any)?.startDate) return null;
+    
+    const today = new Date();
+    const tripStartDate = new Date((trip as any).startDate);
+    const diffTime = today.getTime() - tripStartDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    // If trip has started and is ongoing
+    if (diffDays >= 0 && diffDays < tripDays.length) {
+      return diffDays + 1; // Convert to 1-based day number
+    }
+    
+    return null;
+  };
+
+  const currentTripDay = getCurrentTripDay();
 
   // Generate trip days for the date selector
   const generateTripDays = () => {
@@ -302,14 +362,65 @@ function Itinerary() {
               <h2 className="text-xl font-semibold">Trip Activities</h2>
               <p className="text-muted-foreground">Plan and organize your trip activities</p>
             </div>
-            <Button 
-              onClick={() => setIsAddActivityModalOpen(true)}
-              disabled={!isConfirmedMember}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add to Itinerary
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* View Toggle */}
+              <div className="flex items-center border rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="text-xs px-3 py-1"
+                >
+                  List View
+                </Button>
+                <Button
+                  variant={viewMode === 'day' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => {
+                    setViewMode('day');
+                    // Auto-select current day if trip is active
+                    if (currentTripDay && !selectedDay) {
+                      setSelectedDay(currentTripDay);
+                    } else if (!selectedDay) {
+                      setSelectedDay(1); // Default to first day
+                    }
+                  }}
+                  className="text-xs px-3 py-1"
+                >
+                  Day View
+                </Button>
+              </div>
+              <Button 
+                onClick={() => setIsAddActivityModalOpen(true)}
+                disabled={!isConfirmedMember}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add to Itinerary
+              </Button>
+            </div>
           </div>
+
+          {/* Day Selector for Day View */}
+          {viewMode === 'day' && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm font-medium">Select Day:</span>
+              <Select
+                value={selectedDay?.toString() || ""}
+                onValueChange={(value) => setSelectedDay(parseInt(value))}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select a day..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {tripDays.map((day) => (
+                    <SelectItem key={day.dayNumber} value={day.dayNumber.toString()}>
+                      {day.label} {currentTripDay === day.dayNumber && "(Today)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Activities List */}
           <div className="space-y-4">
@@ -330,28 +441,147 @@ function Itinerary() {
                   </p>
                 </CardContent>
               </Card>
+            ) : viewMode === 'list' ? (
+              // List View - with day separators
+              Object.entries(activitiesByDay)
+                .sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime())
+                .map(([dateKey, dayActivities]) => {
+                  const dayDate = new Date(dateKey);
+                  const tripDay = tripDays.find(day => 
+                    day.date.toISOString().split('T')[0] === dateKey
+                  );
+                  
+                  return (
+                    <div key={dateKey} className="space-y-3">
+                      {/* Day Separator */}
+                      <div className="flex items-center gap-3 py-2">
+                        <div className="flex-shrink-0">
+                          <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium">
+                            {tripDay?.dayNumber || '?'}
+                          </div>
+                        </div>
+                        <div className="flex-grow">
+                          <h3 className="font-medium text-lg">
+                            {tripDay?.label || dayDate.toLocaleDateString('en-US', { 
+                              weekday: 'long', month: 'short', day: 'numeric' 
+                            })}
+                          </h3>
+                          {currentTripDay === tripDay?.dayNumber && (
+                            <span className="text-sm text-primary font-medium">Today</span>
+                          )}
+                        </div>
+                        <div className="h-px bg-border flex-grow"></div>
+                      </div>
+                      
+                      {/* Activities for this day */}
+                      <div className="space-y-3 ml-11">
+                        {dayActivities.map((activity: any) => {
+                          if (activity.isCheckoutNotification) {
+                            return (
+                              <Card key={activity.id} className="border-amber-200 bg-amber-50">
+                                <CardContent className="p-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="text-amber-600">
+                                      <Clock className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-medium text-amber-800">{activity.name}</h4>
+                                      <p className="text-sm text-amber-600">{activity.description}</p>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          }
+                          
+                          return (
+                            <div 
+                              key={activity.id}
+                              className={activity.isAccommodationEntry ? "opacity-75" : ""}
+                            >
+                              <ActivityCard 
+                                id={activity.id}
+                                name={activity.name}
+                                description={activity.description}
+                                date={activity.date}
+                                startTime={activity.startTime}
+                                activityType={activity.activityType}
+                                activityLink={activity.activityLink}
+                                location={activity.location}
+                                duration={activity.duration}
+                                cost={activity.cost}
+                                paymentType={activity.paymentType}
+                                maxParticipants={activity.maxParticipants}
+                                confirmedCount={activity.confirmedCount || 0}
+                                totalCount={activity.totalCount || 0}
+                                rsvps={activity.rsvps || []}
+                                createdBy={activity.createdBy}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
             ) : (
-              sortedActivities.map((activity: any) => (
-                <ActivityCard 
-                  key={activity.id} 
-                  id={activity.id}
-                  name={activity.name}
-                  description={activity.description}
-                  date={activity.date}
-                  startTime={activity.startTime}
-                  activityType={activity.activityType}
-                  activityLink={activity.activityLink}
-                  location={activity.location}
-                  duration={activity.duration}
-                  cost={activity.cost}
-                  paymentType={activity.paymentType}
-                  maxParticipants={activity.maxParticipants}
-                  confirmedCount={activity.confirmedCount || 0}
-                  totalCount={activity.totalCount || 0}
-                  rsvps={activity.rsvps || []}
-                  createdBy={activity.createdBy}
-                />
-              ))
+              // Day View - single day activities
+              selectedDay && activitiesByDay[tripDays.find(d => d.dayNumber === selectedDay)?.date.toISOString().split('T')[0] || ''] ? (
+                <div className="space-y-3">
+                  {activitiesByDay[tripDays.find(d => d.dayNumber === selectedDay)?.date.toISOString().split('T')[0] || ''].map((activity: any) => {
+                    if (activity.isCheckoutNotification) {
+                      return (
+                        <Card key={activity.id} className="border-amber-200 bg-amber-50">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="text-amber-600">
+                                <Clock className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-amber-800">{activity.name}</h4>
+                                <p className="text-sm text-amber-600">{activity.description}</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
+                    
+                    return (
+                      <div 
+                        key={activity.id}
+                        className={activity.isAccommodationEntry ? "opacity-75" : ""}
+                      >
+                        <ActivityCard 
+                          id={activity.id}
+                          name={activity.name}
+                          description={activity.description}
+                          date={activity.date}
+                          startTime={activity.startTime}
+                          activityType={activity.activityType}
+                          activityLink={activity.activityLink}
+                          location={activity.location}
+                          duration={activity.duration}
+                          cost={activity.cost}
+                          paymentType={activity.paymentType}
+                          maxParticipants={activity.maxParticipants}
+                          confirmedCount={activity.confirmedCount || 0}
+                          totalCount={activity.totalCount || 0}
+                          rsvps={activity.rsvps || []}
+                          createdBy={activity.createdBy}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No activities planned for this day.</p>
+                  </CardContent>
+                </Card>
+              )
             )}
           </div>
         </div>
