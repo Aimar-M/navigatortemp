@@ -82,13 +82,13 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
     return (
       <Dialog>
         <DialogTrigger asChild>
-          <div className="cursor-pointer hover:bg-white/10 transition-colors rounded-lg p-3 -m-3">
-            <div className="space-y-2">
+          <div className="cursor-pointer hover:bg-white/10 transition-colors rounded-lg p-4">
+            <div className="space-y-3">
               {/* Title and Time row */}
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-white flex-1">{activity.name}</h4>
+              <div className="flex items-start justify-between gap-3">
+                <h4 className="font-medium text-white flex-1 pr-2 leading-tight">{activity.name}</h4>
                 {activity.startTime && (
-                  <span className="text-sm font-medium text-blue-200 ml-3">
+                  <span className="text-sm font-medium text-blue-200 whitespace-nowrap">
                     {formatTime(activity.startTime)}
                   </span>
                 )}
@@ -97,15 +97,15 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
               {/* Location */}
               {activity.location && (
                 <div className="flex items-center text-sm text-blue-200">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  {activity.location}
+                  <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">{activity.location}</span>
                 </div>
               )}
 
               {/* Bottom row: Payment type and RSVP info */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 {/* Payment type */}
-                <div>
+                <div className="flex-shrink-0">
                   {activity.paymentType && (
                     <Badge 
                       variant={activity.paymentType === 'free' ? 'secondary' : activity.paymentType === 'prepaid' ? 'default' : 'outline'}
@@ -120,10 +120,10 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
 
                 {/* RSVP info and spots */}
                 {!isAccommodation && (
-                  <div className="flex items-center gap-3 text-xs text-blue-200">
-                    <span>{confirmedCount}/{totalCount} going</span>
+                  <div className="flex items-center gap-2 text-xs text-blue-200 flex-shrink-0">
+                    <span className="whitespace-nowrap">{confirmedCount}/{totalCount} going</span>
                     {activity.maxParticipants && (
-                      <span className={spotsLeft && spotsLeft <= 3 ? "text-amber-300 font-medium" : ""}>
+                      <span className={`whitespace-nowrap ${spotsLeft && spotsLeft <= 3 ? "text-amber-300 font-medium" : ""}`}>
                         {spotsLeft && spotsLeft > 0 
                           ? `${spotsLeft} spots left`
                           : "Full"
