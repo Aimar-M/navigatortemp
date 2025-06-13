@@ -256,29 +256,29 @@ export default function InvitationPage() {
                 {trip.name}
               </h2>
               
-              <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-4">
-                <div className="flex items-center gap-2 text-white/90 text-xl">
-                  <MapPin className="h-6 w-6 drop-shadow-md" />
-                  <span className="font-medium drop-shadow-md">{trip.destination}</span>
-                </div>
-                <div className="flex items-center gap-2 text-white/80 text-lg">
-                  <Calendar className="h-5 w-5 drop-shadow-md" />
-                  <span className="drop-shadow-md">
-                    {format(new Date(trip.startDate), 'MMM d')} - {format(new Date(trip.endDate), 'MMM d, yyyy')}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-white/80 text-lg">
-                  <Users className="h-5 w-5 drop-shadow-md" />
-                  <span className="drop-shadow-md">{confirmedMembers.length} confirmed</span>
-                </div>
+              <div className="flex flex-wrap items-center justify-center gap-4 text-white/90">
+                {trip.destination && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    <span>{trip.destination}</span>
+                  </div>
+                )}
+                {(trip.startDate || trip.endDate) && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>
+                      {trip.startDate && format(new Date(trip.startDate), 'MMM d')}
+                      {trip.startDate && trip.endDate && ' - '}
+                      {trip.endDate && format(new Date(trip.endDate), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                )}
               </div>
-              
-              {trip.description && (
-                <p className="text-white/70 text-lg max-w-2xl mx-auto leading-relaxed drop-shadow-md">
-                  {trip.description}
-                </p>
-              )}
             </div>
+            
+            <p className="text-white/90 text-lg max-w-2xl mx-auto mt-6 leading-relaxed">
+              Join an unforgettable adventure with friends.
+            </p>
           </div>
         </div>
 
@@ -397,15 +397,15 @@ export default function InvitationPage() {
         </Card>
 
         {/* RSVP Action Section */}
-        <Card className="mb-8 bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-r from-white/5 to-white/10 p-8 text-center border-b border-white/20">
-            <div className="flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-6 shadow-xl border border-white/30">
+        <Card className="mb-8 bg-white rounded-2xl shadow-lg border-0 overflow-hidden">
+          <div className="p-8 text-center" style={{ backgroundColor: '#0E4272' }}>
+            <div className="flex items-center justify-center w-20 h-20 rounded-full mx-auto mb-6 shadow-xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
               <UserPlus className="h-10 w-10 text-white" />
             </div>
             <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
               Join This Trip
             </h2>
-            <p className="text-white/80 text-lg max-w-lg mx-auto leading-relaxed">
+            <p className="text-white/90 text-lg max-w-lg mx-auto leading-relaxed">
               You're invited to join this amazing adventure! Create an account or sign in to confirm your attendance.
             </p>
           </div>
@@ -414,7 +414,8 @@ export default function InvitationPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <Button 
                 onClick={handleSignUpRedirect}
-                className="w-full py-6 text-lg font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-500 shadow-2xl rounded-2xl border border-blue-400/30"
+                className="w-full py-6 text-lg font-bold text-white transform hover:scale-105 transition-all duration-300 shadow-lg rounded-2xl border-0"
+                style={{ backgroundColor: '#3A8DFF' }}
               >
                 <UserPlus className="h-5 w-5 mr-3" />
                 Create Account & Join
@@ -423,7 +424,8 @@ export default function InvitationPage() {
               <Button 
                 onClick={handleSignInRedirect}
                 variant="outline"
-                className="w-full py-6 text-lg font-bold bg-white/10 border-white/30 text-white hover:bg-white/20 rounded-2xl"
+                className="w-full py-6 text-lg font-bold rounded-2xl border-2 hover:bg-opacity-10 transition-all duration-300"
+                style={{ borderColor: '#3A8DFF', color: '#3A8DFF' }}
               >
                 <User className="h-5 w-5 mr-3" />
                 Sign In & Join
@@ -431,7 +433,7 @@ export default function InvitationPage() {
             </div>
             
             <div className="text-center">
-              <p className="text-white/60 text-sm">
+              <p className="text-sm" style={{ color: '#4B5A6A' }}>
                 Already have an account? Just sign in to confirm your attendance.
               </p>
             </div>
@@ -442,9 +444,9 @@ export default function InvitationPage() {
 
         {/* Footer */}
         <div className="text-center py-12">
-          <div className="inline-flex items-center gap-3 px-8 py-4 bg-white/15 backdrop-blur-md rounded-full shadow-2xl border border-white/30 hover:bg-white/20 transition-all duration-300">
-            <Heart className="h-6 w-6 text-red-400" />
-            <span className="text-white font-bold text-lg">Questions? Contact {trip.organizer.name} for assistance.</span>
+          <div className="inline-flex items-center gap-3 px-8 py-4 bg-white rounded-full shadow-lg border-0 transition-all duration-300">
+            <Heart className="h-6 w-6" style={{ color: '#FF9F43' }} />
+            <span className="font-bold text-lg" style={{ color: '#1A1A1A' }}>Questions? Contact {trip.organizer.name} for assistance.</span>
           </div>
         </div>
       </div>
