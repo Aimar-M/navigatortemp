@@ -143,12 +143,9 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
   const submitPaymentMutation = useMutation({
     mutationFn: async ({ paymentMethod }: { paymentMethod: string }) => {
-      return await apiRequest(`/api/trips/${trip.id}/members/${user?.id}/payment`, {
-        method: 'POST',
-        body: JSON.stringify({ 
-          paymentMethod,
-          paymentAmount: trip.downPaymentAmount 
-        }),
+      return await apiRequest(`/api/trips/${trip.id}/members/${user?.id}/payment`, 'POST', { 
+        paymentMethod,
+        paymentAmount: trip.downPaymentAmount 
       });
     },
     onSuccess: () => {
@@ -186,9 +183,8 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
   const confirmAttendanceMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/trips/${trip.id}/members/${user?.id}/rsvp`, {
-        method: 'POST',
-        body: JSON.stringify({ rsvpStatus: 'confirmed' }),
+      return await apiRequest(`/api/trips/${trip.id}/members/${user?.id}/rsvp`, 'POST', { 
+        rsvpStatus: 'confirmed' 
       });
     },
     onSuccess: () => {
@@ -345,7 +341,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         {/* Enhanced Itinerary Preview */}
         {trip.id && (
           <EnhancedItineraryPreview
-            tripId={trip.id}
+            activities={[]}
             tripName={trip.name}
             className="mb-10"
           />
@@ -596,7 +592,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {members && members.length > 0 ? (
+            {Array.isArray(members) && members.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {(members as any[])
                   .filter((member: any) => member.status === 'confirmed' || member.userId === trip.organizer)
