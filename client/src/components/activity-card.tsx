@@ -46,6 +46,7 @@ export default function ActivityCard({
   totalCount,
   rsvps = [],
   createdBy,
+  isAccommodationEntry = false,
 }: ActivityCardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -128,7 +129,11 @@ export default function ActivityCard({
   };
   
   return (
-    <Card className="border border-gray-200 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+    <Card className={`border rounded-lg cursor-pointer hover:shadow-md transition-shadow ${
+      isAccommodationEntry 
+        ? "border-blue-200 bg-blue-50/30" 
+        : "border-gray-200"
+    }`}
           onClick={() => window.location.href = `/activities/${id}`}>
       <CardContent className="p-3">
         <div className="flex justify-between items-start">
