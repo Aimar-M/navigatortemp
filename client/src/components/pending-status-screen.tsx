@@ -377,116 +377,122 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           />
         )}
 
-        {/* Main RSVP Action Section with Glassmorphism */}
-        <div className="mb-10">
-          <Card className="bg-white/15 backdrop-blur-xl border border-white/30 shadow-2xl overflow-hidden">
+        {/* Main RSVP Action Section */}
+        <Card className="bg-white rounded-2xl shadow-lg border-0">
+          <CardContent className="p-6 space-y-6">
+            {/* Status Display */}
+            <div className="rounded-xl p-4 border" style={{ backgroundColor: '#F5F9FF', borderColor: '#CED6E0' }}>
+              <div className="flex flex-col lg:flex-row gap-4">
+                {/* Status Section */}
+                <div className="flex-1">
+                  <div className="text-center sm:text-left">
+                    <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
+                      <Timer className="h-4 w-4" style={{ color: '#3A8DFF' }} />
+                      <span className="font-semibold text-sm" style={{ color: '#1A1A1A' }}>
+                        {trip.requiresDownPayment ? 'RSVP Status - Payment Required' : 'RSVP Status'}
+                      </span>
+                    </div>
+                    <Badge 
+                      className="text-xs px-3 py-1 rounded-full font-medium"
+                      style={{
+                        backgroundColor: trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') ? '#FF9F43' : '#28A745',
+                        color: 'white',
+                        border: 'none'
+                      }}
+                    >
+                      {getRSVPStatusMessage()}
+                    </Badge>
+                  </div>
+                </div>
 
-
-            <CardContent className="p-4 space-y-4">
-              {/* Simplified Status Display */}
-              <div className="bg-gradient-to-r from-blue-600/30 to-indigo-600/30 backdrop-blur-md rounded-xl p-4 border border-blue-300/50 shadow-lg">
-                <div className="flex flex-col lg:flex-row gap-4">
-                  {/* Single Status Section */}
-                  <div className="flex-1">
-                    <div className="text-center sm:text-left">
-                      <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
-                        <Timer className="h-4 w-4 text-blue-100" />
-                        <span className="font-semibold text-white text-sm">
-                          {trip.requiresDownPayment ? 'RSVP Status - Payment Required' : 'RSVP Status'}
-                        </span>
+                {/* Payment Amount Section */}
+                {trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
+                  <div className="lg:flex-shrink-0 lg:border-l lg:pl-4" style={{ borderColor: '#CED6E0' }}>
+                    <div className="text-center lg:text-right">
+                      <div className="flex items-center justify-center lg:justify-end gap-2 mb-2">
+                        <DollarSign className="h-4 w-4" style={{ color: '#3A8DFF' }} />
+                        <span className="font-semibold text-sm" style={{ color: '#1A1A1A' }}>Down Payment Required</span>
                       </div>
-                      <Badge className={`${getStatusColor()} text-xs px-3 py-1 rounded-full font-medium`}>
-                        {getRSVPStatusMessage()}
-                      </Badge>
+                      <div className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>${trip.downPaymentAmount}</div>
                     </div>
                   </div>
-
-                  {/* Payment Amount Section - Only show when payment required and not yet submitted */}
-                  {trip.requiresDownPayment && (!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
-                    <div className="lg:flex-shrink-0 lg:border-l lg:border-white/20 lg:pl-4">
-                      <div className="text-center lg:text-right">
-                        <div className="flex items-center justify-center lg:justify-end gap-2 mb-2">
-                          <DollarSign className="h-4 w-4 text-blue-200" />
-                          <span className="font-semibold text-white text-sm">Down Payment Required</span>
-                        </div>
-                        <div className="text-2xl font-bold text-white">${trip.downPaymentAmount}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
+            </div>
 
               {/* Payment Method Selection */}
               {trip.requiresDownPayment && (
                 <div className="space-y-3">
 
-                  {/* Compact Payment Method Selection */}
+                  {/* Payment Method Selection */}
                   {(!member.paymentStatus || member.paymentStatus === 'rejected' || member.paymentStatus === 'not_required') && (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div className="flex items-center gap-2 justify-center">
-                        <CreditCard className="h-4 w-4 text-blue-200" />
-                        <h4 className="text-sm font-semibold text-white">Choose Payment Method</h4>
+                        <CreditCard className="h-4 w-4" style={{ color: '#3A8DFF' }} />
+                        <h4 className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Choose Payment Method</h4>
                       </div>
                         
                       {optionsLoading && (
                         <div className="flex items-center justify-center py-4">
-                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-300 border-t-white mr-2"></div>
-                          <span className="text-white/80 text-sm">Loading payment options...</span>
+                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-t-transparent mr-2" style={{ borderColor: '#3A8DFF', borderTopColor: 'transparent' }}></div>
+                          <span className="text-sm" style={{ color: '#4B5A6A' }}>Loading payment options...</span>
                         </div>
                       )}
                       
                       {optionsError && (
-                        <div className="bg-red-500/20 backdrop-blur-sm border border-red-300/30 p-3 rounded-xl">
+                        <div className="p-3 rounded-xl border" style={{ backgroundColor: '#FDF2F2', borderColor: '#E74C3C' }}>
                           <div className="flex items-center gap-2 mb-1">
-                            <AlertCircle className="h-4 w-4 text-red-300" />
-                            <span className="font-semibold text-red-100 text-sm">Failed to load payment options</span>
+                            <AlertCircle className="h-4 w-4" style={{ color: '#E74C3C' }} />
+                            <span className="font-semibold text-sm" style={{ color: '#E74C3C' }}>Failed to load payment options</span>
                           </div>
-                          <p className="text-red-200 text-xs">Please try again or contact the organizer for assistance.</p>
+                          <p className="text-xs" style={{ color: '#4B5A6A' }}>Please try again or contact the organizer for assistance.</p>
                         </div>
                       )}
                       
                       {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).length === 0 && (
-                        <div className="bg-yellow-500/20 backdrop-blur-sm border border-yellow-300/30 p-3 rounded-xl">
+                        <div className="p-3 rounded-xl border" style={{ backgroundColor: '#FFF8E1', borderColor: '#FF9F43' }}>
                           <div className="flex items-center gap-2 mb-1">
-                            <AlertCircle className="h-4 w-4 text-yellow-300" />
-                            <span className="font-semibold text-yellow-100 text-sm">No payment methods available</span>
+                            <AlertCircle className="h-4 w-4" style={{ color: '#FF9F43' }} />
+                            <span className="font-semibold text-sm" style={{ color: '#FF9F43' }}>No payment methods available</span>
                           </div>
-                          <p className="text-yellow-200 text-xs">Please contact the organizer to set up payment preferences.</p>
+                          <p className="text-xs" style={{ color: '#4B5A6A' }}>Please contact the organizer to set up payment preferences.</p>
                         </div>
                       )}
                         
                       {!optionsLoading && !optionsError && (settlementOptions as SettlementOption[]).map((option: SettlementOption, index: number) => (
                         <div
                           key={`${option.method}-${index}`}
-                          className={`border rounded-xl p-3 cursor-pointer transition-all duration-300 ${
-                            selectedMethod === option.method
-                              ? 'border-blue-400 bg-blue-500/20 backdrop-blur-sm'
-                              : 'border-white/30 bg-white/10 backdrop-blur-sm hover:border-blue-400/50'
-                          }`}
+                          className="border rounded-xl p-4 cursor-pointer transition-all duration-300"
+                          style={{
+                            borderColor: selectedMethod === option.method ? '#3A8DFF' : '#CED6E0',
+                            backgroundColor: selectedMethod === option.method ? '#F5F9FF' : '#FFFFFF'
+                          }}
                           onClick={() => setSelectedMethod(option.method)}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                                selectedMethod === option.method
-                                  ? 'border-blue-400 bg-blue-500'
-                                  : 'border-white/50'
-                              }`}>
+                              <div 
+                                className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300"
+                                style={{
+                                  borderColor: selectedMethod === option.method ? '#3A8DFF' : '#CED6E0',
+                                  backgroundColor: selectedMethod === option.method ? '#3A8DFF' : 'transparent'
+                                }}
+                              >
                                 {selectedMethod === option.method && (
                                   <Check className="h-3 w-3 text-white" />
                                 )}
                               </div>
                               <div>
-                                <div className="font-semibold text-white text-sm">{option.displayName}</div>
+                                <div className="font-semibold text-sm" style={{ color: '#1A1A1A' }}>{option.displayName}</div>
                                 {option.method === 'cash' && (
-                                  <div className="text-blue-200 text-xs">
+                                  <div className="text-xs" style={{ color: '#4B5A6A' }}>
                                     Settle in person with organizer
                                   </div>
                                 )}
                               </div>
                             </div>
                             {option.method !== 'cash' && (
-                              <ArrowRight className="h-4 w-4 text-blue-200" />
+                              <ArrowRight className="h-4 w-4" style={{ color: '#4B5A6A' }} />
                             )}
                           </div>
                         </div>
@@ -495,7 +501,12 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                       {selectedMethod && !showPaymentConfirmation && (
                         <Button 
                           onClick={() => handlePaymentSubmit(selectedMethod)}
-                          className="w-full py-4 text-sm font-semibold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 transition-all duration-300 rounded-xl"
+                          className="w-full py-4 text-sm font-semibold rounded-xl transition-all duration-300"
+                          style={{ 
+                            backgroundColor: '#3A8DFF',
+                            color: 'white',
+                            border: 'none'
+                          }}
                         >
                           <div className="flex items-center gap-2">
                             <CreditCard className="h-4 w-4" />
@@ -504,17 +515,20 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                         </Button>
                       )}
                       
-                      {/* Compact Payment Confirmation Dialog */}
+                      {/* Payment Confirmation Dialog */}
                       {showPaymentConfirmation && pendingPaymentMethod && (
-                        <div className="bg-blue-500/20 backdrop-blur-sm border border-blue-300/30 p-4 rounded-xl">
+                        <div className="p-4 rounded-xl border" style={{ backgroundColor: '#F5F9FF', borderColor: '#3A8DFF' }}>
                           <div className="text-center space-y-3">
-                            <div className="flex items-center justify-center w-12 h-12 bg-blue-500/30 backdrop-blur-sm rounded-full mx-auto border border-blue-300/40">
-                              <CheckCircle className="h-6 w-6 text-blue-200" />
+                            <div 
+                              className="flex items-center justify-center w-12 h-12 rounded-full mx-auto border"
+                              style={{ backgroundColor: '#3A8DFF', borderColor: '#3A8DFF' }}
+                            >
+                              <CheckCircle className="h-6 w-6 text-white" />
                             </div>
-                            <h3 className="text-lg font-bold text-white">
+                            <h3 className="text-lg font-bold" style={{ color: '#1A1A1A' }}>
                               Complete Your Payment
                             </h3>
-                            <p className="text-blue-200 text-sm">
+                            <p className="text-sm" style={{ color: '#4B5A6A' }}>
                               {pendingPaymentMethod === 'cash' 
                                 ? 'Please arrange to pay the organizer in person, then mark as paid below.'
                                 : `Please complete your payment on the ${formatPaymentMethod(pendingPaymentMethod)} page that opened, then confirm below.`
@@ -528,7 +542,12 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                                   setPendingPaymentMethod(null);
                                 }}
                                 variant="outline"
-                                className="flex-1 py-3 text-sm bg-white/10 border-white/30 text-white hover:bg-white/20"
+                                className="flex-1 py-3 text-sm"
+                                style={{ 
+                                  backgroundColor: 'white',
+                                  borderColor: '#CED6E0',
+                                  color: '#4B5A6A'
+                                }}
                               >
                                 Cancel
                               </Button>
@@ -537,7 +556,12 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                                   submitPaymentMutation.mutate({ paymentMethod: pendingPaymentMethod });
                                 }}
                                 disabled={submitPaymentMutation.isPending}
-                                className="flex-1 py-3 text-sm bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                                className="flex-1 py-3 text-sm"
+                                style={{ 
+                                  backgroundColor: '#28A745',
+                                  color: 'white',
+                                  border: 'none'
+                                }}
                               >
                                 {submitPaymentMutation.isPending ? (
                                   <div className="flex items-center gap-2">
@@ -557,18 +581,21 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
                       )}
                     </div>
                   )}
-
-
                 </div>
               )}
 
-              {/* Compact RSVP Confirmation for trips without payment */}
+              {/* RSVP Confirmation for trips without payment */}
               {!trip.requiresDownPayment && (
                 <div className="text-center">
                   <Button 
                     onClick={() => confirmAttendanceMutation.mutate()}
                     disabled={confirmAttendanceMutation.isPending}
-                    className="w-full py-4 text-sm font-semibold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 transition-all duration-300 rounded-xl"
+                    className="w-full py-4 text-sm font-semibold transition-all duration-300 rounded-xl"
+                    style={{ 
+                      backgroundColor: '#3A8DFF',
+                      color: 'white',
+                      border: 'none'
+                    }}
                   >
                     {confirmAttendanceMutation.isPending ? (
                       <div className="flex items-center gap-2">
@@ -589,49 +616,47 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         </div>
 
         {/* Confirmed Attendees */}
-        <div className="mb-10">
-          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/15">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
-                <CheckCircle className="h-7 w-7 text-blue-200" />
-                Confirmed Attendees
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {members && members.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {(members as any[])
-                    .filter((member: any) => member.status === 'confirmed' || member.userId === trip.organizer)
-                    .map((member: any) => (
-                      <div key={member.userId} className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-2 border border-white/20">
-                        <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-bold text-xs">
-                            {member.user?.name ? member.user.name.charAt(0).toUpperCase() : member.user?.username?.charAt(0).toUpperCase() || '?'}
-                          </span>
-                        </div>
-                        <span className="text-white font-medium text-sm">
-                          {member.user?.name || member.user?.username || 'Anonymous'}
+        <Card className="bg-white rounded-2xl shadow-lg border-0 mb-10">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-2xl font-bold flex items-center gap-3" style={{ color: '#1A1A1A' }}>
+              <CheckCircle className="h-7 w-7" style={{ color: '#3A8DFF' }} />
+              Confirmed Attendees
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {members && members.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {(members as any[])
+                  .filter((member: any) => member.status === 'confirmed' || member.userId === trip.organizer)
+                  .map((member: any) => (
+                    <div key={member.userId} className="inline-flex items-center gap-2 rounded-full px-3 py-2 border" style={{ backgroundColor: '#F5F9FF', borderColor: '#CED6E0' }}>
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#3A8DFF' }}>
+                        <span className="text-white font-bold text-xs">
+                          {member.user?.name ? member.user.name.charAt(0).toUpperCase() : member.user?.username?.charAt(0).toUpperCase() || '?'}
                         </span>
-                        {member.userId === trip.organizer ? (
-                          <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/30 text-xs px-2 py-0.5">
-                            Organizer
-                          </Badge>
-                        ) : (
-                          <span className="text-green-300 text-xs font-medium">✓</span>
-                        )}
                       </div>
-                    ))}
+                      <span className="font-medium text-sm" style={{ color: '#1A1A1A' }}>
+                        {member.user?.name || member.user?.username || 'Anonymous'}
+                      </span>
+                      {member.userId === trip.organizer ? (
+                        <Badge className="text-xs px-2 py-0.5 border-0" style={{ backgroundColor: '#FF9F43', color: 'white' }}>
+                          Organizer
+                        </Badge>
+                      ) : (
+                        <span className="text-xs font-medium" style={{ color: '#28A745' }}>✓</span>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="text-lg" style={{ color: '#4B5A6A' }}>
+                  No confirmed attendees yet. Be the first to join!
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-white/60 text-lg">
-                    No confirmed attendees yet. Be the first to join!
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Enhanced What Happens Next Section */}
         <Card className="mb-10 bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500">
@@ -686,11 +711,11 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           </CardContent>
         </Card>
 
-        {/* Premium Footer */}
+        {/* Footer */}
         <div className="text-center py-12">
-          <div className="inline-flex items-center gap-3 px-8 py-4 bg-white/15 backdrop-blur-md rounded-full shadow-2xl border border-white/30 hover:bg-white/20 transition-all duration-300">
-            <Heart className="h-6 w-6 text-red-400" />
-            <span className="text-white font-bold text-lg">Questions? Contact the trip organizer for assistance.</span>
+          <div className="inline-flex items-center gap-3 px-8 py-4 bg-white rounded-full shadow-lg border transition-all duration-300" style={{ borderColor: '#CED6E0' }}>
+            <Heart className="h-6 w-6" style={{ color: '#E74C3C' }} />
+            <span className="font-bold text-lg" style={{ color: '#1A1A1A' }}>Questions? Contact the trip organizer for assistance.</span>
           </div>
         </div>
       </div>
