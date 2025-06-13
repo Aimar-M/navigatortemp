@@ -275,21 +275,10 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{
-      background: '#1a3cff'
-    }}>
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0" style={{
-          background: 'white',
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23cccccc' fill-opacity='0.4'%3E%3Ccircle cx='15' cy='15' r='1'/%3E%3Ccircle cx='45' cy='45' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          backgroundSize: '60px 60px'
-        }}></div>
-      </div>
-
-      <div className="relative z-10 max-w-5xl mx-auto p-6 space-y-10">
+    <div className="min-h-screen" style={{ backgroundColor: '#F5F9FF' }}>
+      <div className="max-w-5xl mx-auto p-6 space-y-8">
         {/* Hero Section */}
-        <div className="text-center py-8 relative overflow-hidden">
+        <div className="relative rounded-3xl overflow-hidden shadow-lg" style={{ backgroundColor: '#0E4272' }}>
           {/* Trip Photo Background */}
           {(trip as any).cover && (
             <div className="absolute inset-0 z-0">
@@ -321,67 +310,62 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
           )}
           
           {/* Subtle Lottie Animation */}
-          <div className="absolute top-0 right-2 sm:right-4 md:right-8 opacity-30 z-10">
+          <div className="absolute top-4 right-4 opacity-40 z-10">
             <Lottie 
               animationData={travelAnimation} 
-              className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32"
+              className="w-16 h-16 sm:w-20 sm:h-20"
               loop={true}
               autoplay={true}
             />
           </div>
           
-          <div className="relative z-20">
-            {/* Translucent backdrop behind content for readability */}
-            <div className="bg-black/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 mx-2 sm:mx-4 border border-white/20 shadow-2xl">
-              <div className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-4 sm:mb-6 md:mb-8 shadow-2xl border border-white/30 overflow-hidden animate-bounce" style={{animationDuration: '3s', animationIterationCount: 'infinite'}}>
-                <Plane className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-white" />
-              </div>
-              
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 tracking-tight drop-shadow-lg">
-                {trip.name}
-              </h1>
-              
-              <div className="flex flex-col md:flex-row items-center justify-center gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4">
-                {trip.destination && (
-                  <div className="flex items-center gap-2 text-white/90 text-sm sm:text-base md:text-lg lg:text-xl">
-                    <MapPin className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 drop-shadow-md" />
-                    <span className="font-medium drop-shadow-md">{trip.destination}</span>
-                  </div>
-                )}
-                {(trip.startDate || trip.endDate) && (
-                  <div className="flex items-center gap-2 text-white/80 text-xs sm:text-sm md:text-base lg:text-lg">
-                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 drop-shadow-md" />
-                    <span className="drop-shadow-md">
-                      {trip.startDate && new Date(trip.startDate).toLocaleDateString()}
-                      {trip.startDate && trip.endDate && ' - '}
-                      {trip.endDate && new Date(trip.endDate).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
-              </div>
-              
-              <p className="text-white/70 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed drop-shadow-md">
-                Your adventure awaits.
-              </p>
+          <div className="relative z-20 text-center py-12 px-6">
+            <div className="flex items-center justify-center w-20 h-20 rounded-full mx-auto mb-6 shadow-xl" style={{ backgroundColor: '#3A8DFF' }}>
+              <Plane className="h-10 w-10 text-white" />
             </div>
+            
+            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 tracking-tight" style={{ color: '#FFFFFF' }}>
+              {trip.name}
+            </h1>
+            
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-6">
+              {trip.destination && (
+                <div className="flex items-center gap-3 text-white text-lg">
+                  <MapPin className="h-5 w-5" />
+                  <span className="font-medium">{trip.destination}</span>
+                </div>
+              )}
+              {(trip.startDate || trip.endDate) && (
+                <div className="flex items-center gap-3 text-white/90 text-base">
+                  <Calendar className="h-4 w-4" />
+                  <span>
+                    {trip.startDate && new Date(trip.startDate).toLocaleDateString()}
+                    {trip.startDate && trip.endDate && ' - '}
+                    {trip.endDate && new Date(trip.endDate).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            <p className="text-white/90 text-lg max-w-2xl mx-auto leading-relaxed">
+              Your adventure awaits.
+            </p>
           </div>
         </div>
 
-        {/* Trip Details Card with Glassmorphism */}
+        {/* Trip Details Card */}
         {trip.description && (
-          <div className="mb-10">
-            <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:bg-white/15">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
-                  <Plane className="h-7 w-7 text-blue-200" />
-                  About This Adventure
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-white/90 text-lg leading-relaxed font-medium">{trip.description}</p>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="bg-white rounded-2xl shadow-lg border-0">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-bold flex items-center gap-3" style={{ color: '#1A1A1A' }}>
+                <Plane className="h-7 w-7" style={{ color: '#3A8DFF' }} />
+                About This Adventure
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-lg leading-relaxed" style={{ color: '#4B5A6A' }}>{trip.description}</p>
+            </CardContent>
+          </Card>
         )}
 
         {/* Enhanced Trip Itinerary Preview with Day View */}
