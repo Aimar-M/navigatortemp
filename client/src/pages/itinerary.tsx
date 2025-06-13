@@ -359,7 +359,7 @@ function Itinerary() {
 
       {/* Add Activity Dialog */}
       <Dialog open={isAddActivityModalOpen} onOpenChange={setIsAddActivityModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Itinerary Item</DialogTitle>
           </DialogHeader>
@@ -484,7 +484,7 @@ function Itinerary() {
             )}
 
             {/* Payment Type & Cost */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="activity-payment-type">Payment Type</Label>
                 <Select 
@@ -539,7 +539,7 @@ function Itinerary() {
             {/* Additional Details - Always visible on desktop, toggleable on mobile */}
             <div className={`space-y-4 ${showMoreDetails ? 'block' : 'hidden md:block'}`}>
               {/* Duration & Location */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="activity-duration">Duration</Label>
                   <Input
@@ -562,7 +562,7 @@ function Itinerary() {
               </div>
 
               {/* Website & Registration Cap */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="activity-link">Website</Label>
                   <Input
