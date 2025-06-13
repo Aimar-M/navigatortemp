@@ -10,7 +10,8 @@ import {
   AlertCircle, Clock, Bell, Lock, Heart, User, UserPlus, Plane 
 } from "lucide-react";
 import { format } from "date-fns";
-import navigatorLogo from "@/assets/navigator-logo.svg";
+import navigatorLogo from "@assets/ab_Navigator2-11_1749673314519.png";
+import navigatorText from "@assets/ab_Navigator2-09_1749673915685.png";
 import Lottie from "lottie-react";
 import EnhancedItineraryPreview from "@/components/enhanced-itinerary-preview";
 
@@ -190,7 +191,11 @@ export default function InvitationPage() {
             alt="Navigator Logo" 
             className="h-8 w-8 mr-2"
           />
-          <h1 className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>Navigator</h1>
+          <img 
+            src={navigatorText} 
+            alt="Navigator" 
+            className="h-6"
+          />
         </div>
         
         {/* Hero Section */}
@@ -236,9 +241,9 @@ export default function InvitationPage() {
           </div>
           
           {/* Hero Content */}
-          <div className="relative z-10 px-8 py-16 text-center">
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <div className="w-16 h-16">
+          <div className="relative z-10 px-4 sm:px-8 py-8 sm:py-12 text-center">
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16">
                 <Lottie 
                   animationData={travelAnimation} 
                   loop={true}
@@ -247,16 +252,16 @@ export default function InvitationPage() {
               </div>
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight drop-shadow-lg">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight drop-shadow-lg">
               You're Invited!
             </h1>
             
-            <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 inline-block shadow-2xl border border-white/30 mx-auto max-w-lg">
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+            <div className="bg-white/20 backdrop-blur-md rounded-2xl p-4 sm:p-6 inline-block shadow-2xl border border-white/30 mx-auto max-w-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4">
                 {trip.name}
               </h2>
               
-              <div className="flex flex-wrap items-center justify-center gap-4 text-white/90">
+              <div className="flex flex-wrap items-center justify-center gap-4 text-white/90 text-sm sm:text-base">
                 {trip.destination && (
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
@@ -275,10 +280,6 @@ export default function InvitationPage() {
                 )}
               </div>
             </div>
-            
-            <p className="text-white/90 text-lg max-w-2xl mx-auto mt-6 leading-relaxed">
-              Join an unforgettable adventure with friends.
-            </p>
           </div>
         </div>
 
@@ -398,44 +399,35 @@ export default function InvitationPage() {
 
         {/* RSVP Action Section */}
         <Card className="mb-8 bg-white rounded-2xl shadow-lg border-0 overflow-hidden">
-          <div className="p-8 text-center" style={{ backgroundColor: '#0E4272' }}>
-            <div className="flex items-center justify-center w-20 h-20 rounded-full mx-auto mb-6 shadow-xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
-              <UserPlus className="h-10 w-10 text-white" />
+          <div className="p-6 text-center" style={{ backgroundColor: '#3A8DFF' }}>
+            <div className="flex items-center justify-center w-12 h-12 rounded-full mx-auto mb-4 shadow-lg" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
+              <UserPlus className="h-6 w-6 text-white" />
             </div>
-            <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
+            <h2 className="text-xl font-bold text-white tracking-tight">
               Join This Trip
             </h2>
-            <p className="text-white/90 text-lg max-w-lg mx-auto leading-relaxed">
-              You're invited to join this amazing adventure! Create an account or sign in to confirm your attendance.
-            </p>
           </div>
 
-          <CardContent className="p-8 space-y-6">
-            <div className="grid md:grid-cols-2 gap-4">
+          <CardContent className="p-6 space-y-4">
+            <div className="grid md:grid-cols-2 gap-3">
               <Button 
                 onClick={handleSignUpRedirect}
-                className="w-full py-6 text-lg font-bold text-white transform hover:scale-105 transition-all duration-300 shadow-lg rounded-2xl border-0"
-                style={{ backgroundColor: '#3A8DFF' }}
+                className="w-full py-4 text-base font-semibold text-white transform hover:scale-105 transition-all duration-300 shadow-md rounded-xl border-0"
+                style={{ backgroundColor: '#0E4272' }}
               >
-                <UserPlus className="h-5 w-5 mr-3" />
+                <UserPlus className="h-4 w-4 mr-2" />
                 Create Account & Join
               </Button>
               
               <Button 
                 onClick={handleSignInRedirect}
                 variant="outline"
-                className="w-full py-6 text-lg font-bold rounded-2xl border-2 hover:bg-opacity-10 transition-all duration-300"
-                style={{ borderColor: '#3A8DFF', color: '#3A8DFF' }}
+                className="w-full py-4 text-base font-semibold rounded-xl border-2 hover:bg-opacity-10 transition-all duration-300"
+                style={{ borderColor: '#0E4272', color: '#0E4272' }}
               >
-                <User className="h-5 w-5 mr-3" />
+                <User className="h-4 w-4 mr-2" />
                 Sign In & Join
               </Button>
-            </div>
-            
-            <div className="text-center">
-              <p className="text-sm" style={{ color: '#4B5A6A' }}>
-                Already have an account? Just sign in to confirm your attendance.
-              </p>
             </div>
           </CardContent>
         </Card>

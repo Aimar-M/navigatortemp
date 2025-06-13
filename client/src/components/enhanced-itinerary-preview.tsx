@@ -34,9 +34,54 @@ interface EnhancedItineraryPreviewProps {
 export default function EnhancedItineraryPreview({ activities, tripName, className }: EnhancedItineraryPreviewProps) {
   const [selectedDay, setSelectedDay] = useState<number>(0);
 
+  // Expand accommodation activities across multiple days (same logic as main itinerary)
+  const expandAccommodationActivities = (activities: Activity[]) => {
+    const expandedActivities: any[] = [];
+    
+    activities.forEach((activity: any) => {
+      if (activity.activityType === "Accommodation" && activity.checkInDate && activity.checkOutDate) {
+        // Create entries for each day from check-in to day before check-out
+        const checkInDate = new Date(activity.checkInDate);
+        const checkOutDate = new Date(activity.checkOutDate);
+        
+        const currentDate = new Date(checkInDate);
+        while (currentDate < checkOutDate) {
+          expandedActivities.push({
+            ...activity,
+            date: new Date(currentDate).toISOString(),
+            displayDate: new Date(currentDate),
+            isAccommodationEntry: true
+          });
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        // Add checkout notification on checkout day
+        expandedActivities.push({
+          id: `checkout-${activity.id}`,
+          name: `Check out of ${activity.name}`,
+          description: ``,
+          date: new Date(checkOutDate).toISOString(),
+          displayDate: new Date(checkOutDate),
+          isCheckoutNotification: true,
+          originalAccommodation: activity
+        });
+      } else {
+        // Regular activity - add as is
+        expandedActivities.push({
+          ...activity,
+          displayDate: new Date(activity.date),
+          isAccommodationEntry: false,
+        });
+      }
+    });
+    
+    return expandedActivities;
+  };
+
   const isAccommodationEntry = (activity: Activity) => {
-    return activity.checkInDate || activity.checkOutDate || 
-           activity.activityType === 'accommodation' ||
+    return activity.activityType === 'Accommodation' ||
+           (activity as any).isAccommodationEntry ||
+           activity.checkInDate || activity.checkOutDate || 
            activity.name?.toLowerCase().includes('hotel') ||
            activity.name?.toLowerCase().includes('accommodation');
   };
@@ -50,35 +95,16 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
     return `${displayHour}:${minutes} ${ampm}`;
   };
 
-  // Group activities by day and sort chronologically
-  const groupedActivities = (activities || [])
+  // Use expanded activities and group by day
+  const expandedActivities = expandAccommodationActivities(activities || []);
+  const groupedActivities = expandedActivities
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .reduce((groups: { [key: string]: Activity[] }, activity) => {
-      // For accommodations, add to all days between check-in and check-out
-      if (isAccommodationEntry(activity) && activity.checkInDate && activity.checkOutDate) {
-        const checkIn = new Date(activity.checkInDate);
-        const checkOut = new Date(activity.checkOutDate);
-        const currentDate = new Date(checkIn);
-        
-        while (currentDate < checkOut) {
-          const dateKey = currentDate.toISOString().split('T')[0];
-          if (!groups[dateKey]) {
-            groups[dateKey] = [];
-          }
-          // Avoid duplicates
-          if (!groups[dateKey].some(a => a.id === activity.id)) {
-            groups[dateKey].push(activity);
-          }
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-      } else {
-        // Regular activities go on their specified date
-        const dateKey = activity.date;
-        if (!groups[dateKey]) {
-          groups[dateKey] = [];
-        }
-        groups[dateKey].push(activity);
+    .reduce((groups: { [key: string]: any[] }, activity) => {
+      const dateKey = activity.date.split('T')[0];
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
       }
+      groups[dateKey].push(activity);
       return groups;
     }, {});
 
