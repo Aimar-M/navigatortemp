@@ -181,11 +181,8 @@ export default function InvitationPage() {
   ) || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.024] to-white/[0.072] opacity-50"></div>
-      
-      <div className="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
+    <div className="min-h-screen" style={{ backgroundColor: '#F5F9FF' }}>
+      <div className="max-w-5xl mx-auto p-6 space-y-8">
         {/* Navigator Branding */}
         <div className="flex items-center mb-8">
           <img 
@@ -193,11 +190,11 @@ export default function InvitationPage() {
             alt="Navigator Logo" 
             className="h-8 w-8 mr-2"
           />
-          <h1 className="text-2xl font-bold text-white">Navigator</h1>
+          <h1 className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>Navigator</h1>
         </div>
         
         {/* Hero Section */}
-        <div className="text-center py-8 relative overflow-hidden mb-8">
+        <div className="relative rounded-3xl overflow-hidden shadow-lg mb-8" style={{ backgroundColor: '#0E4272' }}>
           {/* Trip Photo Background */}
           {trip.cover && (
             <div className="absolute inset-0 z-0">
@@ -238,16 +235,26 @@ export default function InvitationPage() {
             />
           </div>
           
-          <div className="relative z-20">
-            {/* Translucent backdrop behind content for readability */}
-            <div className="bg-black/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 mx-2 sm:mx-4 border border-white/20 shadow-2xl">
-              <div className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white/20 backdrop-blur-md rounded-full mx-auto mb-4 sm:mb-6 md:mb-8 shadow-2xl border border-white/30 overflow-hidden animate-bounce" style={{animationDuration: '3s', animationIterationCount: 'infinite'}}>
-                <Plane className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-white" />
+          {/* Hero Content */}
+          <div className="relative z-10 px-8 py-16 text-center">
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <div className="w-16 h-16">
+                <Lottie 
+                  animationData={travelAnimation} 
+                  loop={true}
+                  className="w-full h-full"
+                />
               </div>
-              
-              <h1 className="text-4xl font-bold text-white mb-4 tracking-tight drop-shadow-lg">
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight drop-shadow-lg">
+              You're Invited!
+            </h1>
+            
+            <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 inline-block shadow-2xl border border-white/30 mx-auto max-w-lg">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
                 {trip.name}
-              </h1>
+              </h2>
               
               <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-4">
                 <div className="flex items-center gap-2 text-white/90 text-xl">
@@ -276,23 +283,23 @@ export default function InvitationPage() {
         </div>
 
         {/* Trip Organizer */}
-        <Card className="mb-8 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+        <Card className="mb-8 bg-white rounded-2xl shadow-lg border-0">
           <CardHeader className="pb-4">
-            <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
-              <User className="h-7 w-7 text-blue-200" />
+            <CardTitle className="text-2xl font-bold flex items-center gap-3" style={{ color: '#1A1A1A' }}>
+              <User className="h-7 w-7" style={{ color: '#3A8DFF' }} />
               Trip Organizer
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg border border-white/30">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FF9F43' }}>
                 <span className="text-white font-bold text-lg">
                   {trip.organizer.name.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div>
-                <div className="text-white font-semibold text-lg">{trip.organizer.name}</div>
-                <div className="text-white/60">@{trip.organizer.username}</div>
+                <div className="font-semibold text-lg" style={{ color: '#1A1A1A' }}>{trip.organizer.name}</div>
+                <div style={{ color: '#4B5A6A' }}>@{trip.organizer.username}</div>
               </div>
             </div>
           </CardContent>
@@ -309,37 +316,37 @@ export default function InvitationPage() {
 
         {/* Payment Information */}
         {trip.requiresDownPayment && (
-          <Card className="mb-8 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+          <Card className="mb-8 bg-white rounded-2xl shadow-lg border-0">
             <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
-                <DollarSign className="h-7 w-7 text-blue-200" />
+              <CardTitle className="text-2xl font-bold flex items-center gap-3" style={{ color: '#1A1A1A' }}>
+                <DollarSign className="h-7 w-7" style={{ color: '#3A8DFF' }} />
                 Payment Required
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="bg-gradient-to-r from-blue-600/30 to-indigo-600/30 backdrop-blur-md rounded-xl p-4 border border-blue-300/50 shadow-lg">
+              <div className="rounded-xl p-4 border" style={{ backgroundColor: '#F5F9FF', borderColor: '#CED6E0' }}>
                 <div className="flex flex-col lg:flex-row gap-4">
                   {/* Payment Info Section */}
                   <div className="flex-1">
                     <div className="text-center sm:text-left">
                       <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
-                        <DollarSign className="h-4 w-4 text-blue-100" />
-                        <span className="font-semibold text-white text-sm">Down Payment Required</span>
+                        <DollarSign className="h-4 w-4" style={{ color: '#3A8DFF' }} />
+                        <span className="font-semibold text-sm" style={{ color: '#1A1A1A' }}>Down Payment Required</span>
                       </div>
-                      <p className="text-white/70 text-xs mb-3 leading-relaxed">
+                      <p className="text-xs mb-3 leading-relaxed" style={{ color: '#4B5A6A' }}>
                         A down payment is required to secure your spot on this trip.
                       </p>
                     </div>
                   </div>
 
                   {/* Payment Amount Section */}
-                  <div className="lg:flex-shrink-0 lg:border-l lg:border-white/20 lg:pl-4">
+                  <div className="lg:flex-shrink-0 lg:border-l lg:pl-4" style={{ borderColor: '#CED6E0' }}>
                     <div className="text-center lg:text-right">
                       <div className="flex items-center justify-center lg:justify-end gap-2 mb-2">
-                        <DollarSign className="h-4 w-4 text-blue-200" />
-                        <span className="font-semibold text-white text-sm">Amount Due</span>
+                        <DollarSign className="h-4 w-4" style={{ color: '#3A8DFF' }} />
+                        <span className="font-semibold text-sm" style={{ color: '#1A1A1A' }}>Amount Due</span>
                       </div>
-                      <div className="text-2xl font-bold text-white">${trip.downPaymentAmount}</div>
+                      <div className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>${trip.downPaymentAmount}</div>
                     </div>
                   </div>
                 </div>
@@ -349,10 +356,10 @@ export default function InvitationPage() {
         )}
 
         {/* Confirmed Attendees */}
-        <Card className="mb-8 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+        <Card className="mb-8 bg-white rounded-2xl shadow-lg border-0">
           <CardHeader className="pb-4">
-            <CardTitle className="text-2xl font-bold text-white flex items-center gap-3">
-              <CheckCircle className="h-7 w-7 text-blue-200" />
+            <CardTitle className="text-2xl font-bold flex items-center gap-3" style={{ color: '#1A1A1A' }}>
+              <CheckCircle className="h-7 w-7" style={{ color: '#3A8DFF' }} />
               Confirmed Attendees ({confirmedMembers.length})
             </CardTitle>
           </CardHeader>
@@ -360,28 +367,28 @@ export default function InvitationPage() {
             {confirmedMembers.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {confirmedMembers.map((member) => (
-                  <div key={member.userId} className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 border border-white/40 shadow-lg">
-                    <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-md">
+                  <div key={member.userId} className="inline-flex items-center gap-2 rounded-full px-4 py-2 border shadow-lg" style={{ backgroundColor: '#F5F9FF', borderColor: '#CED6E0' }}>
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center shadow-md" style={{ backgroundColor: '#3A8DFF' }}>
                       <span className="text-white font-bold text-xs">
                         {member.user.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <span className="text-white font-semibold text-sm drop-shadow-sm">
+                    <span className="font-semibold text-sm" style={{ color: '#1A1A1A' }}>
                       {member.user.name}
                     </span>
                     {member.userId === trip.organizer.id ? (
-                      <Badge className="bg-amber-500/30 text-amber-200 border-amber-400/50 text-xs px-2 py-0.5 shadow-sm">
+                      <Badge className="text-xs px-2 py-0.5 shadow-sm border-0" style={{ backgroundColor: '#FF9F43', color: 'white' }}>
                         Organizer
                       </Badge>
                     ) : (
-                      <CheckCircle className="h-4 w-4 text-green-300 drop-shadow-sm" />
+                      <CheckCircle className="h-4 w-4" style={{ color: '#27AE60' }} />
                     )}
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-8">
-                <div className="text-white/60 text-lg">
+                <div className="text-lg" style={{ color: '#4B5A6A' }}>
                   No confirmed attendees yet. Be the first to join!
                 </div>
               </div>
