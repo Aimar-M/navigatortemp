@@ -51,7 +51,7 @@ export default function EnhancedItineraryPreview({ activities, tripName, classNa
   };
 
   // Group activities by day and sort chronologically
-  const groupedActivities = activities
+  const groupedActivities = (activities || [])
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .reduce((groups: { [key: string]: Activity[] }, activity) => {
       // For accommodations, add to all days between check-in and check-out
