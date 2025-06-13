@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 
-import { Plus, MapPin, Clock, DollarSign, Users, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, MapPin, Clock, DollarSign, Users, Calendar, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
 import ActivityCard from "@/components/activity-card";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -96,7 +96,7 @@ function Itinerary() {
         expandedActivities.push({
           id: `checkout-${activity.id}`,
           name: `Check out of ${activity.name}`,
-          description: `Checkout from accommodation`,
+          description: ``,
           date: new Date(checkOutDate),
           displayDate: new Date(checkOutDate),
           isCheckoutNotification: true,
@@ -125,11 +125,11 @@ function Itinerary() {
       return dateA.getTime() - dateB.getTime();
     }
     
-    // Within the same day: regular activities first, then checkout notifications, then accommodations last
+    // Within the same day: checkout notifications first, then regular activities, then accommodations last
     const getTypeOrder = (item: any) => {
-      if (item.isCheckoutNotification) return 1;
+      if (item.isCheckoutNotification) return 0;
       if (item.isAccommodationEntry) return 2;
-      return 0; // regular activities
+      return 1; // regular activities
     };
     
     const typeOrderA = getTypeOrder(a);
@@ -358,44 +358,39 @@ function Itinerary() {
         {/* Activities Section */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold">Trip Activities</h2>
-              <p className="text-muted-foreground">Plan and organize your trip activities</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* View Toggle */}
-              <div className="flex items-center border rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="text-xs px-3 py-1"
-                >
-                  List View
-                </Button>
-                <Button
-                  variant={viewMode === 'day' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => {
-                    setViewMode('day');
-                    // Auto-select current day if trip is active
-                    if (currentTripDay && !selectedDay) {
-                      setSelectedDay(currentTripDay);
-                    } else if (!selectedDay) {
-                      setSelectedDay(1); // Default to first day
-                    }
-                  }}
-                  className="text-xs px-3 py-1"
-                >
-                  Day View
-                </Button>
-              </div>
-              <Button 
-                onClick={() => setIsAddActivityModalOpen(true)}
-                disabled={!isConfirmedMember}
+            <Button 
+              onClick={() => setIsAddActivityModalOpen(true)}
+              disabled={!isConfirmedMember}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add to Itinerary
+            </Button>
+            
+            {/* View Toggle */}
+            <div className="flex items-center border rounded-lg p-1">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="text-xs px-3 py-1"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Add to Itinerary
+                List View
+              </Button>
+              <Button
+                variant={viewMode === 'day' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => {
+                  setViewMode('day');
+                  // Auto-select current day if trip is active
+                  if (currentTripDay && !selectedDay) {
+                    setSelectedDay(currentTripDay);
+                  } else if (!selectedDay) {
+                    setSelectedDay(1); // Default to first day
+                  }
+                }}
+                className="text-xs px-3 py-1"
+              >
+                Day View
               </Button>
             </div>
           </div>
@@ -404,6 +399,20 @@ function Itinerary() {
           {viewMode === 'day' && (
             <div className="flex items-center gap-2 mb-4">
               <span className="text-sm font-medium">Select Day:</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const currentIndex = tripDays.findIndex(d => d.dayNumber === selectedDay);
+                  if (currentIndex > 0) {
+                    setSelectedDay(tripDays[currentIndex - 1].dayNumber);
+                  }
+                }}
+                disabled={!selectedDay || tripDays.findIndex(d => d.dayNumber === selectedDay) === 0}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
               <Select
                 value={selectedDay?.toString() || ""}
                 onValueChange={(value) => setSelectedDay(parseInt(value))}
@@ -419,6 +428,20 @@ function Itinerary() {
                   ))}
                 </SelectContent>
               </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const currentIndex = tripDays.findIndex(d => d.dayNumber === selectedDay);
+                  if (currentIndex < tripDays.length - 1) {
+                    setSelectedDay(tripDays[currentIndex + 1].dayNumber);
+                  }
+                }}
+                disabled={!selectedDay || tripDays.findIndex(d => d.dayNumber === selectedDay) === tripDays.length - 1}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           )}
 
@@ -486,7 +509,6 @@ function Itinerary() {
                                     </div>
                                     <div>
                                       <h4 className="font-medium text-amber-800">{activity.name}</h4>
-                                      <p className="text-sm text-amber-600">{activity.description}</p>
                                     </div>
                                   </div>
                                 </CardContent>
@@ -536,7 +558,6 @@ function Itinerary() {
                               </div>
                               <div>
                                 <h4 className="font-medium text-amber-800">{activity.name}</h4>
-                                <p className="text-sm text-amber-600">{activity.description}</p>
                               </div>
                             </div>
                           </CardContent>
