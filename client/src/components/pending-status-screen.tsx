@@ -141,6 +141,12 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
     queryKey: [`/api/trips/${trip.id}/members`],
   });
 
+  // Fetch activities preview for the trip
+  const { data: activityPreview = [] } = useQuery<any[]>({
+    queryKey: [`/api/trips/${trip.id}/activities/preview`],
+    enabled: !!trip.id,
+  });
+
   const submitPaymentMutation = useMutation({
     mutationFn: async ({ paymentMethod }: { paymentMethod: string }) => {
       return await apiRequest(`/api/trips/${trip.id}/members/${user?.id}/payment`, 'POST', { 
@@ -339,9 +345,9 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
         )}
 
         {/* Enhanced Itinerary Preview */}
-        {trip.id && (
+        {activityPreview && activityPreview.length > 0 && (
           <EnhancedItineraryPreview
-            activities={[]}
+            activities={activityPreview as any[]}
             tripName={trip.name}
             className="mb-10"
           />
