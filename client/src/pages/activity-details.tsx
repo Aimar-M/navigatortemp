@@ -320,14 +320,14 @@ export default function ActivityDetails() {
                 Delete Activity
               </Button>
             )}
-            
-            {/* Show message for prepaid activity creators */}
-            {currentUser && activity.createdBy === currentUser.id && activity.paymentType === 'prepaid' && (
-              <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded mt-2">
-                <span>As the creator of this prepaid activity, you must attend.</span>
-              </div>
-            )}
           </div>
+          
+          {/* Show message for prepaid activity creators - moved below button container */}
+          {currentUser && activity.createdBy === currentUser.id && activity.paymentType === 'prepaid' && (
+            <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded mt-4">
+              <span>As the creator of this prepaid activity, you must attend.</span>
+            </div>
+          )}
         </CardContent>
       </Card>
 
