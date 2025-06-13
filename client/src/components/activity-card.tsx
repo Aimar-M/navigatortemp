@@ -226,10 +226,10 @@ export default function ActivityCard({
                 <div className="flex items-center gap-1">
                   <Button
                     size="sm"
-                    variant={userRSVP?.status === "yes" ? "default" : "outline"}
+                    variant={userRsvp?.status === "going" ? "default" : "outline"}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleRSVP("yes");
+                      handleRsvp("going");
                     }}
                     disabled={isSubmitting}
                     className="h-7 w-7 p-0"
@@ -238,10 +238,10 @@ export default function ActivityCard({
                   </Button>
                   <Button
                     size="sm"
-                    variant={userRSVP?.status === "no" ? "destructive" : "outline"}
+                    variant={userRsvp?.status === "not_going" ? "destructive" : "outline"}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleRSVP("no");
+                      handleRsvp("not_going");
                     }}
                     disabled={isSubmitting}
                     className="h-7 w-7 p-0"
@@ -255,7 +255,7 @@ export default function ActivityCard({
                       variant="ghost"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteActivity();
+                        handleDelete();
                       }}
                       disabled={isSubmitting}
                       className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
