@@ -132,8 +132,14 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
   // Fetch settlement options for this user
   const { data: settlementOptions, isLoading: optionsLoading, error: optionsError } = useQuery({
-    queryKey: [`/api/trips/${trip.id}/settlement-options/${user?.id}`],
-    enabled: !!user?.id && trip.requiresDownPayment,
+    queryKey: [`/api/trips/${trip.id}/settlement-options/${user?.id}`, trip.downPaymentAmount],
+    queryFn: async () => {
+      if (!user?.id || !trip.downPaymentAmount) return [];
+      const response = await fetch(`/api/trips/${trip.id}/settlement-options/${user.id}?amount=${trip.downPaymentAmount}`);
+      if (!response.ok) throw new Error('Failed to fetch settlement options');
+      return response.json();
+    },
+    enabled: !!user?.id && trip.requiresDownPayment && !!trip.downPaymentAmount,
   });
 
   // Fetch trip members for the confirmed attendees section
