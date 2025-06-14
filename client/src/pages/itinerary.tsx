@@ -171,25 +171,6 @@ function Itinerary() {
 
   const activitiesByDay = groupActivitiesByDay(sortedActivities);
 
-  // Get current trip day if trip is active
-  const getCurrentTripDay = () => {
-    if (!(trip as any)?.startDate) return null;
-    
-    const today = new Date();
-    const tripStartDate = new Date((trip as any).startDate);
-    const diffTime = today.getTime() - tripStartDate.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    // If trip has started and is ongoing
-    if (diffDays >= 0 && diffDays < tripDays.length) {
-      return diffDays + 1; // Convert to 1-based day number
-    }
-    
-    return null;
-  };
-
-  const currentTripDay = getCurrentTripDay();
-
   // Generate trip days for the date selector
   const generateTripDays = () => {
     if (!(trip as any)?.startDate || !(trip as any)?.endDate) return [];
@@ -220,6 +201,25 @@ function Itinerary() {
   };
 
   const tripDays = generateTripDays();
+
+  // Get current trip day if trip is active
+  const getCurrentTripDay = () => {
+    if (!(trip as any)?.startDate) return null;
+    
+    const today = new Date();
+    const tripStartDate = new Date((trip as any).startDate);
+    const diffTime = today.getTime() - tripStartDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    // If trip has started and is ongoing
+    if (diffDays >= 0 && diffDays < tripDays.length) {
+      return diffDays + 1; // Convert to 1-based day number
+    }
+    
+    return null;
+  };
+
+  const currentTripDay = getCurrentTripDay();
 
 
 
