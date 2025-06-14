@@ -295,11 +295,21 @@ function Itinerary() {
       }
     }
 
-    // Validate cost is required when payment type is not free
-    if (activityFormData.paymentType !== "free" && (!activityFormData.cost || parseFloat(activityFormData.cost) <= 0)) {
+    // Validate cost is required when payment type is not free or included
+    if (!["free", "included"].includes(activityFormData.paymentType) && (!activityFormData.cost || parseFloat(activityFormData.cost) <= 0)) {
       toast({
         title: "Cost required",
-        description: "Please provide a cost when the activity is not free",
+        description: "Please provide a cost when the activity is not free or included",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate website is required when payment type is "pay in advance"
+    if (activityFormData.paymentType === "pay_in_advance" && !activityFormData.activityLink) {
+      toast({
+        title: "Website required",
+        description: "Please provide a website link for advance payment activities",
         variant: "destructive"
       });
       return;
@@ -742,15 +752,17 @@ function Itinerary() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="included">Included</SelectItem>
                     <SelectItem value="payment_onsite">Payment Onsite</SelectItem>
-                    <SelectItem value="prepaid">Prepaid by Activity Creator</SelectItem>
+                    <SelectItem value="pay_in_advance">Pay in advance (via link)</SelectItem>
+                    <SelectItem value="prepaid">Prepaid by Organizer (group cost)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <Label htmlFor="activity-cost">
-                  Cost {activityFormData.paymentType === "free" ? "(optional)" : "*"}
+                  Cost {["free", "included"].includes(activityFormData.paymentType) ? "(optional)" : "*"}
                 </Label>
                 <Input
                   id="activity-cost"
@@ -759,11 +771,11 @@ function Itinerary() {
                   step="0.01"
                   value={activityFormData.cost}
                   onChange={(e) => setActivityFormData(prev => ({ ...prev, cost: e.target.value }))}
-                  placeholder={activityFormData.paymentType === "free" ? "0.00" : "Enter cost amount"}
-                  required={activityFormData.paymentType !== "free"}
-                  className={activityFormData.paymentType !== "free" && !activityFormData.cost ? "border-red-300" : ""}
+                  placeholder={["free", "included"].includes(activityFormData.paymentType) ? "0.00" : "Enter cost amount"}
+                  required={!["free", "included"].includes(activityFormData.paymentType)}
+                  className={!["free", "included"].includes(activityFormData.paymentType) && !activityFormData.cost ? "border-red-300" : ""}
                 />
-                {activityFormData.paymentType !== "free" && !activityFormData.cost && (
+                {!["free", "included"].includes(activityFormData.paymentType) && !activityFormData.cost && (
                   <p className="text-sm text-red-600 mt-1">Cost is required for paid activities</p>
                 )}
               </div>
@@ -810,14 +822,21 @@ function Itinerary() {
               {/* Website & Registration Cap */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="activity-link">Website</Label>
+                  <Label htmlFor="activity-link">
+                    Website {activityFormData.paymentType === "pay_in_advance" ? "*" : ""}
+                  </Label>
                   <Input
                     id="activity-link"
                     type="url"
                     value={activityFormData.activityLink}
                     onChange={(e) => setActivityFormData(prev => ({ ...prev, activityLink: e.target.value }))}
                     placeholder="https://example.com/activity-booking"
+                    required={activityFormData.paymentType === "pay_in_advance"}
+                    className={activityFormData.paymentType === "pay_in_advance" && !activityFormData.activityLink ? "border-red-300" : ""}
                   />
+                  {activityFormData.paymentType === "pay_in_advance" && !activityFormData.activityLink && (
+                    <p className="text-sm text-red-600 mt-1">Website link is required for advance payment activities</p>
+                  )}
                 </div>
 
                 <div>
