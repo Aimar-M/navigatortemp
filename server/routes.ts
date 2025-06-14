@@ -1475,33 +1475,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Find the activity creator (who paid for the activity)
           const activityCreatorId = activity.createdBy || user.id;
           
-          // Check if expense already exists for this specific user and activity
-          const existingExpenses = await storage.getExpensesByTrip(activity.tripId);
-          const existingUserExpense = existingExpenses.find(expense => 
-            expense.activityId === activityId && 
-            expense.description?.includes(`for ${user.username || user.name || `User ${user.id}`}`)
-          );
+          // Only create expense if the user RSVPing is NOT the activity creator
+          // The creator shouldn't owe themselves money
+          if (user.id !== activityCreatorId) {
+            // Check if expense already exists for this specific user and activity
+            const existingExpenses = await storage.getExpensesByTrip(activity.tripId);
+            const existingUserExpense = existingExpenses.find(expense => 
+              expense.activityId === activityId && 
+              expense.description?.includes(`for ${user.username || user.name || `User ${user.id}`}`)
+            );
 
-          if (!existingUserExpense) {
-            // Create individual expense for this user
-            const expense = await storage.createExpense({
-              tripId: activity.tripId,
-              title: `Activity: ${activity.name}`,
-              amount: activity.cost,
-              currency: 'USD',
-              category: 'activities',
-              description: `Prepaid per-person activity expense for ${user.username || user.name || `User ${user.id}`} - ${activity.name}`,
-              paidBy: activityCreatorId,
-              activityId: activityId,
-              date: new Date()
-            });
+            if (!existingUserExpense) {
+              // Create individual expense for this user
+              const expense = await storage.createExpense({
+                tripId: activity.tripId,
+                title: `Activity: ${activity.name}`,
+                amount: activity.cost,
+                currency: 'USD',
+                category: 'activities',
+                description: `Prepaid per-person activity expense for ${user.username || user.name || `User ${user.id}`} - ${activity.name}`,
+                paidBy: activityCreatorId,
+                activityId: activityId,
+                date: new Date()
+              });
 
-            // Create expense split for just this user (full amount)
-            await storage.createExpenseSplit({
-              expenseId: expense.id,
-              userId: user.id,
-              amount: activity.cost
-            });
+              // Create expense split for just this user (full amount)
+              await storage.createExpenseSplit({
+                expenseId: expense.id,
+                userId: user.id,
+                amount: activity.cost
+              });
+            }
           }
         } catch (expenseError) {
           console.error('Error creating individual activity expense:', expenseError);
