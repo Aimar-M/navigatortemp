@@ -1324,7 +1324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  router.delete('/activities/:id', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
+  router.delete('/activities/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
@@ -1364,7 +1364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Activity RSVP Routes
-  router.post('/activities/:id/rsvp', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
+  router.post('/activities/:id/rsvp', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
