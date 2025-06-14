@@ -130,16 +130,16 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
   const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
   const [pendingPaymentMethod, setPendingPaymentMethod] = useState<string | null>(null);
 
-  // Fetch settlement options for this user
+  // Fetch settlement options for paying the trip organizer
   const { data: settlementOptions, isLoading: optionsLoading, error: optionsError } = useQuery({
-    queryKey: [`/api/trips/${trip.id}/settlement-options/${user?.id}`, trip.downPaymentAmount],
+    queryKey: [`/api/trips/${trip.id}/settlement-options/${trip.organizer}`, trip.downPaymentAmount],
     queryFn: async () => {
-      if (!user?.id || !trip.downPaymentAmount) return [];
-      const response = await fetch(`/api/trips/${trip.id}/settlement-options/${user.id}?amount=${trip.downPaymentAmount}`);
+      if (!trip.organizer || !trip.downPaymentAmount) return [];
+      const response = await fetch(`/api/trips/${trip.id}/settlement-options/${trip.organizer}?amount=${trip.downPaymentAmount}`);
       if (!response.ok) throw new Error('Failed to fetch settlement options');
       return response.json();
     },
-    enabled: !!user?.id && trip.requiresDownPayment && !!trip.downPaymentAmount,
+    enabled: !!trip.organizer && trip.requiresDownPayment && !!trip.downPaymentAmount,
   });
 
   // Fetch trip members for the confirmed attendees section
@@ -155,7 +155,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
   const submitPaymentMutation = useMutation({
     mutationFn: async ({ paymentMethod }: { paymentMethod: string }) => {
-      return await apiRequest(`/api/trips/${trip.id}/members/${user?.id}/payment`, 'POST', { 
+      return await apiRequest('POST', `/api/trips/${trip.id}/members/${user?.id}/payment`, { 
         paymentMethod,
         paymentAmount: trip.downPaymentAmount 
       });
@@ -195,7 +195,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
   const confirmAttendanceMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/trips/${trip.id}/members/${user?.id}/rsvp`, 'POST', { 
+      return await apiRequest('PUT', `/api/trips/${trip.id}/members/${user?.id}/rsvp`, { 
         rsvpStatus: 'confirmed' 
       });
     },
