@@ -1468,6 +1468,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Don't fail the RSVP if expense creation fails
         }
       }
+
+      // Auto-create individual expense for prepaid per person activities when user confirms attendance
+      if (status === 'going' && activity.paymentType === 'prepaid_per_person' && activity.cost && parseFloat(activity.cost) > 0) {
+        try {
+          // Find the activity creator (who paid for the activity)
+          const activityCreatorId = activity.createdBy || user.id;
+          
+          // Check if expense already exists for this specific user and activity
+          const existingExpenses = await storage.getExpensesByTrip(activity.tripId);
+          const existingUserExpense = existingExpenses.find(expense => 
+            expense.activityId === activityId && 
+            expense.description?.includes(`for ${user.username || user.name || `User ${user.id}`}`)
+          );
+
+          if (!existingUserExpense) {
+            // Create individual expense for this user
+            const expense = await storage.createExpense({
+              tripId: activity.tripId,
+              title: `Activity: ${activity.name}`,
+              amount: activity.cost,
+              currency: 'USD',
+              category: 'activities',
+              description: `Prepaid per-person activity expense for ${user.username || user.name || `User ${user.id}`} - ${activity.name}`,
+              paidBy: activityCreatorId,
+              activityId: activityId,
+              date: new Date()
+            });
+
+            // Create expense split for just this user (full amount)
+            await storage.createExpenseSplit({
+              expenseId: expense.id,
+              userId: user.id,
+              amount: activity.cost
+            });
+          }
+        } catch (expenseError) {
+          console.error('Error creating individual activity expense:', expenseError);
+          // Don't fail the RSVP if expense creation fails
+        }
+      }
+
+      // Handle cancellation for prepaid per person activities
+      if (status === 'not going' && activity.paymentType === 'prepaid_per_person' && activity.cost && parseFloat(activity.cost) > 0) {
+        try {
+          // Find and remove the individual expense for this user
+          const existingExpenses = await storage.getExpensesByTrip(activity.tripId);
+          const userExpense = existingExpenses.find(expense => 
+            expense.activityId === activityId && 
+            expense.description?.includes(`for ${user.username || user.name || `User ${user.id}`}`)
+          );
+
+          if (userExpense) {
+            // Remove the expense splits first
+            await storage.removeExpenseSplits(userExpense.id);
+            // Then remove the expense itself
+            await storage.deleteExpense(userExpense.id);
+          }
+        } catch (expenseError) {
+          console.error('Error removing individual activity expense:', expenseError);
+          // Don't fail the RSVP if expense removal fails
+        }
+      }
       
       res.json(rsvp);
     } catch (error) {
