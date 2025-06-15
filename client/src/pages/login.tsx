@@ -69,8 +69,7 @@ export default function Login() {
             <img 
               src={navigatorLogo} 
               alt="Navigator Logo" 
-              className="h-32 w-32 md:h-56 md:w-56 mb-2 md:animate-bounce"
-              style={{ animationDuration: '3s' }}
+              className="h-32 w-32 md:h-56 md:w-56 mb-2"
             />
           </div>
         </div>
