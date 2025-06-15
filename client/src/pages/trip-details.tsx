@@ -1,7 +1,7 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { MapPin, Calendar, Users, Info, UserPlus, Edit2, Save, X, Home, Plane, UserMinus, Trash2 } from "lucide-react";
+import { MapPin, Calendar, Users, Info, UserPlus, Edit2, Save, X, Home, Plane, UserMinus, Trash2, Plus } from "lucide-react";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import UserAvatar from "@/components/user-avatar";
 import RSVPPaymentWorkflow from "@/components/rsvp-payment-workflow";
@@ -237,7 +237,7 @@ export default function TripDetails() {
         description: trip.description || '',
         startDate: trip.startDate.split('T')[0], // Convert to YYYY-MM-DD format
         endDate: trip.endDate.split('T')[0],
-        accommodationLink: trip.accommodationLink || '',
+        accommodationLinks: trip.accommodationLinks && trip.accommodationLinks.length > 0 ? trip.accommodationLinks : [''],
         airportGateway: trip.airportGateway || ''
       });
     }
@@ -281,7 +281,7 @@ export default function TripDetails() {
       description: editForm.description.trim(),
       startDate: startDate,
       endDate: endDate,
-      accommodationLink: editForm.accommodationLink.trim() || null,
+      accommodationLinks: editForm.accommodationLinks.filter(link => link.trim() !== ''),
       airportGateway: editForm.airportGateway.trim() || null
     };
 
@@ -510,32 +510,77 @@ export default function TripDetails() {
                 </div>
               </div>
 
-              {/* Accommodation Link */}
+              {/* Accommodation Links */}
               <div className="flex items-start space-x-3">
                 <Home className="h-5 w-5 text-gray-500 mt-0.5" />
                 <div className="flex-1">
                   <h3 className="font-medium">Accommodation</h3>
                   {isEditing ? (
-                    <Input
-                      value={editForm.accommodationLink}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, accommodationLink: e.target.value }))}
-                      placeholder="Enter accommodation booking link (optional)"
-                      className="mt-1"
-                      type="url"
-                    />
+                    <div className="mt-1 space-y-2">
+                      {editForm.accommodationLinks.map((link, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <Input
+                            value={link}
+                            onChange={(e) => {
+                              const newLinks = [...editForm.accommodationLinks];
+                              newLinks[index] = e.target.value;
+                              setEditForm(prev => ({ ...prev, accommodationLinks: newLinks }));
+                            }}
+                            placeholder="Enter accommodation booking link (optional)"
+                            type="url"
+                            className="flex-1"
+                          />
+                          {editForm.accommodationLinks.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newLinks = editForm.accommodationLinks.filter((_, i) => i !== index);
+                                setEditForm(prev => ({ ...prev, accommodationLinks: newLinks }));
+                              }}
+                              className="text-red-600 border-red-200 hover:bg-red-50"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditForm(prev => ({ 
+                            ...prev, 
+                            accommodationLinks: [...prev.accommodationLinks, ''] 
+                          }));
+                        }}
+                        className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Another Link
+                      </Button>
+                    </div>
                   ) : (
                     <div className="text-gray-600">
-                      {trip.accommodationLink ? (
-                        <a 
-                          href={trip.accommodationLink.startsWith('http') ? trip.accommodationLink : `https://${trip.accommodationLink}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 underline"
-                        >
-                          View Accommodation Details
-                        </a>
+                      {trip.accommodationLinks && trip.accommodationLinks.length > 0 ? (
+                        <div className="space-y-2">
+                          {trip.accommodationLinks.map((link, index) => (
+                            <div key={index}>
+                              <a 
+                                href={link.startsWith('http') ? link : `https://${link}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 underline block"
+                              >
+                                Accommodation Link {trip.accommodationLinks.length > 1 ? `#${index + 1}` : ''}
+                              </a>
+                            </div>
+                          ))}
+                        </div>
                       ) : (
-                        'No accommodation link provided'
+                        'No accommodation links provided'
                       )}
                     </div>
                   )}
