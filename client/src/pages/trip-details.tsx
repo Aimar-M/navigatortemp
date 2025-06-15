@@ -36,7 +36,7 @@ export default function TripDetails() {
     description: '',
     startDate: '',
     endDate: '',
-    accommodationLink: '',
+    accommodationLinks: [''],
     airportGateway: ''
   });
   const [memberToRemove, setMemberToRemove] = useState<TripMember | null>(null);
@@ -55,7 +55,7 @@ export default function TripDetails() {
     organizer: number;
     status: string;
     cover?: string;
-    accommodationLink?: string;
+    accommodationLinks?: string[];
     airportGateway?: string;
     requiresDownPayment?: boolean;
     downPaymentAmount?: string;
