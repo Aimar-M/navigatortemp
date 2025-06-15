@@ -497,13 +497,6 @@ export default function ExpensesPage() {
                                 <span className="hidden sm:inline">{formatCurrency(balance.totalPaid)}</span>
                               </span>
                             </div>
-                            <div className="flex justify-between">
-                              <span>Owes:</span>
-                              <span className="font-medium">
-                                <span className="sm:hidden">{formatCurrency(balance.totalOwed, true)}</span>
-                                <span className="hidden sm:inline">{formatCurrency(balance.totalOwed)}</span>
-                              </span>
-                            </div>
                             <div className="border-t pt-1 flex justify-between font-semibold">
                               <span>Net:</span>
                               <span className={balance.netBalance >= 0 ? "text-green-600" : "text-red-600"}>
