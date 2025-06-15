@@ -92,11 +92,11 @@ export default function TripExpenses() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
 
-  const { data: trip } = useQuery({
+  const { data: trip } = useQuery<any>({
     queryKey: [`/api/trips/${tripId}`],
   });
 
-  const { data: members = [] } = useQuery({
+  const { data: members = [] } = useQuery<any[]>({
     queryKey: [`/api/trips/${tripId}/members`],
   });
 
@@ -109,9 +109,12 @@ export default function TripExpenses() {
   });
 
   // Get current user info
-  const { data: currentUser } = useQuery({
+  const { data: currentUser } = useQuery<any>({
     queryKey: ['/api/auth/me'],
   });
+
+  // Get trip members to check admin status (using same data as members)
+  const tripMembers = members;
 
   // Mutation for deleting an expense
   const deleteExpenseMutation = useMutation({
@@ -151,9 +154,15 @@ export default function TripExpenses() {
 
   // Check if user can edit/delete an expense
   const canModifyExpense = (expense: Expense) => {
-    if (!currentUser) return false;
-    // Check if user is the expense creator or trip organizer
-    return expense.paidBy === currentUser.id || trip?.organizer === currentUser.id;
+    if (!currentUser || !trip) return false;
+    
+    // Find current user's membership info
+    const currentMembership = tripMembers?.find((member: any) => member.userId === currentUser.id);
+    const isOrganizer = trip.organizer === currentUser.id;
+    const isAdmin = currentMembership?.isAdmin === true;
+    
+    // User can modify if they created the expense, are the organizer, or are an admin
+    return expense.paidBy === currentUser.id || isOrganizer || isAdmin;
   };
 
   const form = useForm<ExpenseFormData>({
