@@ -665,6 +665,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Server error' });
     }
   });
+
+  // Update admin-only itinerary setting
+  router.patch('/trips/:id/admin-settings', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+
+      const tripId = parseInt(req.params.id);
+      if (isNaN(tripId)) {
+        return res.status(400).json({ message: 'Invalid trip ID' });
+      }
+
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: 'Trip not found' });
+      }
+
+      // Check if user is an admin of this trip
+      const members = await storage.getTripMembers(tripId);
+      const currentMember = members.find(m => m.userId === user.id);
+      
+      if (!currentMember?.isAdmin) {
+        return res.status(403).json({ message: 'Only trip admins can modify admin settings' });
+      }
+
+      const { adminOnlyItinerary } = req.body;
+      if (typeof adminOnlyItinerary !== 'boolean') {
+        return res.status(400).json({ message: 'adminOnlyItinerary must be a boolean' });
+      }
+
+      const updatedTrip = await storage.updateTrip(tripId, { adminOnlyItinerary });
+      res.json(updatedTrip);
+    } catch (error) {
+      console.error('Error updating admin settings:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
   
   router.delete('/trips/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
@@ -1187,13 +1224,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user is a confirmed member of the trip
       const members = await storage.getTripMembers(tripId);
-      const isMember = members.some(member => 
+      const currentMember = members.find(member => 
         member.userId === authUser.id && member.status === 'confirmed'
       );
       
-      if (!isMember) {
+      if (!currentMember) {
         console.log('User not a confirmed member:', authUser.id, tripId);
         return res.status(403).json({ message: 'Not a confirmed member of this trip' });
+      }
+
+      // Check admin-only itinerary permission
+      if (trip.adminOnlyItinerary && !currentMember.isAdmin) {
+        return res.status(403).json({ message: 'Only trip admins can add to the itinerary' });
       }
       
       try {
@@ -1302,14 +1344,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Activity not found' });
       }
       
-      // Check if user is the trip organizer
+      // Get trip and check permissions
       const trip = await storage.getTrip(activity.tripId);
       if (!trip) {
         return res.status(404).json({ message: 'Trip not found' });
       }
+
+      // Check if user is a confirmed member
+      const members = await storage.getTripMembers(activity.tripId);
+      const currentMember = members.find(member => 
+        member.userId === user.id && member.status === 'confirmed'
+      );
       
-      if (trip.organizer !== user.id) {
-        return res.status(403).json({ message: 'Only the trip organizer can update activities' });
+      if (!currentMember) {
+        return res.status(403).json({ message: 'Not a confirmed member of this trip' });
+      }
+
+      // Check admin-only itinerary permission
+      if (trip.adminOnlyItinerary && !currentMember.isAdmin) {
+        return res.status(403).json({ message: 'Only trip admins can edit the itinerary' });
       }
       
       const activityData = insertActivitySchema.partial().parse(req.body);

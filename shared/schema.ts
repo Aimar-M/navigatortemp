@@ -80,6 +80,7 @@ export const trips = pgTable("trips", {
   isArchived: boolean("is_archived").default(false),
   requiresDownPayment: boolean("requires_down_payment").default(false),
   downPaymentAmount: decimal("down_payment_amount", { precision: 10, scale: 2 }),
+  adminOnlyItinerary: boolean("admin_only_itinerary").default(false),
 });
 
 export const tripsRelations = relations(trips, ({ one, many }) => ({
@@ -108,6 +109,7 @@ export const insertTripSchema = createInsertSchema(trips).pick({
   airportGateway: true,
   requiresDownPayment: true,
   downPaymentAmount: true,
+  adminOnlyItinerary: true,
 });
 
 // Add new table for user-specific trip settings
