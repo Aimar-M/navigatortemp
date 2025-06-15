@@ -169,6 +169,13 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ tripId, currentUserId, isOrga
 
   // Check if user can edit/delete an expense
   const canModifyExpense = (expense: ExpenseWithUser) => {
+    console.log('Permission check:', {
+      expenseUserId: expense.userId,
+      currentUserId,
+      isOrganizer,
+      isAdmin,
+      canModify: expense.userId === currentUserId || isOrganizer || isAdmin
+    });
     return expense.userId === currentUserId || isOrganizer || isAdmin;
   };
 
