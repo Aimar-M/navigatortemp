@@ -574,7 +574,7 @@ export default function TripDetails() {
                                 rel="noopener noreferrer"
                                 className="text-blue-600 hover:text-blue-800 underline block"
                               >
-                                Accommodation Link {trip.accommodationLinks.length > 1 ? `#${index + 1}` : ''}
+                                Accommodation Link {trip.accommodationLinks!.length > 1 ? `#${index + 1}` : ''}
                               </a>
                             </div>
                           ))}
