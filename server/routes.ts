@@ -1392,17 +1392,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Activity not found' });
       }
       
-      // Check if user is the activity creator or trip organizer
+      // Get trip and check permissions
       const trip = await storage.getTrip(activity.tripId);
       if (!trip) {
         return res.status(404).json({ message: 'Trip not found' });
       }
+
+      // Check if user is a confirmed member
+      const members = await storage.getTripMembers(activity.tripId);
+      const currentMember = members.find(member => 
+        member.userId === user.id && member.status === 'confirmed'
+      );
       
+      if (!currentMember) {
+        return res.status(403).json({ message: 'Not a confirmed member of this trip' });
+      }
+
+      // Check admin-only itinerary permission or if user is activity creator
       const isActivityCreator = activity.createdBy === user.id;
-      const isTripOrganizer = trip.organizer === user.id;
-      
-      if (!isActivityCreator && !isTripOrganizer) {
-        return res.status(403).json({ message: 'Only the activity creator or trip organizer can delete activities' });
+      if (trip.adminOnlyItinerary && !currentMember.isAdmin && !isActivityCreator) {
+        return res.status(403).json({ message: 'Only trip admins can delete activities' });
       }
       
       const success = await storage.deleteActivity(activityId);
