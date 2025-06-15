@@ -576,15 +576,15 @@ export class DatabaseStorage {
       console.log(`Found ${realExpenses.length} real expenses and ${relevantSplits.length} splits`);
       
       // Get all unique user IDs involved in expenses (both current members and removed users)
-      const paidBySet = new Set();
+      const paidBySet = new Set<number>();
       realExpenses.forEach(e => paidBySet.add(e.paidBy));
       const paidByUsers = Array.from(paidBySet);
       
-      const splitSet = new Set();
+      const splitSet = new Set<number>();
       relevantSplits.forEach(s => splitSet.add(s.userId));
       const splitUsers = Array.from(splitSet);
       
-      const allUsersSet = new Set();
+      const allUsersSet = new Set<number>();
       memberIds.forEach(id => allUsersSet.add(id));
       paidByUsers.forEach(id => allUsersSet.add(id));
       splitUsers.forEach(id => allUsersSet.add(id));
@@ -594,8 +594,8 @@ export class DatabaseStorage {
       const balances = [];
       
       for (const userId of allInvolvedUsers) {
-        const memberUser = await this.getUser(userId as number);
-        const isCurrentMember = memberIds.includes(userId as number);
+        const memberUser = await this.getUser(userId);
+        const isCurrentMember = memberIds.includes(userId);
         
         // Amount they paid out (only real expenses they covered)
         const totalPaid = realExpenses
