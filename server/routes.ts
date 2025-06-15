@@ -2426,9 +2426,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Expense not found' });
       }
       
-      // Only allow the creator or trip organizer to update expenses
+      // Only allow the creator, trip organizer, or trip admin to update expenses
       const trip = await storage.getTrip(expense.tripId);
-      if (expense.userId !== user.id && trip?.organizer !== user.id) {
+      const members = await storage.getTripMembers(expense.tripId);
+      const membership = members.find(m => m.userId === user.id);
+      const isAdmin = membership?.isAdmin || false;
+      
+      if (expense.userId !== user.id && trip?.organizer !== user.id && !isAdmin) {
         return res.status(403).json({ message: 'Not authorized to update this expense' });
       }
       
@@ -2465,9 +2469,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Expense not found' });
       }
       
-      // Only allow the creator or trip organizer to delete expenses
+      // Only allow the creator, trip organizer, or trip admin to delete expenses
       const trip = await storage.getTrip(expense.tripId);
-      if (expense.userId !== user.id && trip?.organizer !== user.id) {
+      const members = await storage.getTripMembers(expense.tripId);
+      const membership = members.find(m => m.userId === user.id);
+      const isAdmin = membership?.isAdmin || false;
+      
+      if (expense.userId !== user.id && trip?.organizer !== user.id && !isAdmin) {
         return res.status(403).json({ message: 'Not authorized to delete this expense' });
       }
       

@@ -25,6 +25,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -110,7 +120,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ tripId, currentUserId, isOrga
   const [expenseToDelete, setExpenseToDelete] = useState<ExpenseWithUser | null>(null);
 
   // Fetch expenses for this trip
-  const { data: expenses, isLoading, error } = useQuery({
+  const { data: expenses = [], isLoading, error } = useQuery<ExpenseWithUser[]>({
     queryKey: ['/api/trips', tripId, 'expenses'],
     enabled: !!tripId,
   });
@@ -290,7 +300,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ tripId, currentUserId, isOrga
                               <Edit className="mr-2 h-4 w-4" /> Edit Expense
                             </DropdownMenuItem>
                             <DropdownMenuItem 
-                              onClick={() => handleDelete(expense)}
+                              onClick={() => handleDeleteClick(expense)}
                               className="text-red-600"
                             >
                               <Trash2 className="mr-2 h-4 w-4" /> Delete Expense
@@ -342,11 +352,54 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ tripId, currentUserId, isOrga
                 setSelectedExpense(null);
                 queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId, 'expenses'] });
                 queryClient.invalidateQueries({ queryKey: ['/api/trips', tripId, 'expenses/summary'] });
+                toast({
+                  title: "Expense updated successfully",
+                  description: "The expense has been updated with your changes.",
+                  variant: "default",
+                });
               }}
             />
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+            <AlertDialogDescription>
+              {expenseToDelete && (
+                <div className="space-y-2">
+                  <p>Are you sure you want to delete this expense?</p>
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <p className="font-medium">{expenseToDelete.title}</p>
+                    <p className="text-sm text-gray-600">
+                      {expenseToDelete.currency} {parseFloat(expenseToDelete.amount).toFixed(2)}
+                    </p>
+                  </div>
+                  <p className="text-red-600 font-medium">This action cannot be undone.</p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setIsDeleteDialogOpen(false);
+              setExpenseToDelete(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteExpenseMutation.isPending}
+            >
+              {deleteExpenseMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
