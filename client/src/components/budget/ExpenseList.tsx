@@ -97,14 +97,17 @@ interface ExpenseListProps {
   tripId: number;
   currentUserId: number;
   isOrganizer: boolean;
+  isAdmin?: boolean;
 }
 
-const ExpenseList: React.FC<ExpenseListProps> = ({ tripId, currentUserId, isOrganizer }) => {
+const ExpenseList: React.FC<ExpenseListProps> = ({ tripId, currentUserId, isOrganizer, isAdmin = false }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isEditExpenseOpen, setIsEditExpenseOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithUser | null>(null);
+  const [expenseToDelete, setExpenseToDelete] = useState<ExpenseWithUser | null>(null);
 
   // Fetch expenses for this trip
   const { data: expenses, isLoading, error } = useQuery({
@@ -115,9 +118,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ tripId, currentUserId, isOrga
   // Mutation for deleting an expense
   const deleteExpenseMutation = useMutation({
     mutationFn: async (expenseId: number) => {
-      return await apiRequest(`/api/expenses/${expenseId}`, {
-        method: 'DELETE'
-      });
+      return await apiRequest("DELETE", `/api/expenses/${expenseId}`);
     },
     onSuccess: () => {
       toast({
@@ -138,9 +139,16 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ tripId, currentUserId, isOrga
     }
   });
 
-  const handleDelete = (expense: ExpenseWithUser) => {
-    if (window.confirm("Are you sure you want to delete this expense?")) {
-      deleteExpenseMutation.mutate(expense.id);
+  const handleDeleteClick = (expense: ExpenseWithUser) => {
+    setExpenseToDelete(expense);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (expenseToDelete) {
+      deleteExpenseMutation.mutate(expenseToDelete.id);
+      setIsDeleteDialogOpen(false);
+      setExpenseToDelete(null);
     }
   };
 
@@ -151,7 +159,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ tripId, currentUserId, isOrga
 
   // Check if user can edit/delete an expense
   const canModifyExpense = (expense: ExpenseWithUser) => {
-    return expense.userId === currentUserId || isOrganizer;
+    return expense.userId === currentUserId || isOrganizer || isAdmin;
   };
 
   if (isLoading) {
