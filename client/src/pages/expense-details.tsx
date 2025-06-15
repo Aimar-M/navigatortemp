@@ -7,8 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, DollarSign, Receipt, Users, Activity, CheckCircle, XCircle, HandHeart, Calendar, MapPin, User } from "lucide-react";
+import { ArrowLeft, DollarSign, Receipt, Users, Activity, CheckCircle, XCircle, HandHeart, Calendar, MapPin, User, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useAuth } from "@/hooks/use-auth";
 
 interface ExpenseSplit {
   id: number;
@@ -56,6 +67,8 @@ export default function ExpenseDetails() {
   const { tripId, expenseId } = useParams<{ tripId: string; expenseId: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Fetch expense details
   const { data: expense, isLoading } = useQuery<Expense>({
@@ -72,9 +85,65 @@ export default function ExpenseDetails() {
   const settlementExpense = expenses?.find(e => e.id === expenseId);
   const displayExpense = expense || settlementExpense;
 
-  const { data: currentUser } = useQuery<{ id: number; name: string }>({
-    queryKey: ["/api/auth/me"],
+  // Get trip data for permission checking
+  const { data: trip } = useQuery<any>({
+    queryKey: [`/api/trips/${tripId}`],
   });
+
+  // Get trip members for admin status checking
+  const { data: tripMembers = [] } = useQuery<any[]>({
+    queryKey: [`/api/trips/${tripId}/members`],
+  });
+
+  // Delete mutation
+  const deleteExpenseMutation = useMutation({
+    mutationFn: async (expenseId: number | string) => {
+      return await apiRequest("DELETE", `/api/expenses/${expenseId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Expense deleted",
+        description: "The expense has been successfully deleted.",
+      });
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses/balances`] });
+      // Navigate back to expenses page
+      setLocation(`/trips/${tripId}/expenses`);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error deleting expense",
+        description: "There was an error deleting the expense. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Error deleting expense:", error);
+    }
+  });
+
+  // Check if user can delete the expense
+  const canDeleteExpense = () => {
+    if (!user || !trip || !displayExpense) return false;
+    
+    // Find user's membership info
+    const userMembership = tripMembers?.find((member: any) => member.userId === user.id);
+    const isOrganizer = trip.organizer === user.id;
+    const isAdmin = userMembership?.isAdmin === true;
+    
+    // User can delete if they created the expense, are the organizer, or are an admin
+    return displayExpense.paidBy === user.id || isOrganizer || isAdmin;
+  };
+
+  const handleDeleteClick = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (displayExpense) {
+      deleteExpenseMutation.mutate(displayExpense.id);
+      setIsDeleteDialogOpen(false);
+    }
+  };
 
   // Format currency
   const formatCurrency = (amount: number | string) => {
@@ -152,6 +221,19 @@ export default function ExpenseDetails() {
           <ArrowLeft className="h-4 w-4" />
           Back to Expenses
         </Button>
+        
+        {/* Delete button - only show if user has permission and it's not a settlement */}
+        {!displayExpense?.isSettlement && canDeleteExpense() && (
+          <Button 
+            variant="destructive" 
+            size="sm"
+            onClick={handleDeleteClick}
+            className="flex items-center gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Expense
+          </Button>
+        )}
       </div>
 
       {/* Expense Details Card */}
@@ -329,6 +411,44 @@ export default function ExpenseDetails() {
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+            <AlertDialogDescription>
+              {displayExpense && (
+                <div className="space-y-2">
+                  <p>Are you sure you want to delete this expense?</p>
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <p className="font-medium">{displayExpense.title}</p>
+                    <p className="text-sm text-gray-600">
+                      {formatCurrency(displayExpense.amount)}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Paid by {displayExpense.paidByUser?.name || displayExpense.paidByUser?.username}
+                    </p>
+                  </div>
+                  <p className="text-red-600 font-medium">This action cannot be undone.</p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteExpenseMutation.isPending}
+            >
+              {deleteExpenseMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
