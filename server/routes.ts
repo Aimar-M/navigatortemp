@@ -912,7 +912,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Mark activity as created by removed user
           await storage.updateActivity(activity.id, {
-            title: `${activity.title} (Created by removed user)`,
+            name: `${activity.name} (Created by removed user)`,
             createdBy: -1 // Use -1 to indicate removed user
           });
         }
