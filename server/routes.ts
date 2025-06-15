@@ -1478,6 +1478,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Activity not found' });
       }
       
+      // Notify trip members about the deleted activity and any associated expenses
+      broadcastToTrip(wss, activity.tripId, {
+        type: 'DELETE_ACTIVITY',
+        data: { id: activityId, tripId: activity.tripId }
+      });
+      
       res.json({ message: 'Activity deleted successfully' });
     } catch (error) {
       res.status(500).json({ message: 'Server error' });
@@ -2479,6 +2485,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Not authorized to delete this expense' });
       }
       
+      // If this expense is linked to an activity, delete the activity as well (cascading deletion)
+      let activityDeleted = false;
+      if (expense.activityId) {
+        try {
+          const activityExists = await storage.getActivity(expense.activityId);
+          if (activityExists) {
+            await storage.deleteActivity(expense.activityId);
+            activityDeleted = true;
+          }
+        } catch (activityError) {
+          console.error('Error deleting linked activity:', activityError);
+          // Continue with expense deletion even if activity deletion fails
+        }
+      }
+
       const success = await storage.deleteExpense(expenseId);
       
       if (success) {
@@ -2487,8 +2508,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'DELETE_EXPENSE',
           data: { id: expenseId, tripId: expense.tripId }
         });
+
+        // If we also deleted an activity, notify about that too
+        if (activityDeleted && expense.activityId) {
+          broadcastToTrip(wss, expense.tripId, {
+            type: 'DELETE_ACTIVITY',
+            data: { id: expense.activityId, tripId: expense.tripId }
+          });
+        }
         
-        res.status(200).json({ message: 'Expense deleted successfully' });
+        const message = activityDeleted 
+          ? 'Expense and linked activity deleted successfully'
+          : 'Expense deleted successfully';
+        res.status(200).json({ message });
       } else {
         res.status(500).json({ message: 'Failed to delete expense' });
       }

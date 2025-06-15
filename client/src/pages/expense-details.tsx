@@ -108,6 +108,8 @@ export default function ExpenseDetails() {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses`] });
       queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses/balances`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/activities`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/itinerary`] });
       // Navigate back to expenses page
       setLocation(`/trips/${tripId}/expenses`);
     },
@@ -429,6 +431,11 @@ export default function ExpenseDetails() {
                     <p className="text-sm text-gray-600">
                       Paid by {displayExpense.paidByUser?.name || displayExpense.paidByUser?.username}
                     </p>
+                    {displayExpense.activityId && (
+                      <p className="text-sm text-orange-600 font-medium mt-2">
+                        ⚠️ This will also delete the linked itinerary activity
+                      </p>
+                    )}
                   </div>
                   <p className="text-red-600 font-medium">This action cannot be undone.</p>
                 </div>
