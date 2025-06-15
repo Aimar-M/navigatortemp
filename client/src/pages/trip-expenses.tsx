@@ -87,7 +87,7 @@ export default function TripExpenses() {
   const { id } = useParams();
   const tripId = parseInt(id!);
   const { toast } = useToast();
-  const { user: currentUser } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showVisuals, setShowVisuals] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
@@ -152,30 +152,30 @@ export default function TripExpenses() {
   // Check if user can edit/delete an expense
   const canModifyExpense = (expense: Expense) => {
     console.log('=== Permission Debug ===');
-    console.log('currentUser:', currentUser);
+    console.log('user:', user);
     console.log('trip:', trip);
     console.log('expense:', expense);
     console.log('expense.paidBy:', expense.paidBy);
-    console.log('currentUser?.id:', currentUser?.id);
+    console.log('user?.id:', user?.id);
     console.log('trip?.organizer:', trip?.organizer);
     
-    if (!currentUser || !trip) {
-      console.log('Missing currentUser or trip data');
+    if (!user || !trip) {
+      console.log('Missing user or trip data');
       return false;
     }
     
-    // Find current user's membership info
-    const currentMembership = tripMembers?.find((member: any) => member.userId === currentUser.id);
-    const isOrganizer = trip.organizer === currentUser.id;
-    const isAdmin = currentMembership?.isAdmin === true;
+    // Find user's membership info
+    const userMembership = tripMembers?.find((member: any) => member.userId === user.id);
+    const isOrganizer = trip.organizer === user.id;
+    const isAdmin = userMembership?.isAdmin === true;
     
-    console.log('currentMembership:', currentMembership);
+    console.log('userMembership:', userMembership);
     console.log('isOrganizer:', isOrganizer);
     console.log('isAdmin:', isAdmin);
-    console.log('expense.paidBy === currentUser.id:', expense.paidBy === currentUser.id);
+    console.log('expense.paidBy === user.id:', expense.paidBy === user.id);
     
     // User can modify if they created the expense, are the organizer, or are an admin
-    const canModify = expense.paidBy === currentUser.id || isOrganizer || isAdmin;
+    const canModify = expense.paidBy === user.id || isOrganizer || isAdmin;
     console.log('Final canModify result:', canModify);
     console.log('=== End Permission Debug ===');
     
