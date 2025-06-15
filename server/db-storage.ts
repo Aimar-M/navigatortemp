@@ -50,12 +50,13 @@ export class DatabaseStorage {
       .values(insertTrip)
       .returning();
     
-    // Automatically add the organizer as a confirmed member with confirmed RSVP status
+    // Automatically add the organizer as a confirmed member with confirmed RSVP status and admin flag
     await this.addTripMember({
       tripId: trip.id,
       userId: insertTrip.organizer,
       status: "confirmed",
-      rsvpStatus: "confirmed"
+      rsvpStatus: "confirmed",
+      isAdmin: true
     });
     
     return trip;
