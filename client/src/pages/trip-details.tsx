@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
 import InviteModal from "@/components/invite-modal";
 import TripImageUpload from "@/components/trip-image-upload";
@@ -160,6 +161,27 @@ export default function TripDetails() {
     }
   });
 
+  // Member admin status update mutation
+  const updateMemberAdminMutation = useMutation({
+    mutationFn: async ({ userId, isAdmin }: { userId: number; isAdmin: boolean }) => {
+      return await apiRequest("PATCH", `/api/trips/${tripId}/members/${userId}/admin`, { isAdmin });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
+      toast({
+        title: "Admin access updated",
+        description: "Member admin access has been successfully updated"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update admin access",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Initialize edit form when trip data loads or editing starts
   const initializeEditForm = () => {
     if (trip) {
@@ -228,6 +250,13 @@ export default function TripDetails() {
   const isPendingMember = currentUserMembership?.rsvpStatus === 'pending';
   const isDeclinedMember = currentUserMembership?.rsvpStatus === 'declined';
   const isCurrentUserAdmin = currentUserMembership?.isAdmin || isOrganizer;
+
+  // Helper function to check if a member can be demoted (ensure at least one admin remains)
+  const canDemoteMember = (userId: number) => {
+    const adminCount = members.filter(member => member.isAdmin || member.userId === trip?.organizer).length;
+    const isLastAdmin = adminCount <= 1 && (members.find(m => m.userId === userId)?.isAdmin || userId === trip?.organizer);
+    return !isLastAdmin;
+  };
   
   if (isLoading || !trip) {
     return (
@@ -553,16 +582,21 @@ export default function TripDetails() {
                         user={member.user}
                         className="h-8 w-8"
                       />
-                      <div>
-                        <button 
-                          onClick={() => setLocation(`/user/${member.userId}`)}
-                          className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
-                        >
-                          {member.user?.name || member.user?.username || 'Anonymous'}
-                        </button>
-                        {trip.organizer === member.userId && (
-                          <span className="text-xs text-blue-600 ml-1">(Organizer)</span>
-                        )}
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <button 
+                            onClick={() => setLocation(`/user/${member.userId}`)}
+                            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
+                          >
+                            {member.user?.name || member.user?.username || 'Anonymous'}
+                          </button>
+                          {trip.organizer === member.userId && (
+                            <span className="text-xs text-blue-600 ml-1">(Organizer)</span>
+                          )}
+                          {member.isAdmin && trip.organizer !== member.userId && (
+                            <span className="text-xs text-purple-600 ml-1">(Admin)</span>
+                          )}
+                        </div>
                         <div className={`text-xs ${
                           member.status === 'confirmed' ? 'text-green-600' :
                           member.status === 'declined' ? 'text-red-600' :
@@ -572,6 +606,48 @@ export default function TripDetails() {
                            member.status === 'declined' ? '✕ Not attending' :
                            '? Awaiting confirmation'}
                         </div>
+                        
+                        {/* Admin Access Toggle - Only visible to admins, not for organizers */}
+                        {isCurrentUserAdmin && trip.organizer !== member.userId && (
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Label htmlFor={`admin-toggle-${member.userId}`} className="text-xs text-gray-600">
+                              Admin Access
+                            </Label>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <Switch
+                                      id={`admin-toggle-${member.userId}`}
+                                      checked={member.isAdmin || false}
+                                      onCheckedChange={(checked) => {
+                                        if (!checked && !canDemoteMember(member.userId)) {
+                                          toast({
+                                            title: "Cannot remove admin",
+                                            description: "At least one admin is required per trip",
+                                            variant: "destructive"
+                                          });
+                                          return;
+                                        }
+                                        updateMemberAdminMutation.mutate({ 
+                                          userId: member.userId, 
+                                          isAdmin: checked 
+                                        });
+                                      }}
+                                      disabled={updateMemberAdminMutation.isPending}
+                                      className="scale-75"
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                {!canDemoteMember(member.userId) && member.isAdmin && (
+                                  <TooltipContent>
+                                    <p>At least one admin is required per trip</p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        )}
                       </div>
                     </div>
                     
