@@ -1,0 +1,78 @@
+Please enhance the member removal functionality in the trip "Members" section to allow admins to remove users from a trip with proper handling of:
+
+Submitted expenses
+
+Added itinerary activities
+
+🔧 Requirements:
+
+1. Admin-Only Access
+Only trip admins should see and use this feature.
+
+The “Remove Member” button should only appear to admins.
+
+2. Confirmation Modal Before Removal
+When an admin clicks “Remove” on a user, show a confirmation dialog with the following:
+
+Warning message: “This action will remove [user name] from the trip. Please choose how to handle their submitted activities and expenses.”
+
+Two independent toggles (with tooltips):
+
+🗑 Remove their activities from the itinerary
+
+🗑 Remove their submitted expenses from the expense tracker
+
+If either toggle is left off, their respective content remains but is labeled “Created by former member” (for reference).
+
+Include “Cancel” and “Confirm Removal” buttons.
+
+3. Itinerary Activity Handling
+If “Remove their activities” is toggled ON:
+
+Delete all activities created by that user.
+
+If OFF:
+
+Keep the activities, but:
+
+Remove their RSVP
+
+Label the activity card (e.g. “Created by a removed user”)
+
+Disable editing for other users (unless admin)
+
+4. Expense Handling
+If “Remove their expenses” is toggled ON:
+
+Delete those expenses from the system.
+
+If OFF:
+
+Keep the expenses, but:
+
+Mark them clearly (e.g. faded style or label: “From removed member”)
+
+Prevent them from being edited by other users (except admins)
+
+Ensure they still count toward trip expense totals unless explicitly removed
+
+5. Data Consistency & Safety
+Ensure this action:
+
+Does not break summary totals or shared balances
+
+Does not affect RSVP logic or trigger re-renders unnecessarily
+
+Is fully synced to backend and UI updates gracefully
+
+6. UI Feedback
+Show a success toast: “User removed. Selected items handled as requested.”
+
+If the user was the last admin, block the action and show an error: “You cannot remove the last admin from this trip.”
+
+7. Do Not:
+Change the RSVP logic for other users
+
+Modify unrelated form logic or trip settings
+
+Alter the trip's styling or layout
