@@ -12,6 +12,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import InviteModal from "@/components/invite-modal";
 import TripImageUpload from "@/components/trip-image-upload";
@@ -52,6 +54,7 @@ export default function TripDetails() {
     airportGateway?: string;
     requiresDownPayment?: boolean;
     downPaymentAmount?: string;
+    adminOnlyItinerary?: boolean;
   }
 
   interface TripMember {
@@ -66,6 +69,7 @@ export default function TripDetails() {
     paymentSubmittedAt?: string;
     paymentConfirmedAt?: string;
     isOrganizer: boolean;
+    isAdmin?: boolean;
     user: {
       id: number;
       username: string;
@@ -130,6 +134,27 @@ export default function TripDetails() {
       toast({
         title: "RSVP update failed",
         description: error.message || "Failed to update RSVP status",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Admin settings update mutation
+  const updateAdminSettingsMutation = useMutation({
+    mutationFn: async (settings: { adminOnlyItinerary: boolean }) => {
+      return await apiRequest("PATCH", `/api/trips/${tripId}/admin-settings`, settings);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}`] });
+      toast({
+        title: "Settings updated",
+        description: "Admin settings have been successfully updated"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update admin settings",
         variant: "destructive"
       });
     }
@@ -202,6 +227,7 @@ export default function TripDetails() {
   const isConfirmedMember = currentUserMembership?.rsvpStatus === 'confirmed' || isOrganizer;
   const isPendingMember = currentUserMembership?.rsvpStatus === 'pending';
   const isDeclinedMember = currentUserMembership?.rsvpStatus === 'declined';
+  const isCurrentUserAdmin = currentUserMembership?.isAdmin || isOrganizer;
   
   if (isLoading || !trip) {
     return (
@@ -484,6 +510,30 @@ export default function TripDetails() {
                 </div>
               )}
             </div>
+
+            {/* Admin Settings - Only visible to admins */}
+            {isCurrentUserAdmin && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col space-y-1">
+                    <Label htmlFor="admin-only-toggle" className="text-sm font-medium">
+                      Only Admins Can Add to Itinerary
+                    </Label>
+                    <p className="text-xs text-gray-600">
+                      When enabled, only trip admins can add, edit, or delete itinerary items
+                    </p>
+                  </div>
+                  <Switch
+                    id="admin-only-toggle"
+                    checked={trip.adminOnlyItinerary || false}
+                    onCheckedChange={(checked) => {
+                      updateAdminSettingsMutation.mutate({ adminOnlyItinerary: checked });
+                    }}
+                    disabled={updateAdminSettingsMutation.isPending}
+                  />
+                </div>
+              </div>
+            )}
             
             {isMembersLoading ? (
               <div className="space-y-3">
