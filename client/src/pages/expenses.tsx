@@ -646,46 +646,6 @@ export default function ExpensesPage() {
                     </div>
                   </div>
                 </CardHeader>
-                {/* Hide split details on mobile, show only on desktop */}
-                {!isMobile && (
-                  <CardContent>
-                    {!expense.isSettlement && expense.shares && expense.shares.length > 0 && (
-                      <div>
-                        <h4 className="font-medium mb-3">Split details:</h4>
-                        <div className="space-y-2">
-                          {expense.shares.map((share) => (
-                            <div key={share.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-8 w-8">
-                                  <AvatarFallback>
-                                    {(share.user.name || share.user.username || 'U').charAt(0).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <p className="font-medium">{share.user.name || share.user.username || 'Unknown User'}</p>
-                                  <p className="text-sm text-gray-500">Owes {formatCurrency(share.amount, false)}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {share.isPaid ? (
-                                  <Badge variant="outline" className="bg-green-100 text-green-800">
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Paid
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="bg-red-100 text-red-800">
-                                    <XCircle className="h-3 w-3 mr-1" />
-                                    Unpaid
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                )}
               </Card>
             ))
           )}
