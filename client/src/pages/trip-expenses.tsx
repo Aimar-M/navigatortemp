@@ -8,11 +8,29 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, PieChart, List, Users, DollarSign, Calendar } from "lucide-react";
+import { Plus, PieChart, List, Users, DollarSign, Calendar, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
@@ -71,6 +89,8 @@ export default function TripExpenses() {
   const queryClient = useQueryClient();
   const [showVisuals, setShowVisuals] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
 
   const { data: trip } = useQuery({
     queryKey: [`/api/trips/${tripId}`],
@@ -87,6 +107,54 @@ export default function TripExpenses() {
   const { data: balances = [] } = useQuery<Balance[]>({
     queryKey: [`/api/trips/${tripId}/expenses/balances`],
   });
+
+  // Get current user info
+  const { data: currentUser } = useQuery({
+    queryKey: ['/api/auth/me'],
+  });
+
+  // Mutation for deleting an expense
+  const deleteExpenseMutation = useMutation({
+    mutationFn: async (expenseId: number) => {
+      return await apiRequest("DELETE", `/api/expenses/${expenseId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Expense deleted",
+        description: "The expense has been successfully deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses/balances`] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error deleting expense",
+        description: "There was an error deleting the expense. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Error deleting expense:", error);
+    }
+  });
+
+  const handleDeleteClick = (expense: Expense) => {
+    setExpenseToDelete(expense);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (expenseToDelete) {
+      deleteExpenseMutation.mutate(expenseToDelete.id);
+      setIsDeleteDialogOpen(false);
+      setExpenseToDelete(null);
+    }
+  };
+
+  // Check if user can edit/delete an expense
+  const canModifyExpense = (expense: Expense) => {
+    if (!currentUser) return false;
+    // Check if user is the expense creator or trip organizer
+    return expense.paidBy === currentUser.id || trip?.organizer === currentUser.id;
+  };
 
   const form = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
@@ -437,11 +505,33 @@ export default function TripExpenses() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{formatCurrency(parseFloat(expense.amount))}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Split {expense.splits?.length || 0} ways
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="font-semibold">{formatCurrency(parseFloat(expense.amount))}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Split {expense.splits?.length || 0} ways
+                      </p>
+                    </div>
+                    {canModifyExpense(expense) && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteClick(expense)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Expense
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </div>
               ))}
@@ -449,6 +539,44 @@ export default function TripExpenses() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+            <AlertDialogDescription>
+              {expenseToDelete && (
+                <div className="space-y-2">
+                  <p>Are you sure you want to delete this expense?</p>
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <p className="font-medium">{expenseToDelete.description}</p>
+                    <p className="text-sm text-gray-600">
+                      ${parseFloat(expenseToDelete.amount).toFixed(2)}
+                    </p>
+                  </div>
+                  <p className="text-red-600 font-medium">This action cannot be undone.</p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setIsDeleteDialogOpen(false);
+              setExpenseToDelete(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteExpenseMutation.isPending}
+            >
+              {deleteExpenseMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       </div>
     </TripDetailLayout>
   );
