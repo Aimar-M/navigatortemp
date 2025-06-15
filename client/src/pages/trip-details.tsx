@@ -1,7 +1,7 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { MapPin, Calendar, Users, Info, UserPlus, Edit2, Save, X, Home, Plane } from "lucide-react";
+import { MapPin, Calendar, Users, Info, UserPlus, Edit2, Save, X, Home, Plane, UserMinus, Trash2 } from "lucide-react";
 import TripDetailLayout from "@/components/trip-detail-layout";
 import UserAvatar from "@/components/user-avatar";
 import RSVPPaymentWorkflow from "@/components/rsvp-payment-workflow";
@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import InviteModal from "@/components/invite-modal";
 import TripImageUpload from "@/components/trip-image-upload";
@@ -38,6 +39,9 @@ export default function TripDetails() {
     accommodationLink: '',
     airportGateway: ''
   });
+  const [memberToRemove, setMemberToRemove] = useState<TripMember | null>(null);
+  const [removeActivities, setRemoveActivities] = useState(false);
+  const [removeExpenses, setRemoveExpenses] = useState(false);
   const { user } = useAuth();
   
   // Define trip interface
@@ -177,6 +181,48 @@ export default function TripDetails() {
       toast({
         title: "Update failed",
         description: error.message || "Failed to update admin access",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Member removal mutation
+  const removeMemberMutation = useMutation({
+    mutationFn: async ({ 
+      userId, 
+      removeActivities, 
+      removeExpenses 
+    }: { 
+      userId: number; 
+      removeActivities: boolean; 
+      removeExpenses: boolean; 
+    }) => {
+      return await apiRequest("DELETE", `/api/trips/${tripId}/members/${userId}`, {
+        removeActivities,
+        removeExpenses
+      });
+    },
+    onSuccess: (_, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/activities`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}`] });
+      
+      const memberName = memberToRemove?.user?.name || memberToRemove?.user?.username || 'Member';
+      toast({
+        title: "Member removed",
+        description: `${memberName} has been removed. Their items were handled as requested.`,
+        duration: 5000,
+      });
+      
+      setMemberToRemove(null);
+      setRemoveActivities(false);
+      setRemoveExpenses(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to remove member",
+        description: error.message || "Something went wrong",
         variant: "destructive"
       });
     }
@@ -650,6 +696,110 @@ export default function TripDetails() {
                         )}
                       </div>
                     </div>
+                    
+                    {/* Remove Member Button - Only visible to admins, not for themselves or organizer */}
+                    {isCurrentUserAdmin && 
+                     member.userId !== user?.id && 
+                     member.userId !== trip.organizer && (
+                      <div className="ml-2">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 border-red-200 hover:bg-red-50"
+                              onClick={() => {
+                                // Check if this is the last admin
+                                const adminCount = members.filter(m => m.isAdmin || m.userId === trip?.organizer).length;
+                                const isLastAdmin = adminCount <= 1 && member.isAdmin;
+                                
+                                if (isLastAdmin) {
+                                  toast({
+                                    title: "Cannot remove member",
+                                    description: "Cannot remove the last admin from the trip",
+                                    variant: "destructive"
+                                  });
+                                  return;
+                                }
+                                
+                                setMemberToRemove(member);
+                                setRemoveActivities(false);
+                                setRemoveExpenses(false);
+                              }}
+                            >
+                              <UserMinus className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="max-w-md">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove Member</AlertDialogTitle>
+                              <AlertDialogDescription asChild>
+                                <div className="space-y-4">
+                                  <p>
+                                    This will remove <strong>{member.user?.name || member.user?.username}</strong> from the trip. 
+                                    Please choose what to do with their submitted activities and expenses.
+                                  </p>
+                                  
+                                  <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                      <div className="space-y-1">
+                                        <Label htmlFor="remove-activities" className="text-sm font-medium">
+                                          Remove this member's itinerary activities
+                                        </Label>
+                                        <p className="text-xs text-gray-600">
+                                          If off: Keep activities but remove their RSVP and mark as "Created by removed user"
+                                        </p>
+                                      </div>
+                                      <Switch
+                                        id="remove-activities"
+                                        checked={removeActivities}
+                                        onCheckedChange={setRemoveActivities}
+                                      />
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-between">
+                                      <div className="space-y-1">
+                                        <Label htmlFor="remove-expenses" className="text-sm font-medium">
+                                          Remove this member's submitted expenses
+                                        </Label>
+                                        <p className="text-xs text-gray-600">
+                                          If off: Keep expenses but mark as "Submitted by removed user" and prevent editing
+                                        </p>
+                                      </div>
+                                      <Switch
+                                        id="remove-expenses"
+                                        checked={removeExpenses}
+                                        onCheckedChange={setRemoveExpenses}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => setMemberToRemove(null)}>
+                                Cancel
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => {
+                                  if (memberToRemove) {
+                                    removeMemberMutation.mutate({
+                                      userId: memberToRemove.userId,
+                                      removeActivities,
+                                      removeExpenses
+                                    });
+                                  }
+                                }}
+                                className="bg-red-600 hover:bg-red-700"
+                                disabled={removeMemberMutation.isPending}
+                              >
+                                {removeMemberMutation.isPending ? "Removing..." : "Confirm Removal"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    )}
                     
                     {/* Show attend/decline buttons if this is the current user */}
                     {user?.id === member.userId && (member.status === 'pending' || member.status === 'confirmed') && 

@@ -830,6 +830,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Server error' });
     }
   });
+
+  // Remove member from trip with content handling options
+  router.delete('/trips/:tripId/members/:userId', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const tripId = parseInt(req.params.tripId);
+      const userIdToRemove = parseInt(req.params.userId);
+      const { removeActivities = false, removeExpenses = false } = req.body;
+      
+      if (isNaN(tripId) || isNaN(userIdToRemove)) {
+        return res.status(400).json({ message: 'Invalid trip ID or user ID' });
+      }
+      
+      // Get trip details
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: 'Trip not found' });
+      }
+      
+      // Get all members to check permissions
+      const members = await storage.getTripMembers(tripId);
+      const currentUserMember = members.find(m => m.userId === user.id);
+      const memberToRemove = members.find(m => m.userId === userIdToRemove);
+      
+      if (!currentUserMember) {
+        return res.status(403).json({ message: 'Not a member of this trip' });
+      }
+      
+      if (!memberToRemove) {
+        return res.status(404).json({ message: 'Member not found' });
+      }
+      
+      // Check if current user is admin (organizer or has admin privileges)
+      const isCurrentUserAdmin = currentUserMember.userId === trip.organizer || currentUserMember.isAdmin;
+      
+      if (!isCurrentUserAdmin) {
+        return res.status(403).json({ message: 'Only admins can remove members' });
+      }
+      
+      // Cannot remove the organizer
+      if (userIdToRemove === trip.organizer) {
+        return res.status(403).json({ message: 'Cannot remove the trip organizer' });
+      }
+      
+      // Cannot remove yourself
+      if (userIdToRemove === user.id) {
+        return res.status(403).json({ message: 'Cannot remove yourself from the trip' });
+      }
+      
+      // Check if this is the last admin (excluding organizer)
+      const adminCount = members.filter(m => m.isAdmin || m.userId === trip.organizer).length;
+      const isLastAdmin = adminCount <= 1 && memberToRemove.isAdmin;
+      
+      if (isLastAdmin) {
+        return res.status(403).json({ message: 'Cannot remove the last admin from the trip' });
+      }
+      
+      // Handle activities if requested
+      if (removeActivities) {
+        const activities = await storage.getActivitiesByTrip(tripId);
+        const userActivities = activities.filter(activity => activity.createdBy === userIdToRemove);
+        
+        for (const activity of userActivities) {
+          await storage.deleteActivity(activity.id);
+        }
+      } else {
+        // Keep activities but remove user's RSVP and mark as created by removed user
+        const activities = await storage.getActivitiesByTrip(tripId);
+        const userActivities = activities.filter(activity => activity.createdBy === userIdToRemove);
+        
+        for (const activity of userActivities) {
+          // Remove user's RSVP
+          const rsvps = await storage.getActivityRSVPs(activity.id);
+          const userRSVP = rsvps.find(rsvp => rsvp.userId === userIdToRemove);
+          if (userRSVP) {
+            await storage.updateActivityRSVP(activity.id, userIdToRemove, 'declined');
+          }
+          
+          // Mark activity as created by removed user
+          await storage.updateActivity(activity.id, {
+            title: `${activity.title} (Created by removed user)`,
+            createdBy: -1 // Use -1 to indicate removed user
+          });
+        }
+      }
+      
+      // Handle expenses if requested
+      if (removeExpenses) {
+        const expenses = await storage.getExpensesByTrip(tripId);
+        const userExpenses = expenses.filter(expense => expense.submittedBy === userIdToRemove);
+        
+        for (const expense of userExpenses) {
+          await storage.deleteExpense(expense.id);
+        }
+      } else {
+        // Keep expenses but mark as submitted by removed user and prevent editing
+        const expenses = await storage.getExpensesByTrip(tripId);
+        const userExpenses = expenses.filter(expense => expense.submittedBy === userIdToRemove);
+        
+        for (const expense of userExpenses) {
+          await storage.updateExpense(expense.id, {
+            description: `${expense.description} (Submitted by removed user)`,
+            submittedBy: -1, // Use -1 to indicate removed user
+            isLocked: true // Prevent further editing
+          });
+        }
+      }
+      
+      // Remove the member from the trip
+      const removed = await storage.removeTripMember(tripId, userIdToRemove);
+      
+      if (!removed) {
+        return res.status(500).json({ message: 'Failed to remove member' });
+      }
+      
+      res.json({ 
+        message: 'Member removed successfully',
+        removedActivities: removeActivities,
+        removedExpenses: removeExpenses
+      });
+      
+    } catch (error) {
+      console.error('Error removing member:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
   
   // Get travel companions from past trips (for suggestions)
   router.get('/trips/:id/past-companions', isAuthenticated, async (req: Request, res: Response) => {
