@@ -17,6 +17,23 @@ import TripDetailLayout from "@/components/trip-detail-layout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+// Define interfaces
+interface Trip {
+  id: number;
+  name: string;
+  organizer: number;
+  adminOnlyItinerary?: boolean;
+}
+
+interface TripMember {
+  tripId: number;
+  userId: number;
+  status: string;
+  rsvpStatus?: string;
+  isOrganizer: boolean;
+  isAdmin?: boolean;
+}
+
 function Itinerary() {
   const { id } = useParams<{ id: string }>();
   const tripId = parseInt(id!);
@@ -49,20 +66,22 @@ function Itinerary() {
   });
 
   // Fetch trip details
-  const { data: trip, isLoading: isTripLoading } = useQuery({
+  const { data: trip, isLoading: isTripLoading } = useQuery<Trip>({
     queryKey: [`/api/trips/${tripId}`],
     enabled: !!tripId && !!user,
   });
 
   // Fetch trip members to check RSVP status
-  const { data: members = [] } = useQuery({
+  const { data: members = [] } = useQuery<TripMember[]>({
     queryKey: [`/api/trips/${tripId}/members`],
     enabled: !!tripId && !!user,
   });
 
-  // Check user's RSVP status
-  const isOrganizerUser = user && trip && (trip as any).organizer === (user as any).id;
-  const currentUserMembership = (members as any[]).find((member: any) => member.userId === (user as any)?.id);
+  // Check user's RSVP status and admin permissions
+  const isOrganizerUser = user && trip && trip.organizer === (user as any).id;
+  const currentUserMembership = members.find((member: TripMember) => member.userId === (user as any)?.id);
+  const isCurrentUserAdmin = currentUserMembership?.isAdmin || isOrganizerUser;
+  const canAddToItinerary = !trip?.adminOnlyItinerary || isCurrentUserAdmin;
   const isConfirmedMember = currentUserMembership?.rsvpStatus === 'confirmed' || isOrganizerUser;
 
   // Fetch trip activities
@@ -368,13 +387,20 @@ function Itinerary() {
         {/* Activities Section */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <Button 
-              onClick={() => setIsAddActivityModalOpen(true)}
-              disabled={!isConfirmedMember}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add to Itinerary
-            </Button>
+            <div className="flex flex-col space-y-1">
+              <Button 
+                onClick={() => setIsAddActivityModalOpen(true)}
+                disabled={!isConfirmedMember || !canAddToItinerary}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add to Itinerary
+              </Button>
+              {trip?.adminOnlyItinerary && !isCurrentUserAdmin && (
+                <p className="text-xs text-gray-500">
+                  Only trip admins can add to the itinerary
+                </p>
+              )}
+            </div>
             
             {/* View Toggle */}
             <div className="flex items-center border rounded-lg p-1">
