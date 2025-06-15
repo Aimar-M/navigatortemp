@@ -40,6 +40,19 @@ interface ActivityDetail {
   rsvps: ActivityRSVP[];
 }
 
+interface Trip {
+  id: number;
+  organizer: number;
+  adminOnlyItinerary?: boolean;
+}
+
+interface TripMember {
+  tripId: number;
+  userId: number;
+  isOrganizer: boolean;
+  isAdmin?: boolean;
+}
+
 export default function ActivityDetails() {
   const { activityId } = useParams();
   const [, setLocation] = useLocation();
@@ -53,6 +66,24 @@ export default function ActivityDetails() {
   const { data: currentUser } = useQuery<{ id: number; name: string; email: string }>({
     queryKey: ["/api/auth/me"],
   });
+
+  // Fetch trip details to check admin permissions
+  const { data: trip } = useQuery<Trip>({
+    queryKey: [`/api/trips/${activity?.tripId}`],
+    enabled: !!activity?.tripId,
+  });
+
+  // Fetch trip members to check admin status
+  const { data: members = [] } = useQuery<TripMember[]>({
+    queryKey: [`/api/trips/${activity?.tripId}/members`],
+    enabled: !!activity?.tripId,
+  });
+
+  // Check if current user can edit/delete activities
+  const isOrganizer = currentUser && trip && trip.organizer === currentUser.id;
+  const currentUserMembership = members.find(member => member.userId === currentUser?.id);
+  const isCurrentUserAdmin = currentUserMembership?.isAdmin || isOrganizer;
+  const canEditActivity = !trip?.adminOnlyItinerary || isCurrentUserAdmin || (currentUser && activity?.createdBy === currentUser.id);
 
   const rsvpMutation = useMutation({
     mutationFn: async (status: string) => {
@@ -169,8 +200,8 @@ export default function ActivityDetails() {
           Back to Itinerary
         </Button>
         
-        {/* Delete button - only show for activity creator */}
-        {currentUser && activity.createdBy === currentUser.id && (
+        {/* Delete button - show for activity creator or admins when admin-only mode is enabled */}
+        {currentUser && canEditActivity && (activity.createdBy === currentUser.id || isCurrentUserAdmin) && (
           <Button
             variant="destructive"
             size="sm"
