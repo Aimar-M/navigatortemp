@@ -38,6 +38,7 @@ export interface IStorage {
   getTripMembers(tripId: number): Promise<TripMember[]>;
   getTripMembershipsByUser(userId: number): Promise<TripMember[]>;
   updateTripMemberStatus(tripId: number, userId: number, status: string): Promise<TripMember | undefined>;
+  updateTripMemberAdminStatus(tripId: number, userId: number, isAdmin: boolean): Promise<TripMember | undefined>;
   removeTripMember(tripId: number, userId: number): Promise<boolean>;
   
   // Activity methods
