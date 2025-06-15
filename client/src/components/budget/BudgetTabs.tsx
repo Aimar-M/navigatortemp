@@ -9,9 +9,10 @@ interface BudgetTabsProps {
   tripId: number;
   currentUserId: number;
   isOrganizer: boolean;
+  isAdmin?: boolean;
 }
 
-const BudgetTabs: React.FC<BudgetTabsProps> = ({ tripId, currentUserId, isOrganizer }) => {
+const BudgetTabs: React.FC<BudgetTabsProps> = ({ tripId, currentUserId, isOrganizer, isAdmin = false }) => {
   return (
     <Tabs defaultValue="summary" className="mt-6">
       <TabsList className="grid w-full grid-cols-4">
@@ -26,7 +27,7 @@ const BudgetTabs: React.FC<BudgetTabsProps> = ({ tripId, currentUserId, isOrgani
       </TabsContent>
       
       <TabsContent value="expenses" className="mt-6">
-        <ExpenseList tripId={tripId} currentUserId={currentUserId} isOrganizer={isOrganizer} />
+        <ExpenseList tripId={tripId} currentUserId={currentUserId} isOrganizer={isOrganizer} isAdmin={isAdmin} />
       </TabsContent>
       
       <TabsContent value="flights" className="mt-6">
