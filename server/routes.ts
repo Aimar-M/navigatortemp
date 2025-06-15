@@ -1167,6 +1167,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Server error' });
     }
   });
+
+  // Update member admin status
+  router.patch('/trips/:tripId/members/:userId/admin', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const tripId = parseInt(req.params.tripId);
+      const userId = parseInt(req.params.userId);
+      const { isAdmin } = req.body;
+      
+      if (isNaN(tripId) || isNaN(userId)) {
+        return res.status(400).json({ message: 'Invalid trip ID or user ID' });
+      }
+      
+      if (typeof isAdmin !== 'boolean') {
+        return res.status(400).json({ message: 'isAdmin must be a boolean value' });
+      }
+      
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: 'Trip not found' });
+      }
+      
+      // Check if user is admin (organizer or has admin flag)
+      const members = await storage.getTripMembers(tripId);
+      const currentUserMember = members.find(member => member.userId === user.id);
+      const isCurrentUserAdmin = currentUserMember?.isAdmin || trip.organizer === user.id;
+      
+      if (!isCurrentUserAdmin) {
+        return res.status(403).json({ message: 'Only trip admins can modify admin access' });
+      }
+      
+      // Don't allow changing organizer's admin status
+      if (trip.organizer === userId) {
+        return res.status(400).json({ message: 'Cannot modify organizer admin status' });
+      }
+      
+      // If demoting, ensure at least one admin remains
+      if (!isAdmin) {
+        const adminCount = members.filter(member => member.isAdmin || member.userId === trip.organizer).length;
+        const targetMember = members.find(member => member.userId === userId);
+        
+        if (adminCount <= 1 && (targetMember?.isAdmin || userId === trip.organizer)) {
+          return res.status(400).json({ message: 'At least one admin is required per trip' });
+        }
+      }
+      
+      const updatedMember = await storage.updateTripMemberAdminStatus(tripId, userId, isAdmin);
+      if (!updatedMember) {
+        return res.status(404).json({ message: 'Trip member not found' });
+      }
+      
+      res.json(updatedMember);
+    } catch (error) {
+      console.error('Error updating member admin status:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
   
   // Activity Routes
   

@@ -168,6 +168,21 @@ export class DatabaseStorage {
     return updatedMember || undefined;
   }
 
+  async updateTripMemberAdminStatus(tripId: number, userId: number, isAdmin: boolean): Promise<TripMember | undefined> {
+    const [updatedMember] = await db
+      .update(tripMembers)
+      .set({ isAdmin })
+      .where(
+        and(
+          eq(tripMembers.tripId, tripId),
+          eq(tripMembers.userId, userId)
+        )
+      )
+      .returning();
+    
+    return updatedMember || undefined;
+  }
+
   async updateTripMemberRSVPStatus(tripId: number, userId: number, rsvpStatus: string): Promise<TripMember | undefined> {
     const [updatedMember] = await db
       .update(tripMembers)
