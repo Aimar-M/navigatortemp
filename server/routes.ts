@@ -910,10 +910,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.updateActivityRSVP(activity.id, userIdToRemove, 'declined');
           }
           
-          // Mark activity as created by removed user
+          // Mark activity as created by removed user - set to organizer instead of invalid user
           await storage.updateActivity(activity.id, {
             name: `${activity.name} (Created by removed user)`,
-            createdBy: -1 // Use -1 to indicate removed user
+            createdBy: trip.organizer // Assign to organizer instead of invalid ID
           });
         }
       }
@@ -924,19 +924,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userExpenses = expenses.filter(expense => expense.submittedBy === userIdToRemove);
         
         for (const expense of userExpenses) {
+          // First remove all expense splits for this expense
+          await storage.removeExpenseSplits(expense.id);
+          // Then delete the expense itself
           await storage.deleteExpense(expense.id);
         }
       } else {
-        // Keep expenses but mark as submitted by removed user and prevent editing
+        // Keep expenses but mark as submitted by removed user
         const expenses = await storage.getExpensesByTrip(tripId);
         const userExpenses = expenses.filter(expense => expense.submittedBy === userIdToRemove);
         
         for (const expense of userExpenses) {
           await storage.updateExpense(expense.id, {
             description: `${expense.description} (Submitted by removed user)`,
-            submittedBy: -1, // Use -1 to indicate removed user
-            isLocked: true // Prevent further editing
+            submittedBy: trip.organizer // Assign to organizer instead of invalid ID
           });
+        }
+      }
+      
+      // Remove user from all existing expense splits regardless of whether we're keeping their expenses
+      // This ensures they don't appear in settlement calculations anymore
+      const allExpenses = await storage.getExpensesByTrip(tripId);
+      for (const expense of allExpenses) {
+        // Get current splits for this expense
+        const splits = await storage.getExpenseSplits(expense.id) || [];
+        const userSplit = splits.find((split: any) => split.userId === userIdToRemove);
+        
+        if (userSplit) {
+          // Remove this user from the expense split
+          await storage.removeUserFromExpenseSplit(expense.id, userIdToRemove);
         }
       }
       

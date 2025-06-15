@@ -667,6 +667,15 @@ export class DatabaseStorage {
       .where(eq(expenseSplits.expenseId, expenseId));
   }
 
+  async getExpenseSplits(expenseId: number): Promise<any[]> {
+    return await db.select().from(expenseSplits).where(eq(expenseSplits.expenseId, expenseId));
+  }
+
+  async removeUserFromExpenseSplit(expenseId: number, userId: number): Promise<void> {
+    await db.delete(expenseSplits)
+      .where(and(eq(expenseSplits.expenseId, expenseId), eq(expenseSplits.userId, userId)));
+  }
+
   async getExpense(id: number): Promise<any> {
     const [expense] = await db
       .select({
