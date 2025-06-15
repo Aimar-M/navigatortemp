@@ -549,6 +549,21 @@ export class DatabaseStorage implements IStorage {
     return updatedMember || undefined;
   }
 
+  async updateTripMemberAdminStatus(tripId: number, userId: number, isAdmin: boolean): Promise<TripMember | undefined> {
+    const [updatedMember] = await db
+      .update(tripMembers)
+      .set({ isAdmin })
+      .where(
+        and(
+          eq(tripMembers.tripId, tripId),
+          eq(tripMembers.userId, userId)
+        )
+      )
+      .returning();
+    
+    return updatedMember || undefined;
+  }
+
   async removeTripMember(tripId: number, userId: number): Promise<boolean> {
     const result = await db
       .delete(tripMembers)
