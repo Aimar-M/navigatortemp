@@ -463,44 +463,59 @@ export default function ExpensesPage() {
                   {balances
                     .filter(balance => {
                       const member = members.find(m => m.userId === balance.userId);
-                      return member?.rsvpStatus === 'confirmed' || (member?.userId === (trip as any)?.organizer);
+                      // Show current confirmed members, organizer, or removed users with financial obligations
+                      return member?.rsvpStatus === 'confirmed' || 
+                             (member?.userId === (trip as any)?.organizer) ||
+                             (!member && Math.abs(balance.netBalance) > 0.01);
                     })
-                    .map((balance) => (
-                    <div key={balance.userId} className="p-4 border rounded-lg">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>
-                            {balance.name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{balance.name}</span>
-                      </div>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span>Paid out:</span>
-                          <span className="font-medium">
-                            <span className="sm:hidden">{formatCurrency(balance.totalPaid, true)}</span>
-                            <span className="hidden sm:inline">{formatCurrency(balance.totalPaid)}</span>
-                          </span>
+                    .map((balance) => {
+                      const member = members.find(m => m.userId === balance.userId);
+                      const isRemovedUser = !member && Math.abs(balance.netBalance) > 0.01;
+                      
+                      return (
+                        <div key={balance.userId} className={`p-4 border rounded-lg ${isRemovedUser ? 'border-orange-200 bg-orange-50' : ''}`}>
+                          <div className="flex items-center gap-3 mb-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className={isRemovedUser ? 'bg-orange-200 text-orange-800' : ''}>
+                                {balance.name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <span className="font-medium">{balance.name}</span>
+                              {isRemovedUser && (
+                                <div className="text-xs text-orange-600 font-medium">
+                                  • No longer in trip
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span>Paid out:</span>
+                              <span className="font-medium">
+                                <span className="sm:hidden">{formatCurrency(balance.totalPaid, true)}</span>
+                                <span className="hidden sm:inline">{formatCurrency(balance.totalPaid)}</span>
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Owes:</span>
+                              <span className="font-medium">
+                                <span className="sm:hidden">{formatCurrency(balance.totalOwed, true)}</span>
+                                <span className="hidden sm:inline">{formatCurrency(balance.totalOwed)}</span>
+                              </span>
+                            </div>
+                            <div className="border-t pt-1 flex justify-between font-semibold">
+                              <span>Net:</span>
+                              <span className={balance.netBalance >= 0 ? "text-green-600" : "text-red-600"}>
+                                {balance.netBalance >= 0 ? "+" : ""}
+                                <span className="sm:hidden">{formatCurrency(balance.netBalance, true)}</span>
+                                <span className="hidden sm:inline">{formatCurrency(balance.netBalance)}</span>
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Owes:</span>
-                          <span className="font-medium">
-                            <span className="sm:hidden">{formatCurrency(balance.totalOwed, true)}</span>
-                            <span className="hidden sm:inline">{formatCurrency(balance.totalOwed)}</span>
-                          </span>
-                        </div>
-                        <div className="border-t pt-1 flex justify-between font-semibold">
-                          <span>Net:</span>
-                          <span className={balance.netBalance >= 0 ? "text-green-600" : "text-red-600"}>
-                            {balance.netBalance >= 0 ? "+" : ""}
-                            <span className="sm:hidden">{formatCurrency(balance.netBalance, true)}</span>
-                            <span className="hidden sm:inline">{formatCurrency(balance.netBalance)}</span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    })}
                 </div>
               ) : (
                 <div className="h-96 flex flex-col">

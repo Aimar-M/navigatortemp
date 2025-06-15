@@ -575,31 +575,48 @@ export class DatabaseStorage {
 
       console.log(`Found ${realExpenses.length} real expenses and ${relevantSplits.length} splits`);
       
-      // Calculate balances based on actual expense splits
+      // Get all unique user IDs involved in expenses (both current members and removed users)
+      const paidBySet = new Set();
+      realExpenses.forEach(e => paidBySet.add(e.paidBy));
+      const paidByUsers = Array.from(paidBySet);
+      
+      const splitSet = new Set();
+      relevantSplits.forEach(s => splitSet.add(s.userId));
+      const splitUsers = Array.from(splitSet);
+      
+      const allUsersSet = new Set();
+      memberIds.forEach(id => allUsersSet.add(id));
+      paidByUsers.forEach(id => allUsersSet.add(id));
+      splitUsers.forEach(id => allUsersSet.add(id));
+      const allInvolvedUsers = Array.from(allUsersSet);
+      
+      // Calculate balances for all involved users (including removed ones)
       const balances = [];
       
-      for (const memberId of memberIds) {
-        const memberUser = await this.getUser(memberId);
+      for (const userId of allInvolvedUsers) {
+        const memberUser = await this.getUser(userId as number);
+        const isCurrentMember = memberIds.includes(userId as number);
         
         // Amount they paid out (only real expenses they covered)
         const totalPaid = realExpenses
-          .filter(e => e.paidBy === memberId)
+          .filter(e => e.paidBy === userId)
           .reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0);
         
         // Amount they owe (their share of all real expenses)
         const totalOwed = relevantSplits
-          .filter(split => split.userId === memberId)
+          .filter(split => split.userId === userId)
           .reduce((sum, split) => sum + parseFloat(split.amount.toString()), 0);
         
         const netBalance = Math.round((totalPaid - totalOwed) * 100) / 100;
         console.log(`${memberUser?.name}: paid ${totalPaid}, owes ${totalOwed}, net ${netBalance}`);
         
         balances.push({
-          userId: memberId,
+          userId: userId,
           name: memberUser?.name || memberUser?.username || 'Unknown',
           totalPaid: Math.round(totalPaid * 100) / 100,
           totalOwed: Math.round(totalOwed * 100) / 100,
-          netBalance: netBalance
+          netBalance: netBalance,
+          isCurrentMember: isCurrentMember
         });
       }
 
