@@ -2453,7 +2453,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Delete an expense
-  router.delete('/expenses/:id', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
+  router.delete('/expenses/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return; // Response already sent by ensureUser
@@ -2475,7 +2475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const membership = members.find(m => m.userId === user.id);
       const isAdmin = membership?.isAdmin || false;
       
-      if (expense.userId !== user.id && trip?.organizer !== user.id && !isAdmin) {
+      if (expense.paidBy !== user.id && trip?.organizer !== user.id && !isAdmin) {
         return res.status(403).json({ message: 'Not authorized to delete this expense' });
       }
       
