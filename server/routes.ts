@@ -3645,8 +3645,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const payeeId = parseInt(req.params.payeeId);
       const { amount } = req.query;
 
-      if (isNaN(tripId) || isNaN(payeeId) || !amount) {
-        return res.status(400).json({ message: "Missing required parameters" });
+      if (isNaN(tripId) || isNaN(payeeId)) {
+        return res.status(400).json({ message: "Invalid trip ID or payee ID" });
+      }
+
+      // If amount is not provided or is invalid, try to get it from trip member data
+      let paymentAmount = amount ? parseFloat(amount as string) : null;
+      
+      if (!paymentAmount || paymentAmount <= 0) {
+        // Try to get the payment amount from the user's trip membership
+        const members = await storage.getTripMembers(tripId);
+        const member = members.find(m => m.userId === user.id);
+        
+        if (member && member.paymentAmount && parseFloat(member.paymentAmount) > 0) {
+          paymentAmount = parseFloat(member.paymentAmount);
+        } else {
+          // Try to get from trip's down payment requirement
+          const trip = await storage.getTrip(tripId);
+          if (trip?.downPaymentAmount && parseFloat(trip.downPaymentAmount) > 0) {
+            paymentAmount = parseFloat(trip.downPaymentAmount);
+          } else {
+            // Default to a minimal amount if no payment amount is found
+            paymentAmount = 1.00;
+          }
+        }
       }
 
       const payee = await storage.getUser(payeeId);
@@ -3657,7 +3679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { getSettlementOptions } = await import('./settlement-utils');
-      const options = getSettlementOptions(payee, parseFloat(amount as string), user.name, trip.name);
+      const options = getSettlementOptions(payee, paymentAmount, user.name || user.username, trip.name);
 
       res.json(options);
     } catch (error) {

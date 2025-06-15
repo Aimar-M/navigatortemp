@@ -132,14 +132,22 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
 
   // Fetch settlement options for paying the trip organizer
   const { data: settlementOptions, isLoading: optionsLoading, error: optionsError } = useQuery({
-    queryKey: [`/api/trips/${trip.id}/settlement-options/${trip.organizer}`, trip.downPaymentAmount],
+    queryKey: [`/api/trips/${trip.id}/settlement-options/${trip.organizer}`, trip.downPaymentAmount || member?.paymentAmount],
     queryFn: async () => {
-      if (!trip.organizer || !trip.downPaymentAmount) return [];
-      const response = await fetch(`/api/trips/${trip.id}/settlement-options/${trip.organizer}?amount=${trip.downPaymentAmount}`);
+      if (!trip.organizer) return [];
+      
+      // Build URL with amount parameter if available
+      let url = `/api/trips/${trip.id}/settlement-options/${trip.organizer}`;
+      const amount = trip.downPaymentAmount || member?.paymentAmount;
+      if (amount) {
+        url += `?amount=${amount}`;
+      }
+      
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch settlement options');
       return response.json();
     },
-    enabled: !!trip.organizer && trip.requiresDownPayment && !!trip.downPaymentAmount,
+    enabled: !!trip.organizer && (trip.requiresDownPayment || member?.paymentAmount),
   });
 
   // Fetch trip members for the confirmed attendees section
