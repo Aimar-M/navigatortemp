@@ -610,13 +610,20 @@ export class DatabaseStorage {
         const netBalance = Math.round((totalPaid - totalOwed) * 100) / 100;
         console.log(`${memberUser?.name}: paid ${totalPaid}, owes ${totalOwed}, net ${netBalance}`);
         
+        // For removed users, only include them if they have outstanding financial obligations
+        if (!isCurrentMember && Math.abs(netBalance) < 0.01) {
+          console.log(`Skipping removed user ${memberUser?.name} with zero balance`);
+          continue; // Skip removed users with no meaningful financial involvement
+        }
+
         balances.push({
           userId: userId,
           name: memberUser?.name || memberUser?.username || 'Unknown',
           totalPaid: Math.round(totalPaid * 100) / 100,
           totalOwed: Math.round(totalOwed * 100) / 100,
           netBalance: netBalance,
-          isCurrentMember: isCurrentMember
+          isCurrentMember: isCurrentMember,
+          isLegacyRemoved: memberUser?.legacyRemoved || false
         });
       }
 
