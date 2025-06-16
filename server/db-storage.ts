@@ -10,7 +10,7 @@ import {
   messages, surveyQuestions, surveyResponses, expenses, expenseSplits, settlements,
   polls, pollVotes, invitationLinks
 } from "@shared/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, ilike } from "drizzle-orm";
 export class DatabaseStorage {
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -586,13 +586,84 @@ export class DatabaseStorage {
   }
 
   async transferActivityOwnership(activityId: number, newOwnerId: number): Promise<Activity | undefined> {
+    // Get the current activity to find the old owner
+    const currentActivity = await this.getActivity(activityId);
+    if (!currentActivity) {
+      throw new Error('Activity not found');
+    }
+    
+    const oldOwnerId = currentActivity.createdBy;
+    
+    // Update the activity ownership
     const [updatedActivity] = await db
       .update(activities)
       .set({ createdBy: newOwnerId })
       .where(eq(activities.id, activityId))
       .returning();
     
-    return updatedActivity || undefined;
+    if (!updatedActivity) {
+      throw new Error('Failed to update activity ownership');
+    }
+    
+    // Update any associated expenses to reflect the new owner
+    // First, update expenses that have direct activityId reference
+    if (expenses.activityId) {
+      await db
+        .update(expenses)
+        .set({ paidBy: newOwnerId })
+        .where(eq(expenses.activityId, activityId));
+    }
+    
+    // Also update expenses that were created for this activity based on title pattern
+    const titlePattern = `Activity: ${updatedActivity.name}`;
+    await db
+      .update(expenses)
+      .set({ paidBy: newOwnerId })
+      .where(and(
+        eq(expenses.tripId, updatedActivity.tripId),
+        eq(expenses.paidBy, oldOwnerId),
+        sql`title ILIKE ${titlePattern + '%'}`
+      ));
+    
+    // Remove the old owner from the activity's RSVP list since they're no longer participating
+    await db
+      .delete(activityRsvp)
+      .where(and(
+        eq(activityRsvp.activityId, activityId),
+        eq(activityRsvp.userId, oldOwnerId)
+      ));
+    
+    // Ensure the new owner has an RSVP entry marked as "going" if they don't already
+    const existingRSVP = await db
+      .select()
+      .from(activityRsvp)
+      .where(and(
+        eq(activityRsvp.activityId, activityId),
+        eq(activityRsvp.userId, newOwnerId)
+      ))
+      .limit(1);
+    
+    if (existingRSVP.length === 0) {
+      // Create new RSVP for the new owner
+      await db
+        .insert(activityRsvp)
+        .values({
+          activityId: activityId,
+          userId: newOwnerId,
+          status: 'going'
+        });
+    } else {
+      // Update existing RSVP to "going"
+      await db
+        .update(activityRsvp)
+        .set({ status: 'going' })
+        .where(and(
+          eq(activityRsvp.activityId, activityId),
+          eq(activityRsvp.userId, newOwnerId)
+        ));
+    }
+    
+    return updatedActivity;
   }
 
   async createMessage(message: InsertMessage): Promise<Message> {
