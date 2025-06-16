@@ -81,6 +81,7 @@ export const trips = pgTable("trips", {
   requiresDownPayment: boolean("requires_down_payment").default(false),
   downPaymentAmount: decimal("down_payment_amount", { precision: 10, scale: 2 }),
   adminOnlyItinerary: boolean("admin_only_itinerary").default(false),
+  removalLogicVersion: integer("removal_logic_version").default(0),
 });
 
 export const tripsRelations = relations(trips, ({ one, many }) => ({
