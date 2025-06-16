@@ -969,6 +969,21 @@ export default function TripDetails() {
         isOpen={isInviteModalOpen} 
         onClose={() => setIsInviteModalOpen(false)} 
       />
+      
+      {/* Enhanced Member Removal Dialog */}
+      <EnhancedMemberRemovalDialog
+        tripId={tripId}
+        userId={enhancedRemovalDialog.userId}
+        userName={enhancedRemovalDialog.userName}
+        isOpen={enhancedRemovalDialog.isOpen}
+        onClose={() => setEnhancedRemovalDialog({ isOpen: false, userId: 0, userName: '' })}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/members`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/activities`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}/expenses`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/trips/${tripId}`] });
+        }}
+      />
     </TripDetailLayout>
   );
 }
