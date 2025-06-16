@@ -607,60 +607,30 @@ export class DatabaseStorage {
     
     // Update any associated expenses to reflect the new owner
     // First, update expenses that have direct activityId reference
-    if (expenses.activityId) {
-      await db
-        .update(expenses)
-        .set({ paidBy: newOwnerId })
-        .where(eq(expenses.activityId, activityId));
-    }
-    
-    // Also update expenses that were created for this activity based on title pattern
-    const titlePattern = `Activity: ${updatedActivity.name}`;
     await db
       .update(expenses)
       .set({ paidBy: newOwnerId })
-      .where(and(
-        eq(expenses.tripId, updatedActivity.tripId),
-        eq(expenses.paidBy, oldOwnerId),
-        sql`title ILIKE ${titlePattern + '%'}`
-      ));
+      .where(eq(expenses.activityId, activityId));
+    
+    // Also update expenses that were created for this activity based on title pattern
+    const titlePattern = `Activity: ${updatedActivity.name}%`;
+    await db
+      .update(expenses)
+      .set({ paidBy: newOwnerId })
+      .where(sql`trip_id = ${updatedActivity.tripId} AND paid_by = ${oldOwnerId} AND title ILIKE ${titlePattern}`);
     
     // Remove the old owner from the activity's RSVP list since they're no longer participating
-    await db
-      .delete(activityRsvp)
-      .where(and(
-        eq(activityRsvp.activityId, activityId),
-        eq(activityRsvp.userId, oldOwnerId)
-      ));
+    await db.execute(sql`DELETE FROM activity_rsvp WHERE activity_id = ${activityId} AND user_id = ${oldOwnerId}`);
     
     // Ensure the new owner has an RSVP entry marked as "going" if they don't already
-    const existingRSVP = await db
-      .select()
-      .from(activityRsvp)
-      .where(and(
-        eq(activityRsvp.activityId, activityId),
-        eq(activityRsvp.userId, newOwnerId)
-      ))
-      .limit(1);
+    const existingRSVP = await db.execute(sql`SELECT * FROM activity_rsvp WHERE activity_id = ${activityId} AND user_id = ${newOwnerId} LIMIT 1`);
     
-    if (existingRSVP.length === 0) {
+    if (existingRSVP.rows.length === 0) {
       // Create new RSVP for the new owner
-      await db
-        .insert(activityRsvp)
-        .values({
-          activityId: activityId,
-          userId: newOwnerId,
-          status: 'going'
-        });
+      await db.execute(sql`INSERT INTO activity_rsvp (activity_id, user_id, status) VALUES (${activityId}, ${newOwnerId}, 'going')`);
     } else {
       // Update existing RSVP to "going"
-      await db
-        .update(activityRsvp)
-        .set({ status: 'going' })
-        .where(and(
-          eq(activityRsvp.activityId, activityId),
-          eq(activityRsvp.userId, newOwnerId)
-        ));
+      await db.execute(sql`UPDATE activity_rsvp SET status = 'going' WHERE activity_id = ${activityId} AND user_id = ${newOwnerId}`);
     }
     
     return updatedActivity;
