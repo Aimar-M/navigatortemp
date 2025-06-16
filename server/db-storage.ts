@@ -322,16 +322,11 @@ export class DatabaseStorage {
         const splits = await db
           .select()
           .from(expenseSplits)
-          .where(
-            and(
-              inArray(expenseSplits.expenseId, expenseIds),
-              ne(expenseSplits.userId, userId)
-            )
-          );
+          .where(eq(expenseSplits.expenseId, activityExpenses[0].id));
         
-        const amountOwedByOthers = splits.reduce((sum, split) => 
-          sum + parseFloat(split.amount.toString()), 0
-        );
+        const amountOwedByOthers = splits
+          .filter(split => split.userId !== userId)
+          .reduce((sum, split) => sum + parseFloat(split.amount.toString()), 0);
         
         if (amountOwedByOthers > 0.01) {
           prepaidActivityBalance += amountOwedByOthers;
@@ -444,8 +439,7 @@ export class DatabaseStorage {
       .where(
         and(
           eq(activities.tripId, tripId),
-          eq(activities.createdBy, userId),
-          ne(activities.paymentType, 'prepaid')
+          eq(activities.createdBy, userId)
         )
       );
   }

@@ -19,6 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useState } from "react";
 import InviteModal from "@/components/invite-modal";
 import TripImageUpload from "@/components/trip-image-upload";
+import { EnhancedMemberRemovalDialog } from "@/components/EnhancedMemberRemovalDialog";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -42,6 +43,11 @@ export default function TripDetails() {
   const [memberToRemove, setMemberToRemove] = useState<TripMember | null>(null);
   const [removeActivities, setRemoveActivities] = useState(false);
   const [removeExpenses, setRemoveExpenses] = useState(false);
+  const [enhancedRemovalDialog, setEnhancedRemovalDialog] = useState<{
+    isOpen: boolean;
+    userId: number;
+    userName: string;
+  }>({ isOpen: false, userId: 0, userName: '' });
   const { user } = useAuth();
   
   // Define trip interface
@@ -60,6 +66,7 @@ export default function TripDetails() {
     requiresDownPayment?: boolean;
     downPaymentAmount?: string;
     adminOnlyItinerary?: boolean;
+    removalLogicVersion?: number;
   }
 
   interface TripMember {
@@ -767,9 +774,19 @@ export default function TripDetails() {
                                   return;
                                 }
                                 
-                                setMemberToRemove(member);
-                                setRemoveActivities(false);
-                                setRemoveExpenses(false);
+                                // Use enhanced removal system for version 2+ trips
+                                if ((trip?.removalLogicVersion || 0) >= 2) {
+                                  setEnhancedRemovalDialog({
+                                    isOpen: true,
+                                    userId: member.userId,
+                                    userName: member.user?.name || member.user?.username || 'Unknown'
+                                  });
+                                } else {
+                                  // Legacy removal system
+                                  setMemberToRemove(member);
+                                  setRemoveActivities(false);
+                                  setRemoveExpenses(false);
+                                }
                               }}
                             >
                               <UserMinus className="h-4 w-4" />
