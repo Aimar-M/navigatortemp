@@ -53,6 +53,13 @@ interface TripMember {
   userId: number;
   isOrganizer: boolean;
   isAdmin?: boolean;
+  status: string;
+  user?: {
+    id: number;
+    name: string;
+    username: string;
+    avatar?: string;
+  };
 }
 
 export default function ActivityDetails() {
