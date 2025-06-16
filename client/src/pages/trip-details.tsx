@@ -754,44 +754,65 @@ export default function TripDetails() {
                      member.userId !== user?.id && 
                      member.userId !== trip.organizer && (
                       <div className="ml-2">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-600 border-red-200 hover:bg-red-50"
-                              onClick={() => {
-                                // Check if this is the last admin
-                                const adminCount = members.filter(m => m.isAdmin || m.userId === trip?.organizer).length;
-                                const isLastAdmin = adminCount <= 1 && member.isAdmin;
-                                
-                                if (isLastAdmin) {
-                                  toast({
-                                    title: "Cannot remove member",
-                                    description: "Cannot remove the last admin from the trip",
-                                    variant: "destructive"
-                                  });
-                                  return;
-                                }
-                                
-                                // Use enhanced removal system for version 2+ trips
-                                if ((trip?.removalLogicVersion || 0) >= 2) {
-                                  setEnhancedRemovalDialog({
-                                    isOpen: true,
-                                    userId: member.userId,
-                                    userName: member.user?.name || member.user?.username || 'Unknown'
-                                  });
-                                } else {
+                        {/* Enhanced removal for version 2+ trips */}
+                        {(trip?.removalLogicVersion || 0) >= 2 ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 border-red-200 hover:bg-red-50"
+                            onClick={() => {
+                              // Check if this is the last admin
+                              const adminCount = members.filter(m => m.isAdmin || m.userId === trip?.organizer).length;
+                              const isLastAdmin = adminCount <= 1 && member.isAdmin;
+                              
+                              if (isLastAdmin) {
+                                toast({
+                                  title: "Cannot remove member",
+                                  description: "Cannot remove the last admin from the trip",
+                                  variant: "destructive"
+                                });
+                                return;
+                              }
+                              
+                              setEnhancedRemovalDialog({
+                                isOpen: true,
+                                userId: member.userId,
+                                userName: member.user?.name || member.user?.username || 'Unknown'
+                              });
+                            }}
+                          >
+                            <UserMinus className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 border-red-200 hover:bg-red-50"
+                                onClick={() => {
+                                  // Check if this is the last admin
+                                  const adminCount = members.filter(m => m.isAdmin || m.userId === trip?.organizer).length;
+                                  const isLastAdmin = adminCount <= 1 && member.isAdmin;
+                                  
+                                  if (isLastAdmin) {
+                                    toast({
+                                      title: "Cannot remove member",
+                                      description: "Cannot remove the last admin from the trip",
+                                      variant: "destructive"
+                                    });
+                                    return;
+                                  }
+                                  
                                   // Legacy removal system
                                   setMemberToRemove(member);
                                   setRemoveActivities(false);
                                   setRemoveExpenses(false);
-                                }
-                              }}
-                            >
-                              <UserMinus className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
+                                }}
+                              >
+                                <UserMinus className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
                           <AlertDialogContent className="max-w-md">
                             <AlertDialogHeader>
                               <AlertDialogTitle>Remove Member</AlertDialogTitle>
@@ -860,6 +881,7 @@ export default function TripDetails() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
+                        )}
                       </div>
                     )}
                     
