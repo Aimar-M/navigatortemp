@@ -147,7 +147,7 @@ export default function PendingStatusScreen({ trip, member }: PendingStatusScree
       if (!response.ok) throw new Error('Failed to fetch settlement options');
       return response.json();
     },
-    enabled: !!trip.organizer && (trip.requiresDownPayment || member?.paymentAmount),
+    enabled: !!trip.organizer && (!!trip.requiresDownPayment || !!member?.paymentAmount),
   });
 
   // Fetch trip members for the confirmed attendees section
