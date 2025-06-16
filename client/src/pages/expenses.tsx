@@ -70,6 +70,8 @@ interface Balance {
   totalOwed: number;
   totalPaid: number;
   netBalance: number;
+  isCurrentMember: boolean;
+  isLegacyRemoved: boolean;
 }
 
 export default function ExpensesPage() {
@@ -466,11 +468,11 @@ export default function ExpensesPage() {
                       // Show current confirmed members, organizer, or removed users with financial obligations
                       return member?.rsvpStatus === 'confirmed' || 
                              (member?.userId === (trip as any)?.organizer) ||
-                             (!member && Math.abs(balance.netBalance) > 0.01);
+                             (!balance.isCurrentMember && Math.abs(balance.netBalance) > 0.01);
                     })
                     .map((balance) => {
                       const member = members.find(m => m.userId === balance.userId);
-                      const isRemovedUser = !member && Math.abs(balance.netBalance) > 0.01;
+                      const isRemovedUser = !balance.isCurrentMember && Math.abs(balance.netBalance) > 0.01;
                       
                       return (
                         <div key={balance.userId} className={`p-4 border rounded-lg ${isRemovedUser ? 'border-orange-200 bg-orange-50' : ''}`}>
@@ -518,11 +520,14 @@ export default function ExpensesPage() {
                         data={balances
                           .filter(balance => {
                             const member = members.find(m => m.userId === balance.userId);
-                            return member?.rsvpStatus === 'confirmed' || (member?.userId === (trip as any)?.organizer);
+                            return member?.rsvpStatus === 'confirmed' || 
+                                   (member?.userId === (trip as any)?.organizer) ||
+                                   (!balance.isCurrentMember && Math.abs(balance.netBalance) > 0.01);
                           })
                           .map(balance => ({
                             name: balance.name,
-                            value: balance.netBalance
+                            value: balance.netBalance,
+                            isRemoved: !balance.isCurrentMember && Math.abs(balance.netBalance) > 0.01
                           }))}
                         margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                       >
@@ -536,11 +541,13 @@ export default function ExpensesPage() {
                         />
                         <YAxis 
                           domain={(() => {
-                            const confirmedBalances = balances.filter(balance => {
+                            const visibleBalances = balances.filter(balance => {
                               const member = members.find(m => m.userId === balance.userId);
-                              return member?.rsvpStatus === 'confirmed' || (member?.userId === (trip as any)?.organizer);
+                              return member?.rsvpStatus === 'confirmed' || 
+                                     (member?.userId === (trip as any)?.organizer) ||
+                                     (!balance.isCurrentMember && Math.abs(balance.netBalance) > 0.01);
                             });
-                            const values = confirmedBalances.map(b => b.netBalance);
+                            const values = visibleBalances.map(b => b.netBalance);
                             if (values.length === 0) return [-100, 100];
                             const maxAbs = Math.max(...values.map(v => Math.abs(v)));
                             const padding = Math.max(maxAbs * 0.2, 10);
@@ -560,14 +567,19 @@ export default function ExpensesPage() {
                           {balances
                             .filter(balance => {
                               const member = members.find(m => m.userId === balance.userId);
-                              return member?.rsvpStatus === 'confirmed' || (member?.userId === (trip as any)?.organizer);
+                              return member?.rsvpStatus === 'confirmed' || 
+                                     (member?.userId === (trip as any)?.organizer) ||
+                                     (!balance.isCurrentMember && Math.abs(balance.netBalance) > 0.01);
                             })
-                            .map((balance, index) => (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={balance.netBalance >= 0 ? "#16a34a" : "#dc2626"}
-                            />
-                          ))}
+                            .map((balance, index) => {
+                              const isRemovedUser = !balance.isCurrentMember && Math.abs(balance.netBalance) > 0.01;
+                              return (
+                                <Cell 
+                                  key={`cell-${index}`} 
+                                  fill={isRemovedUser ? "#ea580c" : (balance.netBalance >= 0 ? "#16a34a" : "#dc2626")}
+                                />
+                              );
+                            })}
                           <LabelList 
                             dataKey="value"
                             position="outside"
