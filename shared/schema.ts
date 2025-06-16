@@ -28,6 +28,7 @@ export const users = pgTable("users", {
   avatar: text("avatar"),
   venmoUsername: text("venmo_username"),
   paypalEmail: text("paypal_email"),
+  legacyRemoved: boolean("legacy_removed").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -206,6 +207,7 @@ export const activities = pgTable("activities", {
   createdBy: integer("created_by").references(() => users.id), // who created this activity
   checkInDate: timestamp("check_in_date"), // for accommodation types only
   checkOutDate: timestamp("check_out_date"), // for accommodation types only
+  archived: boolean("archived").default(false),
 });
 
 export const activitiesRelations = relations(activities, ({ one, many }) => ({
@@ -403,6 +405,7 @@ export const expenses = pgTable("expenses", {
   activityId: integer("activity_id").references(() => activities.id), // Link to activity if auto-created from RSVP
   isSettled: boolean("is_settled").notNull().default(false),
   receiptUrl: text("receipt_url"),
+  archived: boolean("archived").default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
