@@ -392,6 +392,88 @@ export default function ActivityDetails() {
         </CardContent>
       </Card>
 
+      {/* Activity Management Section - Only visible to admins/organizers */}
+      {isCurrentUserAdmin && activity.paymentType === 'prepaid' && (
+        <Card className="mb-6 border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <UserCheck className="h-5 w-5" />
+              Activity Management
+            </CardTitle>
+            <p className="text-sm text-orange-700">
+              This is a prepaid activity. You can transfer ownership to another confirmed trip member if needed for expense management or member removal.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-white rounded border">
+              <div>
+                <p className="font-medium text-gray-900">Current Owner</p>
+                <p className="text-sm text-gray-600">
+                  {members.find(m => m.userId === activity.createdBy)?.user?.name || 
+                   members.find(m => m.userId === activity.createdBy)?.user?.username || 
+                   'Unknown User'}
+                </p>
+              </div>
+              <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Transfer Ownership
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Transfer Activity Ownership</DialogTitle>
+                    <DialogDescription>
+                      Select a new owner for this prepaid activity. This will transfer any financial obligations associated with this activity to the new owner.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Select New Owner
+                    </label>
+                    <Select value={selectedNewOwner} onValueChange={setSelectedNewOwner}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a trip member..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {members
+                          .filter(m => m.status === 'confirmed' && m.userId !== activity.createdBy)
+                          .map(member => (
+                            <SelectItem key={member.userId} value={member.userId.toString()}>
+                              {member.user?.name || member.user?.username || `User ${member.userId}`}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setTransferDialogOpen(false);
+                        setSelectedNewOwner("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        if (selectedNewOwner) {
+                          transferOwnershipMutation.mutate(parseInt(selectedNewOwner));
+                        }
+                      }}
+                      disabled={!selectedNewOwner || transferOwnershipMutation.isPending}
+                    >
+                      {transferOwnershipMutation.isPending ? "Transferring..." : "Transfer Ownership"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Participants Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Going */}
