@@ -391,7 +391,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'You can only create trips as yourself' });
       }
       
-      const trip = await storage.createTrip(tripData);
+      // Set removalLogicVersion to 2 for new trips to enable enhanced removal system
+      const tripWithEnhancedRemoval = {
+        ...tripData,
+        removalLogicVersion: 2
+      };
+      
+      const trip = await storage.createTrip(tripWithEnhancedRemoval);
       
       // Automatically add the organizer as a confirmed member with full access
       await storage.addTripMember({
