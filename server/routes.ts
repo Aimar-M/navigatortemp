@@ -831,6 +831,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check member removal eligibility (enhanced version 2+ logic)
+  router.get('/trips/:tripId/members/:userId/removal-eligibility', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const tripId = parseInt(req.params.tripId);
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(tripId) || isNaN(userId)) {
+        return res.status(400).json({ message: 'Invalid trip ID or user ID' });
+      }
+      
+      // Get trip and verify admin access
+      const trip = await storage.getTrip(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: 'Trip not found' });
+      }
+      
+      const members = await storage.getTripMembers(tripId);
+      const currentMember = members.find(m => m.userId === user.id);
+      
+      if (!currentMember?.isAdmin && trip.organizer !== user.id) {
+        return res.status(403).json({ message: 'Only admins can check removal eligibility' });
+      }
+      
+      const eligibility = await storage.analyzeMemberRemovalEligibility(tripId, userId);
+      res.json(eligibility);
+      
+    } catch (error) {
+      console.error('Error checking removal eligibility:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
   // Remove member from trip with content handling options
   router.delete('/trips/:tripId/members/:userId', isAuthenticated, async (req: Request, res: Response) => {
     try {

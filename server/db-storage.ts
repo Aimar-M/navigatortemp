@@ -240,7 +240,158 @@ export class DatabaseStorage {
     return member || undefined;
   }
 
+  async analyzeMemberRemovalEligibility(tripId: number, userId: number): Promise<{
+    canRemove: boolean;
+    reason?: string;
+    balance: number;
+    manualExpenseBalance: number;
+    prepaidActivityBalance: number;
+    prepaidActivitiesOwed: any[];
+    suggestions?: string[];
+  }> {
+    // Get trip to check removal logic version
+    const trip = await this.getTrip(tripId);
+    if (!trip) {
+      throw new Error('Trip not found');
+    }
+
+    // For legacy trips, use simple balance check
+    if ((trip.removalLogicVersion || 0) < 2) {
+      const balances = await this.calculateExpenseBalances(tripId);
+      const userBalance = balances.find(b => b.userId === userId);
+      const balance = userBalance?.netBalance || 0;
+      
+      return {
+        canRemove: Math.abs(balance) < 0.01,
+        reason: Math.abs(balance) >= 0.01 ? "User has unsettled expenses" : undefined,
+        balance,
+        manualExpenseBalance: balance,
+        prepaidActivityBalance: 0,
+        prepaidActivitiesOwed: []
+      };
+    }
+
+    // Enhanced logic for version 2+
+    const balances = await this.calculateExpenseBalances(tripId);
+    const userBalance = balances.find(b => b.userId === userId);
+    const totalBalance = userBalance?.netBalance || 0;
+
+    // Get all expenses involving this user
+    const userExpenses = await db
+      .select()
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.tripId, tripId),
+          eq(expenses.paidBy, userId)
+        )
+      );
+
+    // Get prepaid activities created by this user
+    const prepaidActivities = await db
+      .select({
+        id: activities.id,
+        name: activities.name,
+        cost: activities.cost,
+        paymentType: activities.paymentType
+      })
+      .from(activities)
+      .where(
+        and(
+          eq(activities.tripId, tripId),
+          eq(activities.createdBy, userId),
+          eq(activities.paymentType, 'prepaid')
+        )
+      );
+
+    // Calculate balance from prepaid activities this user organized
+    let prepaidActivityBalance = 0;
+    const prepaidActivitiesOwed = [];
+    
+    for (const activity of prepaidActivities) {
+      // Find expenses auto-created for this activity
+      const activityExpenses = userExpenses.filter(e => e.activityId === activity.id);
+      
+      if (activityExpenses.length > 0) {
+        const activityExpenseAmount = activityExpenses.reduce((sum, e) => 
+          sum + parseFloat(e.amount.toString()), 0
+        );
+        
+        // Get splits for these expenses to calculate what others owe
+        const expenseIds = activityExpenses.map(e => e.id);
+        const splits = await db
+          .select()
+          .from(expenseSplits)
+          .where(
+            and(
+              inArray(expenseSplits.expenseId, expenseIds),
+              ne(expenseSplits.userId, userId)
+            )
+          );
+        
+        const amountOwedByOthers = splits.reduce((sum, split) => 
+          sum + parseFloat(split.amount.toString()), 0
+        );
+        
+        if (amountOwedByOthers > 0.01) {
+          prepaidActivityBalance += amountOwedByOthers;
+          prepaidActivitiesOwed.push({
+            activityId: activity.id,
+            activityName: activity.name,
+            amountOwed: amountOwedByOthers
+          });
+        }
+      }
+    }
+
+    const manualExpenseBalance = totalBalance - prepaidActivityBalance;
+
+    // Determine removal eligibility
+    let canRemove = true;
+    let reason = undefined;
+    const suggestions = [];
+
+    if (prepaidActivityBalance > 0.01) {
+      canRemove = false;
+      reason = `User ${userBalance?.name || 'Unknown'} is owed money for prepaid activities they organized. Please cancel or reassign those activities before removing this user.`;
+      suggestions.push('Reassign organizer to another trip member');
+      suggestions.push('Cancel the prepaid activities');
+    } else if (Math.abs(manualExpenseBalance) > 0.01) {
+      canRemove = false;
+      reason = `User ${userBalance?.name || 'Unknown'} has unsettled expenses. Please settle up before removing them.`;
+      suggestions.push('Use the settlement workflow to clear outstanding balances');
+    }
+
+    return {
+      canRemove,
+      reason,
+      balance: totalBalance,
+      manualExpenseBalance,
+      prepaidActivityBalance,
+      prepaidActivitiesOwed,
+      suggestions
+    };
+  }
+
   async removeTripMember(tripId: number, userId: number): Promise<boolean> {
+    // Check removal eligibility first
+    const eligibility = await this.analyzeMemberRemovalEligibility(tripId, userId);
+    if (!eligibility.canRemove) {
+      throw new Error(eligibility.reason || 'User cannot be removed');
+    }
+
+    // Get trip to check removal logic version
+    const trip = await this.getTrip(tripId);
+    if (!trip) {
+      throw new Error('Trip not found');
+    }
+
+    // For version 2+, remove prepaid activities created by the user
+    if ((trip.removalLogicVersion || 0) >= 2) {
+      await this.removePrepaidActivitiesCreatedByUser(tripId, userId);
+    }
+
+    // Remove the user from trip members
     const result = await db
       .delete(tripMembers)
       .where(
@@ -251,6 +402,52 @@ export class DatabaseStorage {
       );
     
     return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  private async removePrepaidActivitiesCreatedByUser(tripId: number, userId: number): Promise<void> {
+    // Get prepaid activities created by this user
+    const prepaidActivities = await db
+      .select()
+      .from(activities)
+      .where(
+        and(
+          eq(activities.tripId, tripId),
+          eq(activities.createdBy, userId),
+          eq(activities.paymentType, 'prepaid')
+        )
+      );
+
+    for (const activity of prepaidActivities) {
+      // Delete related expenses
+      await db
+        .delete(expenses)
+        .where(eq(expenses.activityId, activity.id));
+      
+      // Delete activity RSVPs
+      await db
+        .delete(activityRsvp)
+        .where(eq(activityRsvp.activityId, activity.id));
+      
+      // Delete the activity
+      await db
+        .delete(activities)
+        .where(eq(activities.id, activity.id));
+    }
+
+    // Update free/included activities to show they were created by a removed user
+    await db
+      .update(activities)
+      .set({ 
+        createdBy: null,
+        description: sql`COALESCE(${activities.description}, '') || CASE WHEN COALESCE(${activities.description}, '') = '' THEN 'Created by a removed user' ELSE ' (Created by a removed user)' END`
+      })
+      .where(
+        and(
+          eq(activities.tripId, tripId),
+          eq(activities.createdBy, userId),
+          ne(activities.paymentType, 'prepaid')
+        )
+      );
   }
 
   async createActivity(activity: InsertActivity): Promise<Activity> {
