@@ -184,12 +184,30 @@ export class DatabaseStorage {
   }
 
   async updateTripMemberRSVPStatus(tripId: number, userId: number, rsvpStatus: string): Promise<TripMember | undefined> {
+    // Get trip to check if down payment is required
+    const trip = await this.getTrip(tripId);
+    if (!trip) {
+      throw new Error('Trip not found');
+    }
+
+    // Determine what to update
+    const updateData: any = { 
+      rsvpStatus,
+      rsvpDate: new Date()
+    };
+
+    // If confirming RSVP and no down payment required, automatically confirm member status
+    if (rsvpStatus === 'confirmed' && !trip.requiresDownPayment) {
+      updateData.status = 'confirmed';
+    }
+    // If declining RSVP, set member status to declined
+    else if (rsvpStatus === 'declined') {
+      updateData.status = 'declined';
+    }
+
     const [updatedMember] = await db
       .update(tripMembers)
-      .set({ 
-        rsvpStatus,
-        rsvpDate: new Date()
-      })
+      .set(updateData)
       .where(
         and(
           eq(tripMembers.tripId, tripId),
