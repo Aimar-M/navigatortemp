@@ -585,6 +585,16 @@ export class DatabaseStorage {
     return updatedRsvp || undefined;
   }
 
+  async transferActivityOwnership(activityId: number, newOwnerId: number): Promise<Activity | undefined> {
+    const [updatedActivity] = await db
+      .update(activities)
+      .set({ createdBy: newOwnerId })
+      .where(eq(activities.id, activityId))
+      .returning();
+    
+    return updatedActivity || undefined;
+  }
+
   async createMessage(message: InsertMessage): Promise<Message> {
     const [newMessage] = await db
       .insert(messages)
