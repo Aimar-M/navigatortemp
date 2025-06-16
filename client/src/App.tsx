@@ -44,6 +44,7 @@ function Router() {
       <Route path="/invite/:token" component={InvitationPage} />
       <Route path="/budget-dashboard" component={BudgetDashboard} />
       <Route path="/activities/:activityId" component={ActivityDetails} />
+      <Route path="/trips/:tripId/activities/:activityId" component={ActivityDetails} />
       <Route path="/trips/:tripId/expenses/:expenseId" component={ExpenseDetails} />
       <Route path="/profile" component={Profile} />
       <Route path="/user/:userId" component={UserProfile} />
