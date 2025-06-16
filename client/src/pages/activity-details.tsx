@@ -444,7 +444,15 @@ export default function ActivityDetails() {
                       </SelectTrigger>
                       <SelectContent>
                         {members
-                          .filter(m => m.status === 'confirmed' && m.userId !== activity.createdBy)
+                          .filter(m => {
+                            // Only show confirmed members who are not the current owner
+                            if (m.status !== 'confirmed' || m.userId === activity.createdBy) {
+                              return false;
+                            }
+                            // Only show members who have RSVP'd "going" to this activity
+                            const userRSVP = activity.rsvps?.find(rsvp => rsvp.userId === m.userId);
+                            return userRSVP && userRSVP.status === 'going';
+                          })
                           .map(member => (
                             <SelectItem key={member.userId} value={member.userId.toString()}>
                               {member.user?.name || member.user?.username || `User ${member.userId}`}

@@ -619,18 +619,21 @@ export class DatabaseStorage {
       .set({ paidBy: newOwnerId })
       .where(sql`trip_id = ${updatedActivity.tripId} AND paid_by = ${oldOwnerId} AND title ILIKE ${titlePattern}`);
     
+    // Remove the old owner from the activity's RSVP list since they're no longer participating
+    await db.execute(sql`DELETE FROM activity_rsvp WHERE activity_id = ${activityId} AND user_id = ${oldOwnerId}`);
+    
     // Update expense splits to remove the old owner and recalculate amounts
     // Find all expenses related to this activity
     const activityExpenses = await db
       .select()
       .from(expenses)
-      .where(eq(expenses.activityId, activityId));
+      .where(and(
+        eq(expenses.activityId, activityId),
+        eq(expenses.tripId, updatedActivity.tripId)
+      ));
     
     for (const expense of activityExpenses) {
-      // Remove the old owner from expense splits
-      await this.removeUserFromExpenseSplit(expense.id, oldOwnerId);
-      
-      // Get current participants (who are marked as "going" after RSVP updates)
+      // Get current participants (who are marked as "going" after RSVP updates above)
       const currentRSVPs = await db
         .select()
         .from(activityRsvp)
@@ -641,14 +644,14 @@ export class DatabaseStorage {
       
       const participantIds = currentRSVPs.map(rsvp => rsvp.userId);
       
-      // Recalculate splits only if this is a shared expense (not per-person)
-      if (participantIds.length > 0 && !expense.description?.includes('per-person')) {
-        // Remove all existing splits and recreate with current participants
+      // Always recalculate splits for activity expenses to ensure only current participants are included
+      if (participantIds.length > 0) {
+        // Remove all existing splits and recreate with current participants only
         await this.removeExpenseSplits(expense.id);
         
         const costPerPerson = parseFloat(expense.amount.toString()) / participantIds.length;
         
-        // Create new splits for current participants
+        // Create new splits for current participants only
         for (const userId of participantIds) {
           await this.createExpenseSplit({
             expenseId: expense.id,
@@ -658,9 +661,6 @@ export class DatabaseStorage {
         }
       }
     }
-    
-    // Remove the old owner from the activity's RSVP list since they're no longer participating
-    await db.execute(sql`DELETE FROM activity_rsvp WHERE activity_id = ${activityId} AND user_id = ${oldOwnerId}`);
     
     // Ensure the new owner has an RSVP entry marked as "going" if they don't already
     const existingRSVP = await db.execute(sql`SELECT * FROM activity_rsvp WHERE activity_id = ${activityId} AND user_id = ${newOwnerId} LIMIT 1`);
