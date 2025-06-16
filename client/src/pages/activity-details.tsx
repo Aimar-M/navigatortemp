@@ -7,7 +7,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, MapPin, Clock, DollarSign, Users, CheckIcon, XIcon, Trash2, ExternalLink, UserCheck } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, DollarSign, Users, CheckIcon, XIcon, Trash2, ExternalLink, UserCheck, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useState } from "react";
@@ -269,22 +270,52 @@ export default function ActivityDetails() {
                 )}
               </div>
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <Badge variant="outline" className="bg-primary-100 text-primary-800">
-                {goingRSVPs.length} Going
-              </Badge>
-              {activity.maxParticipants && (
-                <>
-                  <Badge variant="secondary" className="text-xs">
-                    Cap: {activity.maxParticipants}
-                  </Badge>
-                  <Badge 
-                    variant={spotsLeft === 0 ? "destructive" : spotsLeft && spotsLeft <= 3 ? "default" : "outline"}
-                    className="text-xs"
-                  >
-                    {spotsLeft && spotsLeft > 0 ? `${spotsLeft} spots left` : "Full"}
-                  </Badge>
-                </>
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col items-end gap-2">
+                <Badge variant="outline" className="bg-primary-100 text-primary-800">
+                  {goingRSVPs.length} Going
+                </Badge>
+                {activity.maxParticipants && (
+                  <>
+                    <Badge variant="secondary" className="text-xs">
+                      Cap: {activity.maxParticipants}
+                    </Badge>
+                    <Badge 
+                      variant={spotsLeft === 0 ? "destructive" : spotsLeft && spotsLeft <= 3 ? "default" : "outline"}
+                      className="text-xs"
+                    >
+                      {spotsLeft && spotsLeft > 0 ? `${spotsLeft} spots left` : "Full"}
+                    </Badge>
+                  </>
+                )}
+              </div>
+              
+              {/* Admin actions dropdown */}
+              {isCurrentUserAdmin && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {activity.paymentType === 'prepaid' && (
+                      <DropdownMenuItem onSelect={() => setTransferDialogOpen(true)}>
+                        <UserCheck className="mr-2 h-4 w-4" />
+                        Transfer Ownership
+                      </DropdownMenuItem>
+                    )}
+                    {canEditActivity && (
+                      <DropdownMenuItem 
+                        onSelect={() => deleteMutation.mutate()}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Activity
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           </div>
@@ -399,95 +430,65 @@ export default function ActivityDetails() {
         </CardContent>
       </Card>
 
-      {/* Activity Management Section - Only visible to admins/organizers */}
-      {isCurrentUserAdmin && activity.paymentType === 'prepaid' && (
-        <Card className="mb-6 border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-800">
-              <UserCheck className="h-5 w-5" />
-              Activity Management
-            </CardTitle>
-            <p className="text-sm text-orange-700">
-              This is a prepaid activity. You can transfer ownership to another confirmed trip member if needed for expense management or member removal.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-white rounded border">
-              <div>
-                <p className="font-medium text-gray-900">Current Owner</p>
-                <p className="text-sm text-gray-600">
-                  {members.find(m => m.userId === activity.createdBy)?.user?.name || 
-                   members.find(m => m.userId === activity.createdBy)?.user?.username || 
-                   'Unknown User'}
-                </p>
-              </div>
-              <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Transfer Ownership
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Transfer Activity Ownership</DialogTitle>
-                    <DialogDescription>
-                      Select a new owner for this prepaid activity. This will transfer any financial obligations associated with this activity to the new owner.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Select New Owner
-                    </label>
-                    <Select value={selectedNewOwner} onValueChange={setSelectedNewOwner}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a trip member..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {members
-                          .filter(m => {
-                            // Only show confirmed members who are not the current owner
-                            if (m.status !== 'confirmed' || m.userId === activity.createdBy) {
-                              return false;
-                            }
-                            // Only show members who have RSVP'd "going" to this activity
-                            const userRSVP = activity.rsvps?.find(rsvp => rsvp.userId === m.userId);
-                            return userRSVP && userRSVP.status === 'going';
-                          })
-                          .map(member => (
-                            <SelectItem key={member.userId} value={member.userId.toString()}>
-                              {member.user?.name || member.user?.username || `User ${member.userId}`}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <DialogFooter>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setTransferDialogOpen(false);
-                        setSelectedNewOwner("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={() => {
-                        if (selectedNewOwner) {
-                          transferOwnershipMutation.mutate(parseInt(selectedNewOwner));
-                        }
-                      }}
-                      disabled={!selectedNewOwner || transferOwnershipMutation.isPending}
-                    >
-                      {transferOwnershipMutation.isPending ? "Transferring..." : "Transfer Ownership"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Transfer Ownership Dialog */}
+      <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Transfer Activity Ownership</DialogTitle>
+            <DialogDescription>
+              Select a new owner for this prepaid activity. This will transfer any financial obligations associated with this activity to the new owner.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              Select New Owner
+            </label>
+            <Select value={selectedNewOwner} onValueChange={setSelectedNewOwner}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a trip member..." />
+              </SelectTrigger>
+              <SelectContent>
+                {members
+                  .filter(m => {
+                    // Only show confirmed members who are not the current owner
+                    if (m.status !== 'confirmed' || m.userId === activity.createdBy) {
+                      return false;
+                    }
+                    // Only show members who have RSVP'd "going" to this activity
+                    const userRSVP = activity.rsvps?.find(rsvp => rsvp.userId === m.userId);
+                    return userRSVP && userRSVP.status === 'going';
+                  })
+                  .map(member => (
+                    <SelectItem key={member.userId} value={member.userId.toString()}>
+                      {member.user?.name || member.user?.username || `User ${member.userId}`}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setTransferDialogOpen(false);
+                setSelectedNewOwner("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedNewOwner) {
+                  transferOwnershipMutation.mutate(parseInt(selectedNewOwner));
+                }
+              }}
+              disabled={!selectedNewOwner || transferOwnershipMutation.isPending}
+            >
+              {transferOwnershipMutation.isPending ? "Transferring..." : "Transfer Ownership"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Participants Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
