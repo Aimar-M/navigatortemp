@@ -1674,6 +1674,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Server error' });
     }
   });
+
+  // Activity ownership transfer endpoint
+  router.put('/activities/:id/transfer-ownership', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = ensureUser(req, res);
+      if (!user) return;
+      
+      const activityId = parseInt(req.params.id);
+      const { newOwnerId } = req.body;
+      
+      if (isNaN(activityId) || !newOwnerId || isNaN(newOwnerId)) {
+        return res.status(400).json({ message: 'Invalid activity ID or new owner ID' });
+      }
+      
+      const activity = await storage.getActivity(activityId);
+      if (!activity) {
+        return res.status(404).json({ message: 'Activity not found' });
+      }
+      
+      // Get trip and check permissions
+      const trip = await storage.getTrip(activity.tripId);
+      if (!trip) {
+        return res.status(404).json({ message: 'Trip not found' });
+      }
+
+      // Check if user is admin or organizer
+      const members = await storage.getTripMembers(activity.tripId);
+      const currentMember = members.find(member => member.userId === user.id);
+      const isAdminOrOrganizer = currentMember?.isAdmin || trip.organizer === user.id;
+      
+      if (!isAdminOrOrganizer) {
+        return res.status(403).json({ message: 'Only trip admins and organizers can transfer activity ownership' });
+      }
+
+      // Verify new owner is a confirmed member of the trip
+      const newOwnerMember = members.find(member => 
+        member.userId === newOwnerId && member.status === 'confirmed'
+      );
+      
+      if (!newOwnerMember) {
+        return res.status(400).json({ message: 'New owner must be a confirmed member of the trip' });
+      }
+      
+      const updatedActivity = await storage.transferActivityOwnership(activityId, newOwnerId);
+      if (!updatedActivity) {
+        return res.status(404).json({ message: 'Failed to transfer ownership' });
+      }
+      
+      res.json({ 
+        message: 'Activity ownership transferred successfully',
+        activity: updatedActivity 
+      });
+    } catch (error) {
+      console.error('Error transferring activity ownership:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
   
   // Activity RSVP Routes
   router.post('/activities/:id/rsvp', isAuthenticated, async (req: Request, res: Response) => {

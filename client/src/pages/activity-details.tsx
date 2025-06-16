@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, MapPin, Clock, DollarSign, Users, CheckIcon, XIcon, Trash2, ExternalLink } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, DollarSign, Users, CheckIcon, XIcon, Trash2, ExternalLink, UserCheck } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useState } from "react";
@@ -58,6 +60,8 @@ export default function ActivityDetails() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedNewOwner, setSelectedNewOwner] = useState<string>("");
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
 
   const { data: activity, isLoading } = useQuery<ActivityDetail>({
     queryKey: [`/api/activities/${activityId}`],
@@ -112,6 +116,32 @@ export default function ActivityDetails() {
       toast({
         title: "Error",
         description: "Failed to delete activity. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const transferOwnershipMutation = useMutation({
+    mutationFn: async (newOwnerId: number) => {
+      return await apiRequest("PUT", `/api/activities/${activityId}/transfer-ownership`, { newOwnerId });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Ownership transferred",
+        description: "Activity ownership has been successfully transferred.",
+      });
+      setTransferDialogOpen(false);
+      setSelectedNewOwner("");
+      queryClient.invalidateQueries({ queryKey: [`/api/activities/${activityId}`] });
+      if (activity?.tripId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/trips/${activity.tripId}/activities`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/trips/${activity.tripId}/expenses`] });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Transfer failed",
+        description: error.message || "Failed to transfer ownership. Please try again.",
         variant: "destructive",
       });
     },
