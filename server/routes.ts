@@ -983,26 +983,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Remove user from all existing expense splits (but only for real expenses, not settlements)
-      // We filter out settlements since they don't have splits and shouldn't be modified
-      const allExpenses = await storage.getExpensesByTrip(tripId);
-      const realExpenses = allExpenses.filter(expense => 
-        typeof expense.id === 'number' && !expense.isSettlement
-      );
+      // Remove the member from the trip (this includes eligibility check)
+      const removed = await storage.removeTripMember(tripId, userIdToRemove);
       
-      for (const expense of realExpenses) {
-        // Get current splits for this expense
-        const splits = await storage.getExpenseSplits(expense.id) || [];
-        const userSplit = splits.find((split: any) => split.userId === userIdToRemove);
+      if (removed) {
+        // Only after successful removal, clean up expense splits
+        // Remove user from all existing expense splits (but only for real expenses, not settlements)
+        const allExpenses = await storage.getExpensesByTrip(tripId);
+        const realExpenses = allExpenses.filter(expense => 
+          typeof expense.id === 'number' && !expense.isSettlement
+        );
         
-        if (userSplit) {
-          // Remove this user from the expense split
-          await storage.removeUserFromExpenseSplit(expense.id, userIdToRemove);
+        for (const expense of realExpenses) {
+          // Get current splits for this expense
+          const splits = await storage.getExpenseSplits(expense.id) || [];
+          const userSplit = splits.find((split: any) => split.userId === userIdToRemove);
+          
+          if (userSplit) {
+            // Remove this user from the expense split
+            await storage.removeUserFromExpenseSplit(expense.id, userIdToRemove);
+          }
         }
       }
-      
-      // Remove the member from the trip
-      const removed = await storage.removeTripMember(tripId, userIdToRemove);
       
       if (!removed) {
         return res.status(500).json({ message: 'Failed to remove member' });
