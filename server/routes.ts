@@ -1938,7 +1938,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             userId: message.userId,
             user: {
               id: userWithoutPassword.id,
-              name: userWithoutPassword.name,
+              name: userWithoutPassword.name || userWithoutPassword.username || 'Anonymous',
               avatar: userWithoutPassword.avatar
             }
           };
@@ -2166,7 +2166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             tripName: trip?.name || 'Unknown Trip',
             user: user ? {
               id: user.id,
-              name: user.name,
+              name: user.name || user.username || 'Anonymous',
               avatar: user.avatar
             } : null
           };
@@ -2189,7 +2189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pollData: poll,
             user: user ? {
               id: user.id,
-              name: user.name,
+              name: user.name || user.username || 'Anonymous',
               avatar: user.avatar
             } : null
           };
