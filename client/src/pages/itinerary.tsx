@@ -782,7 +782,6 @@ function Itinerary() {
                     <SelectItem value="payment_onsite">Payment Onsite</SelectItem>
                     <SelectItem value="pay_in_advance">Pay in advance (via link)</SelectItem>
                     <SelectItem value="prepaid">Prepaid by Organizer (group cost)</SelectItem>
-                    <SelectItem value="prepaid_per_person">Prepaid by Organizer (per person cost)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -790,9 +789,6 @@ function Itinerary() {
               <div>
                 <Label htmlFor="activity-cost">
                   Cost {["free", "included"].includes(activityFormData.paymentType) ? "(optional)" : "*"}
-                  {activityFormData.paymentType === "prepaid_per_person" && (
-                    <span className="text-sm text-gray-600 ml-1">(per person)</span>
-                  )}
                 </Label>
                 <Input
                   id="activity-cost"
