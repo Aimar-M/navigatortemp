@@ -57,6 +57,7 @@ interface Expense {
   description: string;
   category: string;
   date: string;
+  activityId?: number;
   payer: {
     id: number;
     username: string;
