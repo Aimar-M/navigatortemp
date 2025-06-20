@@ -983,23 +983,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Remove user from all existing expense splits (but only for real expenses, not settlements)
-      // We filter out settlements since they don't have splits and shouldn't be modified
-      const allExpenses = await storage.getExpensesByTrip(tripId);
-      const realExpenses = allExpenses.filter(expense => 
-        typeof expense.id === 'number' && !expense.isSettlement
-      );
-      
-      for (const expense of realExpenses) {
-        // Get current splits for this expense
-        const splits = await storage.getExpenseSplits(expense.id) || [];
-        const userSplit = splits.find((split: any) => split.userId === userIdToRemove);
-        
-        if (userSplit) {
-          // Remove this user from the expense split
-          await storage.removeUserFromExpenseSplit(expense.id, userIdToRemove);
-        }
-      }
+      // DO NOT remove user from expense splits - this would alter financial history
+      // and change other users' balances. Instead, we preserve all financial records
+      // and only remove the user from membership/RSVPs.
       
       // Remove the member from the trip
       const removed = await storage.removeTripMember(tripId, userIdToRemove);
