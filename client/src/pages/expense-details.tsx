@@ -319,44 +319,24 @@ export default function ExpenseDetails() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Split Details ({splits.length} {splits.length === 1 ? 'participant' : 'participants'})
+              Split Between ({splits.length} {splits.length === 1 ? 'participant' : 'participants'})
             </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">
+              {formatCurrency(splits[0]?.amount || 0)} per person
+            </p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {splits.map((split, index) => (
-                <div key={split.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback>
-                        {(split.user?.name || split.user?.username || 'U').charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {split.user?.name || split.user?.username || 'Unknown User'}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Owes {formatCurrency(split.amount)}
-                        {split.paidAt && (
-                          <span className="ml-2">• Paid on {new Date(split.paidAt).toLocaleDateString()}</span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {split.isPaid ? (
-                      <Badge variant="outline" className="bg-green-100 text-green-800">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Paid
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-red-100 text-red-800">
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Unpaid
-                      </Badge>
-                    )}
-                  </div>
+            <div className="flex flex-wrap gap-3">
+              {splits.map((split) => (
+                <div key={split.id} className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-blue-100 text-blue-600 text-sm">
+                      {(split.user?.name || split.user?.username || 'U').charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-blue-800">
+                    {split.user?.name || split.user?.username || 'Unknown User'}
+                  </span>
                 </div>
               ))}
             </div>
@@ -364,22 +344,14 @@ export default function ExpenseDetails() {
             <Separator className="my-6" />
             
             {/* Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="grid grid-cols-2 gap-6 text-center">
               <div>
                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(displayExpense.amount)}</p>
                 <p className="text-sm text-gray-500">Total Amount</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{totalParticipants}</p>
+                <p className="text-2xl font-bold text-blue-600">{totalParticipants}</p>
                 <p className="text-sm text-gray-500">Participants</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-green-600">{paidParticipants}</p>
-                <p className="text-sm text-gray-500">Paid</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-red-600">{totalParticipants - paidParticipants}</p>
-                <p className="text-sm text-gray-500">Unpaid</p>
               </div>
             </div>
           </CardContent>
