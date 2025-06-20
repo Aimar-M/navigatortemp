@@ -2664,14 +2664,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Expense not found' });
       }
       
-      // Only allow the creator, trip organizer, or trip admin to update expenses
+      // Implement enhanced permission system for financial integrity
       const trip = await storage.getTrip(expense.tripId);
       const members = await storage.getTripMembers(expense.tripId);
       const membership = members.find(m => m.userId === user.id);
       const isAdmin = membership?.isAdmin || false;
+      const isOrganizer = trip?.organizer === user.id;
       
-      if (expense.userId !== user.id && trip?.organizer !== user.id && !isAdmin) {
-        return res.status(403).json({ message: 'Not authorized to update this expense' });
+      // Check if this is a manual expense (not linked to an activity)
+      const isManualExpense = !expense.activityId;
+      
+      if (isManualExpense) {
+        // For manual expenses: only the creator can update
+        if (expense.paidBy !== user.id) {
+          return res.status(403).json({ 
+            message: 'Only the creator of a manual expense can modify it' 
+          });
+        }
+      } else {
+        // For prepaid activity expenses: admins and organizer can update
+        if (!isAdmin && !isOrganizer) {
+          return res.status(403).json({ 
+            message: 'Only trip admins can modify prepaid activity expenses' 
+          });
+        }
       }
       
       const expenseUpdate = req.body;
@@ -2707,14 +2723,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Expense not found' });
       }
       
-      // Only allow the creator, trip organizer, or trip admin to delete expenses
+      // Implement enhanced permission system for financial integrity
       const trip = await storage.getTrip(expense.tripId);
       const members = await storage.getTripMembers(expense.tripId);
       const membership = members.find(m => m.userId === user.id);
       const isAdmin = membership?.isAdmin || false;
+      const isOrganizer = trip?.organizer === user.id;
       
-      if (expense.paidBy !== user.id && trip?.organizer !== user.id && !isAdmin) {
-        return res.status(403).json({ message: 'Not authorized to delete this expense' });
+      // Check if this is a manual expense (not linked to an activity)
+      const isManualExpense = !expense.activityId;
+      
+      if (isManualExpense) {
+        // For manual expenses: only the creator can delete
+        if (expense.paidBy !== user.id) {
+          return res.status(403).json({ 
+            message: 'Only the creator of a manual expense can delete it' 
+          });
+        }
+      } else {
+        // For prepaid activity expenses: admins and organizer can delete
+        if (!isAdmin && !isOrganizer) {
+          return res.status(403).json({ 
+            message: 'Only trip admins can delete prepaid activity expenses' 
+          });
+        }
       }
       
       // If this expense is linked to an activity, delete the activity as well (cascading deletion)

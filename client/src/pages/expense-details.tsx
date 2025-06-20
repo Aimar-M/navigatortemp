@@ -123,7 +123,7 @@ export default function ExpenseDetails() {
     }
   });
 
-  // Check if user can delete the expense
+  // Check if user can delete the expense (enhanced permission system)
   const canDeleteExpense = () => {
     if (!user || !trip || !displayExpense) return false;
     
@@ -132,8 +132,16 @@ export default function ExpenseDetails() {
     const isOrganizer = trip.organizer === user.id;
     const isAdmin = userMembership?.isAdmin === true;
     
-    // User can delete if they created the expense, are the organizer, or are an admin
-    return displayExpense.paidBy === user.id || isOrganizer || isAdmin;
+    // Check if this is a manual expense (not linked to an activity)
+    const isManualExpense = !displayExpense.activityId;
+    
+    if (isManualExpense) {
+      // For manual expenses: only the creator can delete
+      return displayExpense.paidBy === user.id;
+    } else {
+      // For prepaid activity expenses: only admins and organizer can delete
+      return isOrganizer || isAdmin;
+    }
   };
 
   const handleDeleteClick = () => {

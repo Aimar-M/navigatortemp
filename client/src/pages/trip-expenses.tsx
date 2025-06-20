@@ -151,35 +151,23 @@ export default function TripExpenses() {
 
   // Check if user can edit/delete an expense
   const canModifyExpense = (expense: Expense) => {
-    console.log('=== Permission Debug ===');
-    console.log('user:', user);
-    console.log('trip:', trip);
-    console.log('expense:', expense);
-    console.log('expense.paidBy:', expense.paidBy);
-    console.log('user?.id:', user?.id);
-    console.log('trip?.organizer:', trip?.organizer);
-    
-    if (!user || !trip) {
-      console.log('Missing user or trip data');
-      return false;
-    }
+    if (!user || !trip) return false;
     
     // Find user's membership info
     const userMembership = tripMembers?.find((member: any) => member.userId === user.id);
     const isOrganizer = trip.organizer === user.id;
     const isAdmin = userMembership?.isAdmin === true;
     
-    console.log('userMembership:', userMembership);
-    console.log('isOrganizer:', isOrganizer);
-    console.log('isAdmin:', isAdmin);
-    console.log('expense.paidBy === user.id:', expense.paidBy === user.id);
+    // Check if this is a manual expense (not linked to an activity)
+    const isManualExpense = !expense.activityId;
     
-    // User can modify if they created the expense, are the organizer, or are an admin
-    const canModify = expense.paidBy === user.id || isOrganizer || isAdmin;
-    console.log('Final canModify result:', canModify);
-    console.log('=== End Permission Debug ===');
-    
-    return canModify;
+    if (isManualExpense) {
+      // For manual expenses: only the creator can modify
+      return expense.paidBy === user.id;
+    } else {
+      // For prepaid activity expenses: only admins and organizer can modify
+      return isOrganizer || isAdmin;
+    }
   };
 
   const form = useForm<ExpenseFormData>({
