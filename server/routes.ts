@@ -2672,12 +2672,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isOrganizer = trip?.organizer === user.id;
       
       // Check for financial integrity restrictions
-      // 1. Check if any settlements exist for this trip
+      // 1. Check if this expense was involved in existing settlements
       const settlements = await storage.getSettlementsByTrip(expense.tripId);
       if (settlements.length > 0) {
-        return res.status(403).json({ 
-          message: `Cannot modify this expense because ${settlements.length} settlement${settlements.length > 1 ? 's have' : ' has'} been recorded for this trip. Changing expenses after settlements would make the financial records inconsistent.` 
-        });
+        // Only block if this expense existed before the settlements were created
+        const oldestSettlement = Math.min(...settlements.map(s => new Date(s.createdAt).getTime()));
+        const expenseCreatedAt = new Date(expense.createdAt).getTime();
+        
+        if (expenseCreatedAt < oldestSettlement) {
+          return res.status(403).json({ 
+            message: `Cannot modify this expense because it was included in settlement calculations. Changing expenses that were part of settlements would make the financial records inconsistent.` 
+          });
+        }
       }
       
       // 2. Check if any users involved in this expense have been removed from the trip
@@ -2752,12 +2758,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isOrganizer = trip?.organizer === user.id;
       
       // Check for financial integrity restrictions
-      // 1. Check if any settlements exist for this trip
+      // 1. Check if this expense was involved in existing settlements
       const settlements = await storage.getSettlementsByTrip(expense.tripId);
       if (settlements.length > 0) {
-        return res.status(403).json({ 
-          message: `Cannot delete this expense because ${settlements.length} settlement${settlements.length > 1 ? 's have' : ' has'} been recorded for this trip. Deleting expenses after settlements would corrupt the financial records and make balances inaccurate.` 
-        });
+        // Only block if this expense existed before the settlements were created
+        const oldestSettlement = Math.min(...settlements.map(s => new Date(s.createdAt).getTime()));
+        const expenseCreatedAt = new Date(expense.createdAt).getTime();
+        
+        if (expenseCreatedAt < oldestSettlement) {
+          return res.status(403).json({ 
+            message: `Cannot delete this expense because it was included in settlement calculations. Deleting expenses that were part of settlements would corrupt the financial records and make balances inaccurate.` 
+          });
+        }
       }
       
       // 2. Check if any users involved in this expense have been removed from the trip
