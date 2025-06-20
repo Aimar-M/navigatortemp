@@ -208,7 +208,6 @@ export default function ExpenseDetails() {
 
   const splits = displayExpense.shares || displayExpense.splits || [];
   const totalParticipants = splits.length;
-  const paidParticipants = splits.filter(split => split.isPaid).length;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl">
@@ -260,11 +259,6 @@ export default function ExpenseDetails() {
               <Badge className={displayExpense.isSettlement ? 'bg-green-100 text-green-800' : getCategoryColor(displayExpense.category)}>
                 {displayExpense.isSettlement ? 'Payment Settlement' : displayExpense.category}
               </Badge>
-              {!displayExpense.isSettlement && totalParticipants > 0 && (
-                <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                  {paidParticipants}/{totalParticipants} Paid
-                </Badge>
-              )}
             </div>
           </div>
         </CardHeader>
