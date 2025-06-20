@@ -598,7 +598,7 @@ export default function TripDetails() {
               <div className="flex items-start space-x-3">
                 <Plane className="h-5 w-5 text-gray-500 mt-0.5" />
                 <div className="flex-1">
-                  <h3 className="font-medium">Recommended Airport</h3>
+                  <h3 className="font-medium">Recommended Airports</h3>
                   {isEditing ? (
                     <Input
                       value={editForm.airportGateway}
