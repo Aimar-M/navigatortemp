@@ -57,6 +57,14 @@ function formatAccommodationLink(name: string, url: string): string {
   return '';
 }
 
+function getDisplayName(linkData: { name: string; url: string }, index: number): string {
+  // If no custom name provided, use fallback
+  if (!linkData.name || linkData.name.trim() === '') {
+    return `Accommodation ${index + 1}`;
+  }
+  return linkData.name;
+}
+
 export default function TripDetails() {
   const { id } = useParams<{ id: string }>();
   const tripId = parseInt(id);
@@ -569,7 +577,7 @@ export default function TripDetails() {
                                 newLinks[index] = formatAccommodationLink(e.target.value, linkData.url);
                                 setEditForm(prev => ({ ...prev, accommodationLinks: newLinks }));
                               }}
-                              placeholder="Enter accommodation name"
+                              placeholder="Accommodation Name"
                               className="flex-1"
                             />
                             <Input
@@ -607,7 +615,7 @@ export default function TripDetails() {
                         onClick={() => {
                           setEditForm(prev => ({ 
                             ...prev, 
-                            accommodationLinks: [...prev.accommodationLinks, 'New Accommodation||'] 
+                            accommodationLinks: [...prev.accommodationLinks, '||'] 
                           }));
                         }}
                         className="text-blue-600 border-blue-200 hover:bg-blue-50"
@@ -622,6 +630,7 @@ export default function TripDetails() {
                         <div className="space-y-2">
                           {trip.accommodationLinks.map((link, index) => {
                             const linkData = parseAccommodationLink(link);
+                            const displayName = getDisplayName(linkData, index);
                             return (
                               <div key={index}>
                                 {linkData.url ? (
@@ -631,10 +640,10 @@ export default function TripDetails() {
                                     rel="noopener noreferrer"
                                     className="text-blue-600 hover:text-blue-800 underline block"
                                   >
-                                    {linkData.name || 'Accommodation Link'}
+                                    {displayName}
                                   </a>
                                 ) : (
-                                  <span className="text-gray-600">{linkData.name || 'Accommodation Link'}</span>
+                                  <span className="text-gray-600">{displayName}</span>
                                 )}
                               </div>
                             );
