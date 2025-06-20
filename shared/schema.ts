@@ -75,7 +75,7 @@ export const trips = pgTable("trips", {
   status: text("status").notNull().default("planning"), // planning, active, completed
   cover: text("cover"),
   organizer: integer("organizer").notNull().references(() => users.id),
-  accommodationLinks: jsonb("accommodation_links").$type<{name: string, url: string}[]>(),
+  accommodationLinks: text("accommodation_links").array(),
   airportGateway: text("airport_gateway"),
   isPinned: boolean("is_pinned").default(false),
   isArchived: boolean("is_archived").default(false),
