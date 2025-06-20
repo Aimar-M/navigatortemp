@@ -103,21 +103,17 @@ export default function Home() {
         body: JSON.stringify({ isPinned: !trip.isPinned })
       });
       
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Failed to update trip: ${errorData}`);
-      }
+      if (!response.ok) throw new Error("Failed to update trip");
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/trips", !!user, token] });
+      queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
       toast({
         title: "Success",
         description: "Trip pin status updated",
       });
     },
     onError: (error) => {
-      console.error("Pin trip error:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong",
@@ -144,21 +140,17 @@ export default function Home() {
         body: JSON.stringify({ isArchived: !trip.isArchived })
       });
       
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Failed to update trip: ${errorData}`);
-      }
+      if (!response.ok) throw new Error("Failed to update trip");
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/trips", !!user, token] });
+      queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
       toast({
         title: "Success",
         description: "Trip archive status updated",
       });
     },
     onError: (error) => {
-      console.error("Archive trip error:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong",
@@ -239,45 +231,31 @@ export default function Home() {
   
   // Handler functions for pinning and archiving
   const handlePinTrip = (id: number) => {
-    console.log("Pinning trip:", id);
-    const trip = trips?.find((t: any) => t.id === id);
-    console.log("Current trip state:", trip);
     pinTripMutation.mutate(id);
   };
   
   const handleArchiveTrip = (id: number) => {
-    console.log("Archiving trip:", id);
-    const trip = trips?.find((t: any) => t.id === id);
-    console.log("Current trip state:", trip);
     archiveTripMutation.mutate(id);
   };
 
   // Combine confirmed trips with pending invitations
   const allTripsIncludingPending = [...(trips || []), ...pendingTripsFromInvitations];
   
-  // Past trips = trips with end date before current date (non-archived only)
+  // Past trips = trips with end date before current date
   const pastTrips = allTripsIncludingPending.filter((trip: any) => {
     const endDate = new Date(trip.endDate);
     return endDate < currentDate && 
-      !trip.isArchived && // Never show archived trips in main lists
+      (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
   }).sort(sortTripsByPinnedAndProximity);
   
-  // Upcoming trips = trips with end date on or after current date (non-archived only)
+  // Upcoming trips = trips with end date on or after current date
   const upcomingTrips = allTripsIncludingPending.filter((trip: any) => {
     const endDate = new Date(trip.endDate);
     return endDate >= currentDate && 
-      !trip.isArchived && // Never show archived trips in main lists
-      (searchTerm === "" || 
-        trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
-  }).sort(sortTripsByPinnedAndProximity);
-  
-  // Archived trips only
-  const archivedTrips = allTripsIncludingPending.filter((trip: any) => {
-    return trip.isArchived && // Only show archived trips
+      (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -285,7 +263,7 @@ export default function Home() {
   
   // All trips (filtered for search and archive status)
   const filteredTrips = allTripsIncludingPending.filter((trip: any) => {
-    return !trip.isArchived && // Main list excludes archived
+    return (showArchived ? true : !trip.isArchived) && // Only show archived if selected
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -507,8 +485,8 @@ export default function Home() {
                   
                   <TabsContent value="archived">
                     {/* Only archived trips */}
-                    {archivedTrips.length > 0 ? (
-                      archivedTrips.map((trip: any) => (
+                    {filteredTrips.filter((trip: any) => trip.isArchived).length > 0 ? (
+                      filteredTrips.filter((trip: any) => trip.isArchived).map((trip: any) => (
                         <div key={trip.id} className="px-1">
                           <EnhancedTripCard
                             id={trip.id}
