@@ -239,31 +239,45 @@ export default function Home() {
   
   // Handler functions for pinning and archiving
   const handlePinTrip = (id: number) => {
+    console.log("Pinning trip:", id);
+    const trip = trips?.find((t: any) => t.id === id);
+    console.log("Current trip state:", trip);
     pinTripMutation.mutate(id);
   };
   
   const handleArchiveTrip = (id: number) => {
+    console.log("Archiving trip:", id);
+    const trip = trips?.find((t: any) => t.id === id);
+    console.log("Current trip state:", trip);
     archiveTripMutation.mutate(id);
   };
 
   // Combine confirmed trips with pending invitations
   const allTripsIncludingPending = [...(trips || []), ...pendingTripsFromInvitations];
   
-  // Past trips = trips with end date before current date
+  // Past trips = trips with end date before current date (non-archived only)
   const pastTrips = allTripsIncludingPending.filter((trip: any) => {
     const endDate = new Date(trip.endDate);
     return endDate < currentDate && 
-      (showArchived ? true : !trip.isArchived) && // Only show archived if selected
+      !trip.isArchived && // Never show archived trips in main lists
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
   }).sort(sortTripsByPinnedAndProximity);
   
-  // Upcoming trips = trips with end date on or after current date
+  // Upcoming trips = trips with end date on or after current date (non-archived only)
   const upcomingTrips = allTripsIncludingPending.filter((trip: any) => {
     const endDate = new Date(trip.endDate);
     return endDate >= currentDate && 
-      (showArchived ? true : !trip.isArchived) && // Only show archived if selected
+      !trip.isArchived && // Never show archived trips in main lists
+      (searchTerm === "" || 
+        trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
+  }).sort(sortTripsByPinnedAndProximity);
+  
+  // Archived trips only
+  const archivedTrips = allTripsIncludingPending.filter((trip: any) => {
+    return trip.isArchived && // Only show archived trips
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -271,7 +285,7 @@ export default function Home() {
   
   // All trips (filtered for search and archive status)
   const filteredTrips = allTripsIncludingPending.filter((trip: any) => {
-    return (showArchived ? true : !trip.isArchived) && // Only show archived if selected
+    return !trip.isArchived && // Main list excludes archived
       (searchTerm === "" || 
         trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trip.destination.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -493,8 +507,8 @@ export default function Home() {
                   
                   <TabsContent value="archived">
                     {/* Only archived trips */}
-                    {filteredTrips.filter((trip: any) => trip.isArchived).length > 0 ? (
-                      filteredTrips.filter((trip: any) => trip.isArchived).map((trip: any) => (
+                    {archivedTrips.length > 0 ? (
+                      archivedTrips.map((trip: any) => (
                         <div key={trip.id} className="px-1">
                           <EnhancedTripCard
                             id={trip.id}
