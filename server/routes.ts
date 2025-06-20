@@ -3332,7 +3332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Vote on a poll
-  router.post('/polls/:id/vote', isAuthenticated, requireConfirmedRSVP, async (req: Request, res: Response) => {
+  router.post('/polls/:id/vote', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const user = ensureUser(req, res);
       if (!user) return;
@@ -3348,14 +3348,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Poll not found' });
       }
       
-      // Check if user is a member of the associated trip (allow any member to vote)
+      // Check if user is a member of the associated trip with confirmed RSVP
       const members = await storage.getTripMembers(poll.tripId);
-      const isMember = members.some(member => 
-        member.userId === user.id
-      );
+      const member = members.find(member => member.userId === user.id);
       
-      if (!isMember) {
-        return res.status(403).json({ message: 'Must be a member of this trip to vote' });
+      if (!member) {
+        return res.status(403).json({ message: 'Not a member of this trip' });
+      }
+      
+      // Allow organizer regardless of RSVP status
+      const trip = await storage.getTrip(poll.tripId);
+      if (trip?.organizer !== user.id && member.rsvpStatus !== 'confirmed') {
+        return res.status(403).json({ 
+          message: 'RSVP confirmation required to vote on polls',
+          rsvpStatus: member.rsvpStatus,
+          requiresRSVP: true 
+        });
       }
       
       // Check if poll is still active
