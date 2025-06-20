@@ -169,14 +169,16 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ tripId, currentUserId, isOrga
 
   // Check if user can edit/delete an expense
   const canModifyExpense = (expense: ExpenseWithUser) => {
-    console.log('Permission check:', {
-      expenseUserId: expense.userId,
-      currentUserId,
-      isOrganizer,
-      isAdmin,
-      canModify: expense.userId === currentUserId || isOrganizer || isAdmin
-    });
-    return expense.userId === currentUserId || isOrganizer || isAdmin;
+    // Check if this is a manual expense (not linked to an activity)
+    const isManualExpense = !expense.activityId;
+    
+    if (isManualExpense) {
+      // For manual expenses: only the creator can modify
+      return expense.userId === currentUserId;
+    } else {
+      // For prepaid activity expenses: only admins and organizer can modify
+      return isOrganizer || isAdmin;
+    }
   };
 
   if (isLoading) {
