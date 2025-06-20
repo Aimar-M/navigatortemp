@@ -103,17 +103,21 @@ export default function Home() {
         body: JSON.stringify({ isPinned: !trip.isPinned })
       });
       
-      if (!response.ok) throw new Error("Failed to update trip");
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Failed to update trip: ${errorData}`);
+      }
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/trips", !!user, token] });
       toast({
         title: "Success",
         description: "Trip pin status updated",
       });
     },
     onError: (error) => {
+      console.error("Pin trip error:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong",
@@ -140,17 +144,21 @@ export default function Home() {
         body: JSON.stringify({ isArchived: !trip.isArchived })
       });
       
-      if (!response.ok) throw new Error("Failed to update trip");
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Failed to update trip: ${errorData}`);
+      }
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/trips", !!user, token] });
       toast({
         title: "Success",
         description: "Trip archive status updated",
       });
     },
     onError: (error) => {
+      console.error("Archive trip error:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong",
