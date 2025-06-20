@@ -88,6 +88,7 @@ type ExpenseWithUser = {
   receiptUrl: string | null;
   createdAt: string;
   updatedAt: string;
+  activityId?: number;
   // User details added by API
   createdBy: {
     id: number;
