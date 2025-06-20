@@ -8,7 +8,7 @@ import {
   InvitationLink, InsertInvitationLink,
   users, trips, tripMembers, activities, activityRsvp, 
   messages, surveyQuestions, surveyResponses, expenses, expenseSplits, settlements,
-  polls, pollVotes, invitationLinks
+  polls, pollVotes, invitationLinks, userTripSettings
 } from "@shared/schema";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
 export class DatabaseStorage {
@@ -1096,11 +1096,38 @@ export class DatabaseStorage {
 
   // Add missing methods for app functionality
   async getUserTripSettings(userId: number, tripId: number): Promise<any> {
-    return { isPinned: false, isArchived: false };
+    const [settings] = await db
+      .select()
+      .from(userTripSettings)
+      .where(
+        and(
+          eq(userTripSettings.userId, userId),
+          eq(userTripSettings.tripId, tripId)
+        )
+      );
+    return settings || undefined;
   }
 
   async createOrUpdateUserTripSettings(userId: number, tripId: number, settings: any): Promise<any> {
-    return settings;
+    const [result] = await db
+      .insert(userTripSettings)
+      .values({
+        userId,
+        tripId,
+        isPinned: settings.isPinned,
+        isArchived: settings.isArchived,
+        updatedAt: new Date()
+      })
+      .onConflictDoUpdate({
+        target: [userTripSettings.userId, userTripSettings.tripId],
+        set: {
+          isPinned: settings.isPinned,
+          isArchived: settings.isArchived,
+          updatedAt: new Date()
+        }
+      })
+      .returning();
+    return result;
   }
 
   async getPollsByTrip(tripId: number): Promise<any[]> {
