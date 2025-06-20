@@ -2671,6 +2671,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isAdmin = membership?.isAdmin || false;
       const isOrganizer = trip?.organizer === user.id;
       
+      // Check for financial integrity restrictions
+      // 1. Check if any settlements exist for this trip
+      const settlements = await storage.getSettlementsByTrip(expense.tripId);
+      if (settlements.length > 0) {
+        return res.status(403).json({ 
+          message: 'Cannot modify expenses when settlements exist. This protects financial integrity.' 
+        });
+      }
+      
+      // 2. Check if any users involved in this expense have been removed from the trip
+      const expenseSplits = await storage.getExpenseSplits(expense.id);
+      const involvedUserIds = [expense.paidBy, ...expenseSplits.map(split => split.userId)];
+      const currentMemberIds = members.map(m => m.userId);
+      
+      const hasRemovedUsers = involvedUserIds.some(userId => !currentMemberIds.includes(userId));
+      if (hasRemovedUsers) {
+        return res.status(403).json({ 
+          message: 'Cannot modify expenses involving users who have been removed from the trip' 
+        });
+      }
+      
       // Check if this is a manual expense (not linked to an activity)
       const isManualExpense = !expense.activityId;
       
@@ -2729,6 +2750,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const membership = members.find(m => m.userId === user.id);
       const isAdmin = membership?.isAdmin || false;
       const isOrganizer = trip?.organizer === user.id;
+      
+      // Check for financial integrity restrictions
+      // 1. Check if any settlements exist for this trip
+      const settlements = await storage.getSettlementsByTrip(expense.tripId);
+      if (settlements.length > 0) {
+        return res.status(403).json({ 
+          message: 'Cannot delete expenses when settlements exist. This protects financial integrity.' 
+        });
+      }
+      
+      // 2. Check if any users involved in this expense have been removed from the trip
+      const expenseSplits = await storage.getExpenseSplits(expenseId);
+      const involvedUserIds = [expense.paidBy, ...expenseSplits.map(split => split.userId)];
+      const currentMemberIds = members.map(m => m.userId);
+      
+      const hasRemovedUsers = involvedUserIds.some(userId => !currentMemberIds.includes(userId));
+      if (hasRemovedUsers) {
+        return res.status(403).json({ 
+          message: 'Cannot delete expenses involving users who have been removed from the trip' 
+        });
+      }
       
       // Check if this is a manual expense (not linked to an activity)
       const isManualExpense = !expense.activityId;
