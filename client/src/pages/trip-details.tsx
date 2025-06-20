@@ -24,6 +24,39 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
+// Helper functions for accommodation links with custom names
+function parseAccommodationLink(link: string): { name: string; url: string } {
+  // Check if the link contains custom name (format: "Name||URL")
+  if (link.includes('||')) {
+    const [name, url] = link.split('||');
+    return { name: name || '', url: url || '' };
+  }
+  
+  // For legacy links without custom names, generate a default name
+  if (link.startsWith('http')) {
+    try {
+      const domain = new URL(link).hostname.replace('www.', '');
+      return { name: domain, url: link };
+    } catch {
+      return { name: 'Accommodation Link', url: link };
+    }
+  }
+  
+  return { name: 'Accommodation Link', url: link };
+}
+
+function formatAccommodationLink(name: string, url: string): string {
+  // Store as "Name||URL" format
+  if (name && url) {
+    return `${name}||${url}`;
+  } else if (url) {
+    return url;
+  } else if (name) {
+    return `${name}||`;
+  }
+  return '';
+}
+
 export default function TripDetails() {
   const { id } = useParams<{ id: string }>();
   const tripId = parseInt(id);
@@ -524,35 +557,49 @@ export default function TripDetails() {
                   <h3 className="font-medium">Accommodation</h3>
                   {isEditing ? (
                     <div className="mt-1 space-y-2">
-                      {editForm.accommodationLinks.map((link, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <Input
-                            value={link}
-                            onChange={(e) => {
-                              const newLinks = [...editForm.accommodationLinks];
-                              newLinks[index] = e.target.value;
-                              setEditForm(prev => ({ ...prev, accommodationLinks: newLinks }));
-                            }}
-                            placeholder="Enter accommodation booking link (optional)"
-                            type="url"
-                            className="flex-1"
-                          />
-                          {editForm.accommodationLinks.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const newLinks = editForm.accommodationLinks.filter((_, i) => i !== index);
+                      {editForm.accommodationLinks.map((link, index) => {
+                        // Parse the link to extract name and URL
+                        const linkData = parseAccommodationLink(link);
+                        return (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              value={linkData.name}
+                              onChange={(e) => {
+                                const newLinks = [...editForm.accommodationLinks];
+                                newLinks[index] = formatAccommodationLink(e.target.value, linkData.url);
                                 setEditForm(prev => ({ ...prev, accommodationLinks: newLinks }));
                               }}
-                              className="text-red-600 border-red-200 hover:bg-red-50"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
+                              placeholder="Enter accommodation name"
+                              className="flex-1"
+                            />
+                            <Input
+                              value={linkData.url}
+                              onChange={(e) => {
+                                const newLinks = [...editForm.accommodationLinks];
+                                newLinks[index] = formatAccommodationLink(linkData.name, e.target.value);
+                                setEditForm(prev => ({ ...prev, accommodationLinks: newLinks }));
+                              }}
+                              placeholder="Enter accommodation booking link (optional)"
+                              type="url"
+                              className="flex-1"
+                            />
+                            {editForm.accommodationLinks.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const newLinks = editForm.accommodationLinks.filter((_, i) => i !== index);
+                                  setEditForm(prev => ({ ...prev, accommodationLinks: newLinks }));
+                                }}
+                                className="text-red-600 border-red-200 hover:bg-red-50"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
                       <Button
                         type="button"
                         variant="outline"
@@ -560,7 +607,7 @@ export default function TripDetails() {
                         onClick={() => {
                           setEditForm(prev => ({ 
                             ...prev, 
-                            accommodationLinks: [...prev.accommodationLinks, ''] 
+                            accommodationLinks: [...prev.accommodationLinks, 'New Accommodation||'] 
                           }));
                         }}
                         className="text-blue-600 border-blue-200 hover:bg-blue-50"
@@ -573,18 +620,25 @@ export default function TripDetails() {
                     <div className="text-gray-600">
                       {trip.accommodationLinks && trip.accommodationLinks.length > 0 ? (
                         <div className="space-y-2">
-                          {trip.accommodationLinks.map((link, index) => (
-                            <div key={index}>
-                              <a 
-                                href={link.startsWith('http') ? link : `https://${link}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 underline block"
-                              >
-                                Accommodation Link {trip.accommodationLinks!.length > 1 ? `#${index + 1}` : ''}
-                              </a>
-                            </div>
-                          ))}
+                          {trip.accommodationLinks.map((link, index) => {
+                            const linkData = parseAccommodationLink(link);
+                            return (
+                              <div key={index}>
+                                {linkData.url ? (
+                                  <a 
+                                    href={linkData.url.startsWith('http') ? linkData.url : `https://${linkData.url}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 underline block"
+                                  >
+                                    {linkData.name || 'Accommodation Link'}
+                                  </a>
+                                ) : (
+                                  <span className="text-gray-600">{linkData.name || 'Accommodation Link'}</span>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       ) : (
                         'No accommodation links provided'
