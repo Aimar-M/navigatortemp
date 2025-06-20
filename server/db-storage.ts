@@ -827,13 +827,17 @@ export class DatabaseStorage {
         
         return {
           id: `settlement-${settlement.id}`,
-          title: `Payment: ${payer?.name || 'Unknown'} → ${payee?.name || 'Unknown'}`,
+          title: `Payment: ${payer?.name || payer?.username || 'Unknown'} → ${payee?.name || payee?.username || 'Unknown'}`,
           amount: parseFloat(settlement.amount),
           category: 'settlement',
           date: settlement.confirmedAt?.toISOString() || new Date().toISOString(),
           description: settlement.notes || `${settlement.paymentMethod ? settlement.paymentMethod.charAt(0).toUpperCase() + settlement.paymentMethod.slice(1) : 'Cash'} payment settlement`,
           paidBy: settlement.payerId,
-          paidByUser: payer,
+          paidByUser: {
+            id: payer?.id,
+            name: payer?.name || payer?.username || 'Unknown',
+            username: payer?.username
+          },
           activityId: null,
           isSettlement: true,
           paymentMethod: settlement.paymentMethod,
