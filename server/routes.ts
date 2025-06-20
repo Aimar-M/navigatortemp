@@ -2676,7 +2676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settlements = await storage.getSettlementsByTrip(expense.tripId);
       if (settlements.length > 0) {
         return res.status(403).json({ 
-          message: 'Cannot modify expenses when settlements exist. This protects financial integrity.' 
+          message: `Cannot modify this expense because ${settlements.length} settlement${settlements.length > 1 ? 's have' : ' has'} been recorded for this trip. Changing expenses after settlements would make the financial records inconsistent.` 
         });
       }
       
@@ -2688,7 +2688,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasRemovedUsers = involvedUserIds.some(userId => !currentMemberIds.includes(userId));
       if (hasRemovedUsers) {
         return res.status(403).json({ 
-          message: 'Cannot modify expenses involving users who have been removed from the trip' 
+          message: 'Cannot modify this expense because it involves users who have been removed from the trip. Changing expenses with removed users would create inconsistent financial data.' 
         });
       }
       
@@ -2756,7 +2756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settlements = await storage.getSettlementsByTrip(expense.tripId);
       if (settlements.length > 0) {
         return res.status(403).json({ 
-          message: 'Cannot delete expenses when settlements exist. This protects financial integrity.' 
+          message: `Cannot delete this expense because ${settlements.length} settlement${settlements.length > 1 ? 's have' : ' has'} been recorded for this trip. Deleting expenses after settlements would corrupt the financial records and make balances inaccurate.` 
         });
       }
       
@@ -2768,7 +2768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasRemovedUsers = involvedUserIds.some(userId => !currentMemberIds.includes(userId));
       if (hasRemovedUsers) {
         return res.status(403).json({ 
-          message: 'Cannot delete expenses involving users who have been removed from the trip' 
+          message: 'Cannot delete this expense because it involves users who have been removed from the trip. Deleting expenses with removed users would create inconsistent financial data.' 
         });
       }
       
