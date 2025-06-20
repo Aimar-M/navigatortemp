@@ -3229,36 +3229,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const newPoll = await storage.createPoll(pollData);
       
-      // Post the poll to the group chat as a regular message
-      const pollMessage = await storage.createMessage({
-        tripId,
-        userId: user.id,
-        content: `📊 New Poll: ${newPoll.title}\n\nOptions:\n${newPoll.options.map((opt: string, idx: number) => `${idx + 1}. ${opt}`).join('\n')}\n\nVote in the Polls tab!`
-      });
-      
       // Notify trip members about new poll via WebSocket
       broadcastToTrip(wss, tripId, {
         type: 'NEW_POLL',
         data: newPoll
-      });
-      
-      // Also broadcast the new message
-      wss.clients.forEach((client: WebSocketClient) => {
-        if (client.readyState === WebSocket.OPEN && 
-            client.tripIds?.includes(tripId)) {
-          client.send(JSON.stringify({
-            type: 'NEW_MESSAGE',
-            data: {
-              ...pollMessage,
-              user: {
-                id: user.id,
-                name: user.name,
-                username: user.username,
-                avatar: user.avatar
-              }
-            }
-          }));
-        }
       });
       
       res.status(201).json(newPoll);
