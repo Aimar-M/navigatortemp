@@ -1,0 +1,5 @@
+[phases.build]
+cmds = ["esbuild server/standalone-index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist"]
+
+[start]
+cmd = "node dist/standalone-index.js"

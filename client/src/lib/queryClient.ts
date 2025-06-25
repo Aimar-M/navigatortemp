@@ -27,6 +27,8 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
 export async function apiRequest<T = any>(
   method: string,
   url: string,
@@ -39,7 +41,10 @@ export async function apiRequest<T = any>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, {
+  // Prepend API base URL if it's not already a full URL
+  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+
+  const res = await fetch(fullUrl, {
     method,
     headers,
     credentials: 'include', // Include cookies for session auth
@@ -63,7 +68,11 @@ export const getQueryFn: <T>(options: {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const res = await fetch(queryKey[0] as string, {
+    const url = queryKey[0] as string;
+    // Prepend API base URL if it's not already a full URL
+    const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+
+    const res = await fetch(fullUrl, {
       headers,
       credentials: 'include', // Include cookies for session auth
     });
