@@ -1,0 +1,1 @@
+web: node dist/standalone-index.js
