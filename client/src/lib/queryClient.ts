@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { getApiUrl } from "./config";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -39,7 +40,10 @@ export async function apiRequest<T = any>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, {
+  // Use full API URL if not already a full URL
+  const fullUrl = url.startsWith('http') ? url : getApiUrl(url);
+
+  const res = await fetch(fullUrl, {
     method,
     headers,
     credentials: 'include', // Include cookies for session auth
@@ -63,7 +67,11 @@ export const getQueryFn: <T>(options: {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const res = await fetch(queryKey[0] as string, {
+    const url = queryKey[0] as string;
+    // Use full API URL if not already a full URL
+    const fullUrl = url.startsWith('http') ? url : getApiUrl(url);
+
+    const res = await fetch(fullUrl, {
       headers,
       credentials: 'include', // Include cookies for session auth
     });

@@ -1,3 +1,5 @@
+import { API_CONFIG } from "./config";
+
 type MessageHandler = (event: MessageEvent) => void;
 type ErrorHandler = (event: Event) => void;
 type StatusChangeHandler = (status: 'connecting' | 'connected' | 'disconnected') => void;
@@ -21,8 +23,7 @@ export class WebSocketClient {
     this.tripIds = tripIds;
     this.setConnectionStatus('connecting');
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const wsUrl = `${API_CONFIG.wsURL}/ws`;
 
     this.socket = new WebSocket(wsUrl);
 
