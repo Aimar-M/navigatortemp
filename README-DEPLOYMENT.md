@@ -21,10 +21,10 @@ This guide shows you how to deploy your Navigator app with:
 ### Environment Variables (Railway)
 In your Railway dashboard, add these variables:
 ```
-DATABASE_URL=your-neon-connection-string
-SESSION_SECRET=any-long-random-string
+DATABASE_URL=postgresql://neondb_owner:npg_bNmBGXOQ75Is@ep-cool-glade-a5d6gw1g.us-east-2.aws.neon.tech/neondb?sslmode=require
+SESSION_SECRET=navigator-session-secret-2025-production-key
 PAYPAL_CLIENT_ID=your-paypal-client-id
-PAYPAL_CLIENT_SECRET=your-paypal-secret
+PAYPAL_CLIENT_SECRET=your-paypal-client-secret
 FRONTEND_URL=https://your-app.vercel.app
 ```
 
@@ -40,7 +40,7 @@ Railway will give you a URL like: `https://your-app.railway.app`
 ### Environment Variables (Vercel)
 In your Vercel project settings, add:
 ```
-VITE_API_URL=https://your-app.railway.app
+VITE_API_URL=https://navigatortemp-production.up.railway.app
 VITE_NODE_ENV=production
 ```
 
@@ -59,7 +59,7 @@ Run this once after deployment:
 npm install
 
 # Set your database URL
-export DATABASE_URL="your-neon-connection-string"
+export DATABASE_URL="postgresql://neondb_owner:npg_bNmBGXOQ75Is@ep-cool-glade-a5d6gw1g.us-east-2.aws.neon.tech/neondb?sslmode=require"
 
 # Push database schema
 npm run db:push
