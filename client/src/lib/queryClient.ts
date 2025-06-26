@@ -28,6 +28,8 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
 export async function apiRequest<T = any>(
   method: string,
   url: string,
@@ -40,8 +42,13 @@ export async function apiRequest<T = any>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+<<<<<<< HEAD
   // Use full API URL if not already a full URL
   const fullUrl = url.startsWith('http') ? url : getApiUrl(url);
+=======
+  // Prepend API base URL if it's not already a full URL
+  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+>>>>>>> c76e66f6ee3ec461f1f75c9346d2b837b6e25829
 
   const res = await fetch(fullUrl, {
     method,
@@ -68,8 +75,13 @@ export const getQueryFn: <T>(options: {
     }
 
     const url = queryKey[0] as string;
+<<<<<<< HEAD
     // Use full API URL if not already a full URL
     const fullUrl = url.startsWith('http') ? url : getApiUrl(url);
+=======
+    // Prepend API base URL if it's not already a full URL
+    const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+>>>>>>> c76e66f6ee3ec461f1f75c9346d2b837b6e25829
 
     const res = await fetch(fullUrl, {
       headers,

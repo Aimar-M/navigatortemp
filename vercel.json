@@ -1,5 +1,6 @@
 {
   "version": 2,
+<<<<<<< HEAD
   "buildCommand": "npm run build:frontend",
   "outputDirectory": "dist/public",
   "framework": "vite",
@@ -19,4 +20,25 @@
       "VITE_API_URL": "@vite_api_url"
     }
   }
+=======
+  "name": "navigator-frontend",
+  "buildCommand": "npm run build:frontend",
+  "outputDirectory": "dist/public",
+  "installCommand": "npm install",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ]
+>>>>>>> c76e66f6ee3ec461f1f75c9346d2b837b6e25829
 }

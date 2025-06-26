@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+<<<<<<< HEAD
       "@shared": path.resolve(__dirname, "..", "shared"),
       "@assets": path.resolve(__dirname, "..", "attached_assets"),
     },
@@ -27,5 +28,18 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+=======
+      "@shared": path.resolve(__dirname, "../shared"),
+      "@assets": path.resolve(__dirname, "../attached_assets"),
+    },
+  },
+  build: {
+    outDir: "../dist/public",
+    emptyOutDir: true,
+  },
+  define: {
+    // Define environment variables for production
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+>>>>>>> c76e66f6ee3ec461f1f75c9346d2b837b6e25829
   },
 });

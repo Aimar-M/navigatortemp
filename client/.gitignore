@@ -29,31 +29,3 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
-
-# Database
-*.db
-*.sqlite
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Build artifacts
-build/
-coverage/
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Cache
-.npm
-.cache
-.parcel-cache
