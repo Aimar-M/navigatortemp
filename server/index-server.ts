@@ -1,8 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
 
-// ✅ Import db to ensure it runs and tests connection
+// Import db to ensure it runs and tests connection
 import "./db";
 
 const app = express();
@@ -32,7 +31,7 @@ app.use((req, res, next) => {
         logLine = logLine.slice(0, 79) + "…";
       }
 
-      log(logLine);
+      console.log(logLine);
     }
   });
 
@@ -50,13 +49,7 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
-
-  const port = 5000;
+  const port = parseInt(process.env.PORT || "5000");
   server.listen(
     {
       port,
@@ -64,7 +57,7 @@ app.use((req, res, next) => {
       reusePort: true,
     },
     () => {
-      log(`🚀 Serving on port ${port}`);
+      console.log(`🚀 Server running on port ${port}`);
     },
   );
 })();

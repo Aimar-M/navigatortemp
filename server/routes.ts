@@ -30,6 +30,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const router = express.Router();
   const httpServer = createServer(app);
   
+  // CORS configuration for cross-origin requests (Vercel frontend to Railway backend)
+  app.use((req, res, next) => {
+    const allowedOrigins = [
+      'http://localhost:5173', // Vite dev server
+      'http://localhost:3000', // Common dev port
+      process.env.FRONTEND_URL, // Production frontend URL
+    ].filter((url): url is string => Boolean(url));
+    
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+      return;
+    }
+    
+    next();
+  });
+  
+  // Health check endpoint for Railway
+  router.get('/health', (req: Request, res: Response) => {
+    res.status(200).json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      service: 'navigator-api'
+    });
+  });
+  
   // Configure session middleware with PostgreSQL store
   const PgSession = connectPgSimple(session);
   app.use(session({
